@@ -1,0 +1,222 @@
+{
+  "catalog_version": "1.0.0",
+  "repository": "https://github.com/mangala1728/rust-bricks",
+  "standard": "09-contract-boundary",
+  "zero_dependencies": true,
+  "total_functions": 16,
+  "modules": [
+    {
+      "module": "audio_vad",
+      "file": "src/audio_vad.rs",
+      "architecture_map": [
+        "Role: core/audio_vad — 音訊 PCM16 方均根能量 (RMS)、靜音門檻判定與字幕每秒字速 (CPS) 計算。",
+        "Inputs: PCM16 取樣切片、靜音閾值、字幕字元數與毫秒持續時間。",
+        "Outputs: RMS 能量值 (u32)、靜音布林判斷、每秒字速浮點數。",
+        "Invariants: 零全域可變狀態、無遞迴、除數防零守衛、有界切片長度（最大 192,000 取樣點）。"
+      ],
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "pcm16_rms_energy",
+          "signature": "pub fn pcm16_rms_energy(samples: &[i16]) -> u32",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "is_silence_frame",
+          "signature": "pub fn is_silence_frame(rms: u32, threshold: u32) -> bool",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {
+            "rms": "0..32768",
+            "threshold": "0..32768"
+          },
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "cps_chars_per_second",
+          "signature": "pub fn cps_chars_per_second(char_count: u32, duration_ms: u32) -> Option<f64>",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {
+            "char_count": "0..1000",
+            "duration_ms": "1..3600000"
+          },
+          "rosetta_equivalent": null
+        }
+      ]
+    },
+    {
+      "module": "crypto_vault",
+      "file": "src/crypto_vault.rs",
+      "architecture_map": [
+        "Role: core/crypto_vault — 零依賴常數時間字節比對、SHA-256 摘要與對稱 XOR 流式混淆。",
+        "Inputs: 二進位位元組切片、密鑰切片。",
+        "Outputs: 常數時間布林比對、32 位元組 SHA-256 陣列、十六進位字串、混淆位元組向量。",
+        "Invariants: 零全域可變狀態、無遞迴、零外部第三方依賴、有界迴圈。"
+      ],
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "constant_time_eq",
+          "signature": "pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "sha256_digest",
+          "signature": "pub fn sha256_digest(data: &[u8]) -> [u8; 32]",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "sha256_hex",
+          "signature": "pub fn sha256_hex(data: &[u8]) -> String",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "xor_stream",
+          "signature": "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        }
+      ]
+    },
+    {
+      "module": "math_time",
+      "file": "src/math_time.rs",
+      "architecture_map": [
+        "Role: core/math_time — 基礎數值夾止、移動平均、天文儒略日與占星大限時間比例運算。",
+        "Inputs: 數值、時間戳、年月日時、視窗切片。",
+        "Outputs: 夾止數值、浮點均值、儒略日、大限天數比例。",
+        "Invariants: 零全域可變狀態、無遞迴、除數防零守衛、有界迴圈（最大 100,000 點）。"
+      ],
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "clamp_i64",
+          "signature": "pub fn clamp_i64(val: i64, min_val: i64, max_val: i64) -> i64",
+          "description": "",
+          "outputs_cardinality": 3,
+          "domain_bounds": {
+            "val": "-1000000000000..1000000000000",
+            "min_val": "-1000000000000..1000000000000",
+            "max_val": "-1000000000000..1000000000000"
+          },
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "moving_average_f64",
+          "signature": "pub fn moving_average_f64(window: &[f64]) -> Option<f64>",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "julian_day_from_ymd",
+          "signature": "pub fn julian_day_from_ymd(year: i32, month: u32, day: u32) -> Option<f64>",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {
+            "year": "-4713..9999",
+            "month": "1..12",
+            "day": "1..31"
+          },
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "dasha_proportion_days",
+          "signature": "pub fn dasha_proportion_days(total_span_days: f64, sub_period_years: f64, total_dasha_years: f64) -> Option<f64>",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {
+            "total_span_days": "0.001..365000.0",
+            "sub_period_years": "0.001..200.0",
+            "total_dasha_years": "0.001..200.0"
+          },
+          "rosetta_equivalent": null
+        }
+      ]
+    },
+    {
+      "module": "sys_path",
+      "file": "src/sys_path.rs",
+      "architecture_map": [
+        "Role: core/sys_path — 跨平台路徑防穿越校驗、斜線規範化與史實層只增不刪 (Append-Only) 差異校驗。",
+        "Inputs: 路徑字串、新舊文本。",
+        "Outputs: 安全性布林、規範化字串、單調只增不刪檢查結果元組。",
+        "Invariants: 零全域可變狀態、無遞迴、字串長度有界防護（最大 65,536 字元）。"
+      ],
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "is_safe_rel_path",
+          "signature": "pub fn is_safe_rel_path(path_str: &str) -> bool",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "normalize_slashes",
+          "signature": "pub fn normalize_slashes(path_str: &str) -> String",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "verify_append_only",
+          "signature": "pub fn verify_append_only(old_text: &str, new_text: &str) -> (bool, Option<usize>)",
+          "description": "",
+          "outputs_cardinality": 2,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        }
+      ]
+    },
+    {
+      "module": "text_cleaner",
+      "file": "src/text_cleaner.rs",
+      "architecture_map": [
+        "Role: core/text_cleaner — UTF-8 安全字節界限截斷、字詞界限智能折行與 CJK 字元統計。",
+        "Inputs: 字串切片、最大字節數限制。",
+        "Outputs: 安全子字串切片、字元計數。",
+        "Invariants: 零全域可變狀態、無遞迴、絕不跨 UTF-8 延續字節引發 panic。"
+      ],
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "truncate_at_boundary",
+          "signature": "pub fn truncate_at_boundary(text: &str, max_bytes: usize) -> &str",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {
+            "max_bytes": "0..1048576"
+          },
+          "rosetta_equivalent": null
+        },
+        {
+          "name": "count_cjk_characters",
+          "signature": "pub fn count_cjk_characters(text: &str) -> usize",
+          "description": "",
+          "outputs_cardinality": 1,
+          "domain_bounds": {},
+          "rosetta_equivalent": null
+        }
+      ]
+    }
+  ]
+}

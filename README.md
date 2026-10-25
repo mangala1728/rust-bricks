@@ -71,9 +71,31 @@ fn main() {
 
 ---
 
-## 四、品質與自測
+## 四、AI 代理專用機器索引（Machine-Readable Catalog）
+
+> **【甩手掌櫃免讀】** 本庫所有函式均已被結構化抽取至索引清單。  
+> AI 碼工代理在跨專案開發時，請直接讀取下列檔案即可在 O(1) 時間內獲得可用積木、型別簽章與邊界定義，無需逐一掃描各個 `.rs` 原始檔：
+
+- **YAML 格式（推薦代理檢索）**：[`CATALOG.yaml`](CATALOG.yaml)
+- **JSON 格式（程式化讀取）**：[`CATALOG.json`](CATALOG.json)
+- **自動更新指令**：新增積木後請執行 `python scripts/generate_catalog.py` 同步最新索引。
+
+---
+
+## 五、倉庫容量與合約守門員（Brick-Guard Hook）
+
+為防止 AI 代理隨意提交二進位大檔或破壞 09 合約，本庫內建剛性 Hook（[`scripts/brick-guard.py`](scripts/brick-guard.py)）：
+
+1. **二進位多媒體直擋**：嚴禁提交音訊（.wav/.mp3）、圖像（.png/.jpg）、封裝檔（.zip/.tar）或模型權重檔（.onnx/.pt）。
+2. **單檔 500 KB 硬上限**：嚴禁提交超大日誌或龐大硬編碼測試數據，測試數據一律在代碼中以虛擬陣列動態生成。
+3. **零外部依賴防線**：`Cargo.toml` 的 `[dependencies]` 必須為空。
+4. **09 號合約自動審查**：提交前自動執行 `rust-lint.py`。
+5. **單元測試全綠保證**：提交前自動執行 `cargo test`。
 
 ```bash
+# 手動執行守護檢查
+python scripts/brick-guard.py
+
 # 執行全部單元測試
 cargo test
 
