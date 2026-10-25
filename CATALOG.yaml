@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 23
+total_functions: 27
 modules:
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
@@ -71,6 +71,23 @@ modules:
         domains:
           char_count: "[0..1000]"
           duration_ms: "[1..3600000]"
+  - module: "audio_wav"
+    file: "src/audio_wav.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: core/audio_wav — 零外部依賴之純記憶體 16-bit PCM 單聲道 WAV 格式編解碼微積木。"
+      - "Inputs: PCM16 取樣切片、取樣率、或者 WAV 二進位位元組切片。"
+      - "Outputs: WAV 二進位位元組向量、或者解析後的 (PCM16 樣本, 取樣率)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、長度防溢出守衛（最大 32,000,000 樣本）、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "encode_pcm16_wav"
+        signature: "pub fn encode_pcm16_wav(samples: &[i16], sample_rate: u32) -> Result<Vec<u8>, &'static str>"
+        outputs: 2
+        domains:
+          sample_rate: "[8000..192000]"
+      - name: "decode_pcm16_wav"
+        signature: "pub fn decode_pcm16_wav(wav_bytes: &[u8]) -> Result<(Vec<i16>, u32), &'static str>"
+        outputs: 2
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4
@@ -128,6 +145,21 @@ modules:
       - name: "xorshift64_step"
         signature: "pub fn xorshift64_step(state: u64) -> u64"
         outputs: 1
+  - module: "receipt"
+    file: "src/receipt.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: core/receipt — 本地 AI 決策模型審查收據簽發與 Diff 綁定校驗。"
+      - "Inputs: Git Diff 輸出、模型標籤、裁決狀態。"
+      - "Outputs: 收據 JSON 檔案與校驗結果 Result<(), String>。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "create_receipt"
+        signature: "pub fn create_receipt(repo_root: &Path, model: &str, verdict: &str) -> Result<String, String>"
+        outputs: 2
+      - name: "verify_receipt"
+        signature: "pub fn verify_receipt(repo_root: &Path) -> Result<String, String>"
+        outputs: 2
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3

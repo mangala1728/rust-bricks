@@ -8,9 +8,11 @@
 
 pub mod audio_dsp;
 pub mod audio_vad;
+pub mod audio_wav;
 pub mod catalog;
 pub mod crypto_vault;
 pub mod guard;
 pub mod math_time;
+pub mod receipt;
 pub mod sys_path;
 pub mod text_cleaner;

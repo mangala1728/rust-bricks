@@ -1,0 +1,34 @@
+name: Pure Zero-Dependency 09-Contract CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  contract-quality-gates:
+    name: Pure Rust Quality & Contract Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Unit Tests (A-Loop Logic)
+        run: cargo test --verbose
+
+      - name: Hardware-Grade Brick Guard (Capacity, JPL 60-Line, Safety Proof, Incidents)
+        run: cargo run -- guard
+
+      - name: Machine Catalog Generator (YAML & JSON)
+        run: cargo run -- catalog
+
+      - name: Verify Clean Git Tree (Catalog & Code in Sync)
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)" || (echo "❌ CATALOG or files out of sync after build!" && exit 1)

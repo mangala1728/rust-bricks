@@ -192,3 +192,24 @@ fn test_math_time_xorshift64() {
     let s_zero = math_time::xorshift64_step(0);
     assert_ne!(s_zero, 0);
 }
+
+#[test]
+fn test_audio_wav_roundtrip() {
+    let original: Vec<i16> = vec![0, 1000, -1000, 20000, -20000, 32767, -32768];
+    let encoded = rust_bricks::audio_wav::encode_pcm16_wav(&original, 16000);
+    assert!(encoded.is_ok());
+    // @safety-proof: encoded 已驗證 is_ok()
+    let wav_bytes = encoded.unwrap();
+    assert_eq!(&wav_bytes[0..4], b"RIFF");
+    assert_eq!(&wav_bytes[8..12], b"WAVE");
+
+    let decoded = rust_bricks::audio_wav::decode_pcm16_wav(&wav_bytes);
+    assert!(decoded.is_ok());
+    // @safety-proof: decoded 已驗證 is_ok()
+    let (read_back, rate) = decoded.unwrap();
+    assert_eq!(rate, 16000);
+    assert_eq!(read_back, original);
+
+    // 異常長度拒絕測試
+    assert!(rust_bricks::audio_wav::decode_pcm16_wav(&[0u8; 10]).is_err());
+}

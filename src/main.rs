@@ -85,13 +85,46 @@ fn run_guard_cmd() {
 }
 
 /// @outputs: 1
+fn run_receipt_cmd(model: &str, verdict: &str) {
+    println!("🔏 [rust-bricks] Generating Diff-bound Arbitration Receipt with [{}]...", model);
+    let repo_root = Path::new(".");
+    match rust_bricks::receipt::create_receipt(repo_root, model, verdict) {
+        Ok(hash) => {
+            println!("✅ [rust-bricks] Arbitration Receipt successfully written to .ai-memory/receipt.json");
+            println!("  SHA-256 Diff Fingerprint: {}", hash);
+        }
+        Err(e) => {
+            eprintln!("❌ [rust-bricks] Failed to create receipt: {}", e);
+            process::exit(1);
+        }
+    }
+}
+
+/// @outputs: 1
+fn run_verify_receipt_cmd() {
+    println!("🔍 [rust-bricks] Verifying Local Arbitration Receipt against current git diff...");
+    let repo_root = Path::new(".");
+    match rust_bricks::receipt::verify_receipt(repo_root) {
+        Ok(msg) => {
+            println!("✅ [rust-bricks] Receipt verification passed! {}", msg);
+        }
+        Err(e) => {
+            eprintln!("❌ [rust-bricks] Receipt verification failed: {}", e);
+            process::exit(1);
+        }
+    }
+}
+
+/// @outputs: 1
 fn print_help() {
     println!("rust-bricks v0.1.0 — Pure Zero-Dependency Function Blocks (09 Contract)");
     println!("Usage:");
-    println!("  cargo run -- selftest   # Run internal contract self-test");
-    println!("  cargo run -- catalog    # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
-    println!("  cargo run -- guard      # Run capacity & contract guard hook (Pure Rust)");
-    println!("  cargo test              # Run full unit test suite");
+    println!("  cargo run -- selftest          # Run internal contract self-test");
+    println!("  cargo run -- catalog           # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
+    println!("  cargo run -- guard             # Run capacity & contract guard hook (Pure Rust)");
+    println!("  cargo run -- receipt <model>   # Sign Diff-bound Arbitration Receipt");
+    println!("  cargo run -- verify-receipt    # Verify Receipt against current Git Diff");
+    println!("  cargo test                     # Run full unit test suite");
 }
 
 /// @outputs: 1
@@ -103,6 +136,12 @@ fn main() {
         "selftest" | "test" => run_selftest(),
         "catalog" => run_catalog_cmd(),
         "guard" => run_guard_cmd(),
+        "receipt" => {
+            let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
+            let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");
+            run_receipt_cmd(model, verdict);
+        }
+        "verify-receipt" => run_verify_receipt_cmd(),
         _ => print_help(),
     }
 }

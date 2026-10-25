@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 23,
+  "total_functions": 27,
   "modules": [
     {
       "module": "audio_dsp",
@@ -65,6 +65,23 @@
       ]
     },
     {
+      "module": "audio_wav",
+      "file": "src/audio_wav.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "encode_pcm16_wav",
+          "signature": "pub fn encode_pcm16_wav(samples: &[i16], sample_rate: u32) -> Result<Vec<u8>, &'static str>",
+          "outputs": 2
+        },
+        {
+          "name": "decode_pcm16_wav",
+          "signature": "pub fn decode_pcm16_wav(wav_bytes: &[u8]) -> Result<(Vec<i16>, u32), &'static str>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "crypto_vault",
       "file": "src/crypto_vault.rs",
       "functions_count": 4,
@@ -120,6 +137,23 @@
           "name": "xorshift64_step",
           "signature": "pub fn xorshift64_step(state: u64) -> u64",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "receipt",
+      "file": "src/receipt.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "create_receipt",
+          "signature": "pub fn create_receipt(repo_root: &Path, model: &str, verdict: &str) -> Result<String, String>",
+          "outputs": 2
+        },
+        {
+          "name": "verify_receipt",
+          "signature": "pub fn verify_receipt(repo_root: &Path) -> Result<String, String>",
+          "outputs": 2
         }
       ]
     },
