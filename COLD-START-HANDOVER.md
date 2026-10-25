@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：9 大核心模組、26 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：10 大核心模組、28 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -19,6 +19,12 @@
 ---
 
 ## 2. 三位一體編制（Commander + Worker + Reviewer）
+
+轉譯方法論遵循四步閉環（詳見 [`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)）：
+1. 深入分析子庫原理 
+2. 純手刻零依賴 Rust 
+3. 原語言差分測試對齊 
+4. 8-bit/16-bit 邊界型別異變壓測
 
 ```text
 ┌────────────────────────────────────────────────────────┐
@@ -77,6 +83,7 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `audio_wav` | `src/audio_wav.rs` | 零依賴 16-bit PCM WAV 檔頭解析與構建 |
 | `sensor_motion` | `src/sensor_motion.rs` | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 |
 | `vision_yuv` | `src/vision_yuv.rs` | Android Camera2 (NV21 / YUV420sp) 預覽幀灰階快速抽取、2x2 平均降採樣、亮度直方圖 |
+| `packet_checksum` | `src/packet_checksum.rs` | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 |
 | `crypto_vault` | `src/crypto_vault.rs` | 純 Rust SHA-256、常數時間相等性比較、XOR 流混淆 |
 | `sys_path` | `src/sys_path.rs` | 相對路徑穿越防禦、斜線標準化、史實層只增不刪校驗 |
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |

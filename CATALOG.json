@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 36,
+  "total_functions": 42,
   "modules": [
     {
       "module": "audio_dsp",
@@ -146,6 +146,43 @@
         {
           "name": "xorshift64_step",
           "signature": "pub fn xorshift64_step(state: u64) -> u64",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "packet_checksum",
+      "file": "src/packet_checksum.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "crc32_ieee_update",
+          "signature": "pub fn crc32_ieee_update(prev_crc: u32, data: &[u8]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "crc32_ieee",
+          "signature": "pub fn crc32_ieee(data: &[u8]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "crc32_pcm16_le",
+          "signature": "pub fn crc32_pcm16_le(samples: &[i16]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "adler32_update",
+          "signature": "pub fn adler32_update(prev_adler: u32, data: &[u8]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "adler32",
+          "signature": "pub fn adler32(data: &[u8]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "adler32_pcm16_le",
+          "signature": "pub fn adler32_pcm16_le(samples: &[i16]) -> u32",
           "outputs": 1
         }
       ]

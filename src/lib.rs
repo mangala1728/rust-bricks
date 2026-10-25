@@ -13,6 +13,7 @@ pub mod catalog;
 pub mod crypto_vault;
 pub mod guard;
 pub mod math_time;
+pub mod packet_checksum;
 pub mod receipt;
 pub mod sensor_motion;
 pub mod sys_path;

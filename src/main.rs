@@ -5,11 +5,22 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, catalog, crypto_vault, guard, math_time, sensor_motion, sys_path, text_cleaner, vision_yuv,
+    audio_vad, catalog, crypto_vault, guard, math_time, packet_checksum, sensor_motion, sys_path, text_cleaner,
+    vision_yuv,
 };
 use std::env;
 use std::path::Path;
 use std::process;
+
+/// @outputs: 1
+fn verify_edge_sensors_and_packets() -> bool {
+    let fused = sensor_motion::complementary_filter(10.0, 1.0, 10.5, 0.1, 0.98);
+    let ok_sensor = fused > 0.0 && sensor_motion::haversine_distance_m(25.033, 121.565, 25.034, 121.565).is_some();
+    let nv21_mock = vec![128u8; 16 * 16 * 3 / 2];
+    let ok_vision = vision_yuv::nv21_extract_grayscale(&nv21_mock, 16, 16).is_ok();
+    let ok_chk = packet_checksum::crc32_ieee(b"123456789") == 0xcbf4_3926;
+    ok_sensor && ok_vision && ok_chk
+}
 
 /// @outputs: 1
 fn run_selftest() {
@@ -48,19 +59,11 @@ fn run_selftest() {
     }
     println!("  ✅ text_cleaner: PASS");
 
-    let fused = sensor_motion::complementary_filter(10.0, 1.0, 10.5, 0.1, 0.98);
-    if fused <= 0.0 || sensor_motion::haversine_distance_m(25.0330, 121.5654, 25.0340, 121.5654).is_none() {
-        println!("  ❌ sensor_motion: FAIL");
+    if !verify_edge_sensors_and_packets() {
+        println!("  ❌ edge_sensors_and_packets: FAIL");
         process::exit(1);
     }
-    println!("  ✅ sensor_motion: PASS");
-
-    let nv21_mock = vec![128u8; 16 * 16 * 3 / 2];
-    if vision_yuv::nv21_extract_grayscale(&nv21_mock, 16, 16).is_err() {
-        println!("  ❌ vision_yuv: FAIL");
-        process::exit(1);
-    }
-    println!("  ✅ vision_yuv: PASS");
+    println!("  ✅ edge_sensors_and_packets: PASS");
 
     println!("✨ [rust-bricks] All core brick modules verified successfully! 100% PASS.");
 }

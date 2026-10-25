@@ -280,3 +280,39 @@ fn test_audio_dsp_pre_emphasis_and_clip() {
     let clipped = rust_bricks::audio_dsp::soft_clip_i16(20000, 10000);
     assert!(clipped < 20000 && clipped > 10000);
 }
+
+#[test]
+fn test_packet_checksum_crc32_and_adler32_parity() {
+    // 1. Python zlib 對齊測試向量
+    assert_eq!(rust_bricks::packet_checksum::crc32_ieee(b""), 0x0000_0000);
+    assert_eq!(rust_bricks::packet_checksum::crc32_ieee(b"123456789"), 0xcbf4_3926);
+
+    assert_eq!(rust_bricks::packet_checksum::adler32(b""), 0x0000_0001);
+    assert_eq!(rust_bricks::packet_checksum::adler32(b"123456789"), 0x091e_01de);
+
+    // 2. 增量更新測試（分段計算 vs 一次性計算）
+    let part1 = b"12345";
+    let part2 = b"6789";
+    let crc_step1 = rust_bricks::packet_checksum::crc32_ieee(part1);
+    let crc_full = rust_bricks::packet_checksum::crc32_ieee_update(crc_step1, part2);
+    assert_eq!(crc_full, 0xcbf4_3926);
+
+    let adler_step1 = rust_bricks::packet_checksum::adler32(part1);
+    let adler_full = rust_bricks::packet_checksum::adler32_update(adler_step1, part2);
+    assert_eq!(adler_full, 0x091e_01de);
+}
+
+#[test]
+fn test_packet_checksum_16bit_mutation_parity() {
+    // 3. 8-bit 變 16-bit 異變測試（音訊 PCM16 / 16-bit 感測器數據序列化）
+    // 測試陣列：[-1, 0, 1, 32767, -32768]
+    // Python struct.pack('<5h', *pcm) 之真值校驗：
+    // CRC32 LE: 0xecceca30
+    // Adler32 LE: 0x18f603fe
+    let pcm = vec![-1i16, 0, 1, 32767, -32768];
+    let crc16 = rust_bricks::packet_checksum::crc32_pcm16_le(&pcm);
+    assert_eq!(crc16, 0xecce_ca30);
+
+    let adler16 = rust_bricks::packet_checksum::adler32_pcm16_le(&pcm);
+    assert_eq!(adler16, 0x18f6_03fe);
+}
