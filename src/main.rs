@@ -4,7 +4,9 @@
 // Outputs: 退出代碼與終端執行報告。
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
-use rust_bricks::{audio_vad, catalog, crypto_vault, guard, math_time, sys_path, text_cleaner};
+use rust_bricks::{
+    audio_vad, catalog, crypto_vault, guard, math_time, sensor_motion, sys_path, text_cleaner, vision_yuv,
+};
 use std::env;
 use std::path::Path;
 use std::process;
@@ -45,6 +47,20 @@ fn run_selftest() {
         process::exit(1);
     }
     println!("  ✅ text_cleaner: PASS");
+
+    let fused = sensor_motion::complementary_filter(10.0, 1.0, 10.5, 0.1, 0.98);
+    if fused <= 0.0 || sensor_motion::haversine_distance_m(25.0330, 121.5654, 25.0340, 121.5654).is_none() {
+        println!("  ❌ sensor_motion: FAIL");
+        process::exit(1);
+    }
+    println!("  ✅ sensor_motion: PASS");
+
+    let nv21_mock = vec![128u8; 16 * 16 * 3 / 2];
+    if vision_yuv::nv21_extract_grayscale(&nv21_mock, 16, 16).is_err() {
+        println!("  ❌ vision_yuv: FAIL");
+        process::exit(1);
+    }
+    println!("  ✅ vision_yuv: PASS");
 
     println!("✨ [rust-bricks] All core brick modules verified successfully! 100% PASS.");
 }

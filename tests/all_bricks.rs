@@ -213,3 +213,70 @@ fn test_audio_wav_roundtrip() {
     // 異常長度拒絕測試
     assert!(rust_bricks::audio_wav::decode_pcm16_wav(&[0u8; 10]).is_err());
 }
+
+#[test]
+fn test_sensor_motion_complementary_and_kalman() {
+    let angle = rust_bricks::sensor_motion::complementary_filter(0.0, 10.0, 1.0, 0.1, 0.9);
+    assert!((angle - 1.0).abs() < 1e-4);
+
+    let (est1, cov1) = rust_bricks::sensor_motion::kalman_filter_1d(0.0, 1.0, 5.0, 0.1, 0.5);
+    assert!(est1 > 0.0 && est1 < 5.0);
+    assert!(cov1 < 1.1);
+}
+
+#[test]
+fn test_sensor_motion_haversine() {
+    // 台北101 (25.0339, 121.5645) 到 台北車站 (25.0478, 121.5170)
+    let dist_opt = rust_bricks::sensor_motion::haversine_distance_m(25.0339, 121.5645, 25.0478, 121.5170);
+    assert!(dist_opt.is_some());
+    // @safety-proof: dist_opt 已驗證 is_some()
+    let dist = dist_opt.unwrap();
+    // 距離約 5 公里左右
+    assert!(dist > 4500.0 && dist < 5500.0);
+
+    let bearing_opt = rust_bricks::sensor_motion::haversine_bearing_deg(25.0339, 121.5645, 25.0478, 121.5170);
+    assert!(bearing_opt.is_some());
+    // @safety-proof: bearing_opt 已驗證 is_some()
+    let bearing = bearing_opt.unwrap();
+    assert!(bearing >= 0.0 && bearing < 360.0);
+}
+
+#[test]
+fn test_vision_yuv_nv21_and_downsample() {
+    let w = 4usize;
+    let h = 4usize;
+    let mut nv21 = vec![0u8; w * h * 3 / 2];
+    for i in 0..(w * h) {
+        nv21[i] = (i * 10) as u8;
+    }
+
+    let gray_res = rust_bricks::vision_yuv::nv21_extract_grayscale(&nv21, w, h);
+    assert!(gray_res.is_ok());
+    // @safety-proof: gray_res 已驗證 is_ok()
+    let gray = gray_res.unwrap();
+    assert_eq!(gray.len(), 16);
+
+    let down_res = rust_bricks::vision_yuv::downsample_2x2_grayscale(&gray, w, h);
+    assert!(down_res.is_ok());
+    // @safety-proof: down_res 已驗證 is_ok()
+    let (down, dw, dh) = down_res.unwrap();
+    assert_eq!(dw, 2);
+    assert_eq!(dh, 2);
+    assert_eq!(down.len(), 4);
+
+    let hist = rust_bricks::vision_yuv::calculate_luminance_histogram(&gray);
+    assert_eq!(hist.iter().sum::<u32>(), 16);
+}
+
+#[test]
+fn test_audio_dsp_pre_emphasis_and_clip() {
+    let pcm = vec![1000i16, 2000, 3000, 4000];
+    let filtered = rust_bricks::audio_dsp::pre_emphasis_filter(&pcm, 0.97);
+    assert_eq!(filtered.len(), 4);
+    assert_eq!(filtered[0], 1000);
+
+    // 軟削峰測試
+    assert_eq!(rust_bricks::audio_dsp::soft_clip_i16(500, 1000), 500);
+    let clipped = rust_bricks::audio_dsp::soft_clip_i16(20000, 10000);
+    assert!(clipped < 20000 && clipped > 10000);
+}

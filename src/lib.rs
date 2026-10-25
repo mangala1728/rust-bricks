@@ -14,5 +14,7 @@ pub mod crypto_vault;
 pub mod guard;
 pub mod math_time;
 pub mod receipt;
+pub mod sensor_motion;
 pub mod sys_path;
 pub mod text_cleaner;
+pub mod vision_yuv;

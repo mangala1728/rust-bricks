@@ -3,12 +3,12 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 27,
+  "total_functions": 36,
   "modules": [
     {
       "module": "audio_dsp",
       "file": "src/audio_dsp.rs",
-      "functions_count": 6,
+      "functions_count": 8,
       "functions": [
         {
           "name": "pcm16_frame_power",
@@ -38,6 +38,16 @@
         {
           "name": "mix_noise_scale_factor",
           "signature": "pub fn mix_noise_scale_factor(speech_power: f64, noise_power: f64, target_snr_db: f64) -> f64",
+          "outputs": 2
+        },
+        {
+          "name": "pre_emphasis_filter",
+          "signature": "pub fn pre_emphasis_filter(samples: &[i16], alpha: f32) -> Vec<i16>",
+          "outputs": 2
+        },
+        {
+          "name": "soft_clip_i16",
+          "signature": "pub fn soft_clip_i16(sample: i32, threshold: i32) -> i16",
           "outputs": 2
         }
       ]
@@ -158,6 +168,33 @@
       ]
     },
     {
+      "module": "sensor_motion",
+      "file": "src/sensor_motion.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "complementary_filter",
+          "signature": "pub fn complementary_filter(angle_prev: f32, gyro_rate: f32, accel_angle: f32, dt: f32, alpha: f32) -> f32",
+          "outputs": 2
+        },
+        {
+          "name": "kalman_filter_1d",
+          "signature": "pub fn kalman_filter_1d(",
+          "outputs": 2
+        },
+        {
+          "name": "haversine_distance_m",
+          "signature": "pub fn haversine_distance_m(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "haversine_bearing_deg",
+          "signature": "pub fn haversine_bearing_deg(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> Option<f64>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "sys_path",
       "file": "src/sys_path.rs",
       "functions_count": 3,
@@ -192,6 +229,28 @@
         {
           "name": "count_cjk_characters",
           "signature": "pub fn count_cjk_characters(text: &str) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "vision_yuv",
+      "file": "src/vision_yuv.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "nv21_extract_grayscale",
+          "signature": "pub fn nv21_extract_grayscale(nv21_buffer: &[u8], width: usize, height: usize) -> Result<Vec<u8>, &'static str>",
+          "outputs": 2
+        },
+        {
+          "name": "downsample_2x2_grayscale",
+          "signature": "pub fn downsample_2x2_grayscale(",
+          "outputs": 2
+        },
+        {
+          "name": "calculate_luminance_histogram",
+          "signature": "pub fn calculate_luminance_histogram(gray: &[u8]) -> [u32; 256]",
           "outputs": 1
         }
       ]

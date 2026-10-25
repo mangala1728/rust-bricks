@@ -128,3 +128,45 @@ pub fn mix_noise_scale_factor(speech_power: f64, noise_power: f64, target_snr_db
     let target_noise_power = speech_power / ratio;
     (target_noise_power / noise_power).sqrt()
 }
+
+/// @outputs: 2
+/// @domain: alpha [0.0..1.0]
+pub fn pre_emphasis_filter(samples: &[i16], alpha: f32) -> Vec<i16> {
+    if alpha < 0.0 || alpha > 1.0 || samples.is_empty() || samples.len() > MAX_AUDIO_SAMPLES {
+        return samples.to_vec();
+    }
+    let mut out = Vec::with_capacity(samples.len());
+    out.push(samples[0]);
+    for i in 1..samples.len() {
+        let cur = samples[i] as f32;
+        let prev = samples[i - 1] as f32;
+        let val = cur - alpha * prev;
+        let clamped = if val > 32767.0 {
+            32767
+        } else if val < -32768.0 {
+            -32768
+        } else {
+            val as i16
+        };
+        out.push(clamped);
+    }
+    out
+}
+
+/// @outputs: 2
+/// @domain: threshold [1000..32767]
+pub fn soft_clip_i16(sample: i32, threshold: i32) -> i16 {
+    if threshold < 1000 || threshold > 32767 {
+        return if sample > 32767 { 32767 } else if sample < -32768 { -32768 } else { sample as i16 };
+    }
+    if sample.abs() <= threshold {
+        return sample as i16;
+    }
+    let sign = if sample < 0 { -1 } else { 1 };
+    let abs_val = sample.abs();
+    let excess = abs_val - threshold;
+    let compressed = threshold + (excess as f32 * 0.5) as i32;
+    let final_val = if compressed > 32767 { 32767 } else { compressed };
+    (sign * final_val) as i16
+}
+
