@@ -4,7 +4,7 @@
 // Outputs: 測試通過與斷言驗證。
 // Invariants: 零全域可變狀態、覆蓋 100% 函式積木。
 
-use rust_bricks::{audio_vad, crypto_vault, math_time, sys_path, text_cleaner};
+use rust_bricks::{audio_dsp, audio_vad, crypto_vault, math_time, sys_path, text_cleaner};
 
 #[test]
 fn test_clamp_i64() {
@@ -131,4 +131,64 @@ fn test_truncate_at_boundary() {
 fn test_count_cjk_characters() {
     assert_eq!(text_cleaner::count_cjk_characters("Hello 世界 123"), 2);
     assert_eq!(text_cleaner::count_cjk_characters("Pure English"), 0);
+}
+
+#[test]
+fn test_audio_dsp_frame_power_and_energy() {
+    assert_eq!(audio_dsp::pcm16_frame_power(&[]), 0.0);
+    assert_eq!(audio_dsp::energy_dbfs_from_power(0.0), -100.0);
+    let full = vec![32767i16; 320];
+    let power = audio_dsp::pcm16_frame_power(&full);
+    assert!((power - 1.0).abs() < 1e-4);
+    assert!((audio_dsp::energy_dbfs_from_power(power) - 0.0).abs() < 1e-3);
+}
+
+#[test]
+fn test_audio_dsp_snr_subtracted() {
+    // Speech power 0.01 (-20 dBFS), noise 0.001 (-30 dBFS) -> SNR ~ 9.54 dB
+    let snr = audio_dsp::snr_subtracted_db(0.01, 0.001);
+    assert!((snr - 9.542).abs() < 0.01);
+    assert_eq!(audio_dsp::snr_subtracted_db(0.05, 0.0), 100.0);
+    assert_eq!(audio_dsp::snr_subtracted_db(0.0, 0.0), 100.0);
+}
+
+#[test]
+fn test_audio_dsp_zero_crossing_rate() {
+    assert_eq!(audio_dsp::pcm16_zero_crossing_rate(&[100]), 0.0);
+    let alternating = vec![1000, -1000, 1000, -1000, 1000];
+    assert_eq!(audio_dsp::pcm16_zero_crossing_rate(&alternating), 1.0);
+    let non_crossing = vec![1000, 2000, 3000, 4000];
+    assert_eq!(audio_dsp::pcm16_zero_crossing_rate(&non_crossing), 0.0);
+}
+
+#[test]
+fn test_audio_dsp_biquad_highpass() {
+    let coeffs = audio_dsp::biquad_butterworth_highpass_coeffs(150, 16000);
+    assert!(coeffs.is_some());
+    // @safety-proof: coeffs verified is_some()
+    let c = coeffs.unwrap();
+    assert_eq!(c.len(), 5);
+    assert!((c[0] - c[2]).abs() < 1e-9); // b0 should equal b2
+    // Cutoff >= Nyquist should return None
+    assert!(audio_dsp::biquad_butterworth_highpass_coeffs(8000, 16000).is_none());
+}
+
+#[test]
+fn test_audio_dsp_noise_scale_factor() {
+    // Target SNR 0 dB with equal power -> scale factor 1.0
+    let scale = audio_dsp::mix_noise_scale_factor(0.01, 0.01, 0.0);
+    assert!((scale - 1.0).abs() < 1e-4);
+    // Invalid powers return 0.0
+    assert_eq!(audio_dsp::mix_noise_scale_factor(0.0, 0.01, 10.0), 0.0);
+}
+
+#[test]
+fn test_math_time_xorshift64() {
+    let s1 = math_time::xorshift64_step(12345);
+    assert_ne!(s1, 12345);
+    let s2 = math_time::xorshift64_step(s1);
+    assert_ne!(s2, s1);
+    // Zero seed does not produce zero
+    let s_zero = math_time::xorshift64_step(0);
+    assert_ne!(s_zero, 0);
 }

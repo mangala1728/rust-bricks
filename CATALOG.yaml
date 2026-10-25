@@ -6,8 +6,47 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 16
+total_functions: 23
 modules:
+  - module: "audio_dsp"
+    file: "src/audio_dsp.rs"
+    functions_count: 6
+    architecture_map:
+      - "Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數與目標 SNR 雜訊縮放因數。"
+      - "Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率。"
+      - "Outputs: 0.0..=1.0 功率、-100.0..=0.0 dBFS 能量、0.0..=100.0 SNR dB、0.0..=1.0 零交越率、Biquad 係數陣列 [b0, b1, b2, a1, a2]、雜訊縮放乘數。"
+      - "Invariants: 零全域可變狀態、無遞迴、除數防零守衛、有界取樣切片（最大 192,000 取樣點）、純標準庫 100% 零依賴。"
+    functions:
+      - name: "pcm16_frame_power"
+        signature: "pub fn pcm16_frame_power(samples: &[i16]) -> f64"
+        outputs: 2
+      - name: "energy_dbfs_from_power"
+        signature: "pub fn energy_dbfs_from_power(power: f64) -> f64"
+        outputs: 2
+        domains:
+          power: "[0.0..1.0]"
+      - name: "snr_subtracted_db"
+        signature: "pub fn snr_subtracted_db(speech_power: f64, quiet_power: f64) -> f64"
+        outputs: 2
+        domains:
+          speech_power: "[0.0..1.0]"
+          quiet_power: "[0.0..1.0]"
+      - name: "pcm16_zero_crossing_rate"
+        signature: "pub fn pcm16_zero_crossing_rate(samples: &[i16]) -> f64"
+        outputs: 2
+      - name: "biquad_butterworth_highpass_coeffs"
+        signature: "pub fn biquad_butterworth_highpass_coeffs(cutoff_hz: u32, sample_rate: u32) -> Option<[f64; 5]>"
+        outputs: 2
+        domains:
+          cutoff_hz: "[1..23999]"
+          sample_rate: "[8000..48000]"
+      - name: "mix_noise_scale_factor"
+        signature: "pub fn mix_noise_scale_factor(speech_power: f64, noise_power: f64, target_snr_db: f64) -> f64"
+        outputs: 2
+        domains:
+          speech_power: "[0.0..1.0]"
+          noise_power: "[0.0..1.0]"
+          target_snr_db: "[-50.0..100.0]"
   - module: "audio_vad"
     file: "src/audio_vad.rs"
     functions_count: 3
@@ -55,7 +94,7 @@ modules:
         outputs: 1
   - module: "math_time"
     file: "src/math_time.rs"
-    functions_count: 4
+    functions_count: 5
     architecture_map:
       - "Role: core/math_time — 基礎數值夾止、移動平均、天文儒略日與占星大限時間比例運算。"
       - "Inputs: 數值、時間戳、年月日時、視窗切片。"
@@ -86,6 +125,11 @@ modules:
           total_span_days: "[0.001..365000.0]"
           sub_period_years: "[0.001..200.0]"
           total_dasha_years: "[0.001..200.0]"
+      - name: "xorshift64_step"
+        signature: "pub fn xorshift64_step(state: u64) -> u64"
+        outputs: 1
+        domains:
+          state: "[0..18446744073709551615]"
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3

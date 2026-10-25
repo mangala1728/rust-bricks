@@ -3,8 +3,45 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 16,
+  "total_functions": 23,
   "modules": [
+    {
+      "module": "audio_dsp",
+      "file": "src/audio_dsp.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "pcm16_frame_power",
+          "signature": "pub fn pcm16_frame_power(samples: &[i16]) -> f64",
+          "outputs": 2
+        },
+        {
+          "name": "energy_dbfs_from_power",
+          "signature": "pub fn energy_dbfs_from_power(power: f64) -> f64",
+          "outputs": 2
+        },
+        {
+          "name": "snr_subtracted_db",
+          "signature": "pub fn snr_subtracted_db(speech_power: f64, quiet_power: f64) -> f64",
+          "outputs": 2
+        },
+        {
+          "name": "pcm16_zero_crossing_rate",
+          "signature": "pub fn pcm16_zero_crossing_rate(samples: &[i16]) -> f64",
+          "outputs": 2
+        },
+        {
+          "name": "biquad_butterworth_highpass_coeffs",
+          "signature": "pub fn biquad_butterworth_highpass_coeffs(cutoff_hz: u32, sample_rate: u32) -> Option<[f64; 5]>",
+          "outputs": 2
+        },
+        {
+          "name": "mix_noise_scale_factor",
+          "signature": "pub fn mix_noise_scale_factor(speech_power: f64, noise_power: f64, target_snr_db: f64) -> f64",
+          "outputs": 2
+        }
+      ]
+    },
     {
       "module": "audio_vad",
       "file": "src/audio_vad.rs",
@@ -57,7 +94,7 @@
     {
       "module": "math_time",
       "file": "src/math_time.rs",
-      "functions_count": 4,
+      "functions_count": 5,
       "functions": [
         {
           "name": "clamp_i64",
@@ -78,6 +115,11 @@
           "name": "dasha_proportion_days",
           "signature": "pub fn dasha_proportion_days(total_span_days: f64, sub_period_years: f64, total_dasha_years: f64) -> Option<f64>",
           "outputs": 2
+        },
+        {
+          "name": "xorshift64_step",
+          "signature": "pub fn xorshift64_step(state: u64) -> u64",
+          "outputs": 1
         }
       ]
     },
