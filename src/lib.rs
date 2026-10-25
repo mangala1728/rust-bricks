@@ -9,6 +9,7 @@
 pub mod audio_dsp;
 pub mod audio_vad;
 pub mod audio_wav;
+pub mod bezier_curve;
 pub mod catalog;
 pub mod crypto_vault;
 pub mod guard;
@@ -19,4 +20,6 @@ pub mod ring_buffer;
 pub mod sensor_motion;
 pub mod sys_path;
 pub mod text_cleaner;
+pub mod touch_control;
+pub mod vision_feature;
 pub mod vision_yuv;

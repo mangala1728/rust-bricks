@@ -350,3 +350,67 @@ fn test_ring_buffer_pcm16_lifecycle() {
     assert_eq!(rb.available_write(), 0);
     assert!(!rb.push(999));
 }
+
+#[test]
+fn test_touch_control_bricks() {
+    let mut stable_cnt = 0u32;
+    // 抖動濾除：單次跳變不應改變狀態（門檻 3）
+    assert!(!rust_bricks::touch_control::touch_debounce_filter(false, true, &mut stable_cnt, 3));
+    assert!(!rust_bricks::touch_control::touch_debounce_filter(false, true, &mut stable_cnt, 3));
+    assert!(rust_bricks::touch_control::touch_debounce_filter(false, true, &mut stable_cnt, 3)); // 滿 3 次確認
+
+    // 速度與平滑
+    let (vx, vy, speed) = rust_bricks::touch_control::touch_velocity_estimate(10.0, 0.0, 0.016, 0.5, 0.0, 0.0);
+    assert!(vx > 0.0 && vy == 0.0 && speed > 0.0);
+
+    // 壓力分級與遲滯
+    assert_eq!(rust_bricks::touch_control::pressure_touch_level(0.05, 0.2, 0.8, 0), 0);
+    assert_eq!(rust_bricks::touch_control::pressure_touch_level(0.9, 0.2, 0.8, 0), 2);
+
+    // 手勢狀態機（單擊與雙擊）
+    let (s1, ev1) = rust_bricks::touch_control::gesture_tap_state_machine(0, true, 0, 300, 250);
+    assert_eq!(s1, 1);
+    assert_eq!(ev1, 0);
+}
+
+#[test]
+fn test_vision_feature_otsu_sobel_integral() {
+    // 雙峰直方圖測試 Otsu
+    let mut image = vec![30u8; 50];
+    image.extend_from_slice(&[200u8; 50]);
+    let thresh = rust_bricks::vision_feature::otsu_threshold(&image);
+    assert!(thresh >= 30 && thresh <= 200);
+
+    // Sobel 邊緣梯度
+    let w = 5usize;
+    let h = 5usize;
+    let mut edge_img = vec![0u8; w * h];
+    for y in 0..h {
+        for x in 2..w {
+            edge_img[y * w + x] = 255;
+        }
+    }
+    let grad = rust_bricks::vision_feature::sobel_gradient_3x3(&edge_img, w, h, 2, 2);
+    assert!(grad > 0);
+
+    // 積分圖與區域求和
+    let int_res = rust_bricks::vision_feature::integral_image_compute(&edge_img, w, h);
+    assert!(int_res.is_ok());
+    // @safety-proof: int_res 已驗證 is_ok()
+    let integral = int_res.unwrap();
+    let sum_box = rust_bricks::vision_feature::integral_box_sum(&integral, w + 1, 0, 0, w, h);
+    assert_eq!(sum_box, (3 * 5 * 255) as u32);
+}
+
+#[test]
+fn test_bezier_curve_point_and_tangent() {
+    // 線性對稱曲線測試：(0, 0) -> (1, 1)
+    let p_mid = rust_bricks::bezier_curve::cubic_bezier_point(0.0, 0.333, 0.666, 1.0, 0.5);
+    assert!((p_mid - 0.5).abs() < 1e-3);
+
+    let tan = rust_bricks::bezier_curve::cubic_bezier_tangent(0.0, 0.333, 0.666, 1.0, 0.5);
+    assert!(tan > 0.0);
+
+    let curv = rust_bricks::bezier_curve::cubic_bezier_curvature([0.0, 0.0, 1.0, 1.0], [0.0, 1.0, 1.0, 0.0], 0.5);
+    assert!(curv >= 0.0);
+}

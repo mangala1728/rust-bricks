@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 49,
+  "total_functions": 60,
   "modules": [
     {
       "module": "audio_dsp",
@@ -88,6 +88,28 @@
           "name": "decode_pcm16_wav",
           "signature": "pub fn decode_pcm16_wav(wav_bytes: &[u8]) -> Result<(Vec<i16>, u32), &'static str>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "bezier_curve",
+      "file": "src/bezier_curve.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "cubic_bezier_point",
+          "signature": "pub fn cubic_bezier_point(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "cubic_bezier_tangent",
+          "signature": "pub fn cubic_bezier_tangent(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "cubic_bezier_curvature",
+          "signature": "pub fn cubic_bezier_curvature(x_pts: [f32; 4], y_pts: [f32; 4], t: f32) -> f32",
+          "outputs": 1
         }
       ]
     },
@@ -308,6 +330,60 @@
         {
           "name": "count_cjk_characters",
           "signature": "pub fn count_cjk_characters(text: &str) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "touch_control",
+      "file": "src/touch_control.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "touch_debounce_filter",
+          "signature": "pub fn touch_debounce_filter(",
+          "outputs": 2
+        },
+        {
+          "name": "touch_velocity_estimate",
+          "signature": "pub fn touch_velocity_estimate(",
+          "outputs": 2
+        },
+        {
+          "name": "pressure_touch_level",
+          "signature": "pub fn pressure_touch_level(",
+          "outputs": 3
+        },
+        {
+          "name": "gesture_tap_state_machine",
+          "signature": "pub fn gesture_tap_state_machine(",
+          "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "vision_feature",
+      "file": "src/vision_feature.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "otsu_threshold",
+          "signature": "pub fn otsu_threshold(gray: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "sobel_gradient_3x3",
+          "signature": "pub fn sobel_gradient_3x3(",
+          "outputs": 1
+        },
+        {
+          "name": "integral_image_compute",
+          "signature": "pub fn integral_image_compute(",
+          "outputs": 2
+        },
+        {
+          "name": "integral_box_sum",
+          "signature": "pub fn integral_box_sum(",
           "outputs": 1
         }
       ]

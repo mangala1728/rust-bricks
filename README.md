@@ -38,6 +38,9 @@
 | [`packet_checksum`](src/packet_checksum.rs) | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 | 檔案總管校驗、感測器封包傳輸、PNG/ZIP 區塊校驗 |
 | [`crypto_vault`](src/crypto_vault.rs) | 零依賴 SHA-256 摘要、常數時間比較 (防時序側信道攻擊)、XOR 流式混淆 | 機密分片校驗、快照雜湊校驗、敏感字串安全防護 |
 | [`sys_path`](src/sys_path.rs) | 跨平台相對路徑防穿越校驗、史實層只增不刪 (Append-Only) 差異校驗 | 檔案系統守衛、檔案總管路徑校驗、日誌保鮮關卡 |
+| [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
+| [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
+| [`bezier_curve`](src/bezier_curve.rs) | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 | 網頁 Wasm 動態圖表、AI 簡報路徑平滑動畫、粒子幾何軌跡 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 
 ---

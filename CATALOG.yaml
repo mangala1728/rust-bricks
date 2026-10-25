@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 49
+total_functions: 60
 modules:
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
@@ -98,6 +98,30 @@ modules:
       - name: "decode_pcm16_wav"
         signature: "pub fn decode_pcm16_wav(wav_bytes: &[u8]) -> Result<(Vec<i16>, u32), &'static str>"
         outputs: 2
+  - module: "bezier_curve"
+    file: "src/bezier_curve.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/bezier_curve — 網頁與簡報視覺圖表 Wasm 渲染微積木：三次貝茲曲線座標求值、切線速度與曲率幾何計算。"
+      - "Inputs: 控制點座標 (p0, p1, p2, p3)、內插參數 t [0.0..1.0]。"
+      - "Outputs: 座標值 (f32)、切線向量斜率 (f32)、曲率 kappa (f32)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、控制流巢狀深度 <= 2、純標準庫 100% 零依賴。"
+    functions:
+      - name: "cubic_bezier_point"
+        signature: "pub fn cubic_bezier_point(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32"
+        outputs: 1
+        domains:
+          t: "[0.0..1.0]"
+      - name: "cubic_bezier_tangent"
+        signature: "pub fn cubic_bezier_tangent(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32"
+        outputs: 1
+        domains:
+          t: "[0.0..1.0]"
+      - name: "cubic_bezier_curvature"
+        signature: "pub fn cubic_bezier_curvature(x_pts: [f32; 4], y_pts: [f32; 4], t: f32) -> f32"
+        outputs: 1
+        domains:
+          t: "[0.0..1.0]"
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4
@@ -301,6 +325,72 @@ modules:
       - name: "count_cjk_characters"
         signature: "pub fn count_cjk_characters(text: &str) -> usize"
         outputs: 1
+  - module: "touch_control"
+    file: "src/touch_control.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/touch_control — 手機觸控螢幕微控制：觸控消抖、滑動速度向量平滑、壓力觸控分級與手勢狀態機微積木。"
+      - "Inputs: 觸控開關狀態、取樣間隔 dt、位移增量 (dx, dy)、壓力浮點數、經過時間 (ms)。"
+      - "Outputs: 消抖後布林值、(vx, vy, 速度純量)、壓力等級 (0/1/2)、(次態, 觸發事件)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、控制流巢狀深度 <= 2、純標準庫 100% 零依賴。"
+    functions:
+      - name: "touch_debounce_filter"
+        signature: "pub fn touch_debounce_filter("
+        outputs: 2
+        domains:
+          threshold: "[1..1000]"
+      - name: "touch_velocity_estimate"
+        signature: "pub fn touch_velocity_estimate("
+        outputs: 2
+        domains:
+          dt: "[0.0001..10.0]"
+          alpha: "[0.0..1.0]"
+      - name: "pressure_touch_level"
+        signature: "pub fn pressure_touch_level("
+        outputs: 3
+        domains:
+          pressure: "[0.0..10.0]"
+          light_th: "[0.01..10.0]"
+          heavy_th: "[0.01..10.0]"
+      - name: "gesture_tap_state_machine"
+        signature: "pub fn gesture_tap_state_machine("
+        outputs: 4
+        domains:
+          state: "[0..4]"
+          elapsed_ms: "[0..3600000]"
+          max_tap_ms: "[10..5000]"
+          double_tap_window_ms: "[50..5000]"
+  - module: "vision_feature"
+    file: "src/vision_feature.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/vision_feature — 手機相機邊緣影像特徵萃取：Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度與積分圖 O(1) 區域和計算微積木。"
+      - "Inputs: 灰階影像切片、寬高、座標 (x, y)、積分圖切片、矩形區域邊界。"
+      - "Outputs: Otsu 最佳門檻值 (u8)、Sobel 梯度強度 (u16)、積分圖向量 (Vec<u32>)、區域像素總和 (u32)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、寬高有界守衛（最大 8192x8192）、控制流巢狀深度 <= 2、純標準庫 100% 零依賴。"
+    functions:
+      - name: "otsu_threshold"
+        signature: "pub fn otsu_threshold(gray: &[u8]) -> u8"
+        outputs: 1
+      - name: "sobel_gradient_3x3"
+        signature: "pub fn sobel_gradient_3x3("
+        outputs: 1
+        domains:
+          width: "[3..8192]"
+          height: "[3..8192]"
+          x: "[1..8191]"
+          y: "[1..8191]"
+      - name: "integral_image_compute"
+        signature: "pub fn integral_image_compute("
+        outputs: 2
+        domains:
+          width: "[1..8192]"
+          height: "[1..8192]"
+      - name: "integral_box_sum"
+        signature: "pub fn integral_box_sum("
+        outputs: 1
+        domains:
+          stride: "[2..8193]"
   - module: "vision_yuv"
     file: "src/vision_yuv.rs"
     functions_count: 3

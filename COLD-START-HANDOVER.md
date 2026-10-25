@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：11 大核心模組、29 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：14 大核心模組、32 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -87,6 +87,9 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `ring_buffer` | `src/ring_buffer.rs` | 純記憶體無鎖固定容量 PCM16 環形緩衝區、批次讀寫、溢出守衛 |
 | `crypto_vault` | `src/crypto_vault.rs` | 純 Rust SHA-256、常數時間相等性比較、XOR 流混淆 |
 | `sys_path` | `src/sys_path.rs` | 相對路徑穿越防禦、斜線標準化、史實層只增不刪校驗 |
+| `touch_control` | `src/touch_control.rs` | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 |
+| `vision_feature` | `src/vision_feature.rs` | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 |
+| `bezier_curve` | `src/bezier_curve.rs` | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 |
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |
 | `guard` | `src/guard.rs` | 純 Rust 內建合約守衛、檔案防膨脹、依賴審查、缺陷硬鎖 |
 | `catalog` | `src/catalog.rs` | 純 Rust 自動產生 CATALOG.yaml / CATALOG.json 機器索引 |

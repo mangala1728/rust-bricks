@@ -5,8 +5,8 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, catalog, crypto_vault, guard, math_time, packet_checksum, ring_buffer, sensor_motion, sys_path,
-    text_cleaner, vision_yuv,
+    audio_vad, bezier_curve, catalog, crypto_vault, guard, math_time, packet_checksum, ring_buffer, sensor_motion,
+    sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -20,7 +20,10 @@ fn verify_edge_sensors_and_packets() -> bool {
     let ok_vision = vision_yuv::nv21_extract_grayscale(&nv21_mock, 16, 16).is_ok();
     let ok_chk = packet_checksum::crc32_ieee(b"123456789") == 0xcbf4_3926;
     let ok_rb = ring_buffer::RingBufferPcm16::with_capacity(8).is_ok();
-    ok_sensor && ok_vision && ok_chk && ok_rb
+    let ok_touch = touch_control::pressure_touch_level(0.5, 0.2, 0.8, 0) == 1;
+    let ok_feat = vision_feature::otsu_threshold(&[10, 20, 200, 210]) > 0;
+    let ok_bez = bezier_curve::cubic_bezier_point(0.0, 0.5, 0.5, 1.0, 0.5) > 0.0;
+    ok_sensor && ok_vision && ok_chk && ok_rb && ok_touch && ok_feat && ok_bez
 }
 
 /// @outputs: 1
