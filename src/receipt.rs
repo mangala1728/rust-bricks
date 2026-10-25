@@ -12,7 +12,7 @@ use std::process::Command;
 /// @outputs: 2
 fn get_git_diff() -> Result<Vec<u8>, String> {
     let output = Command::new("git")
-        .args(["diff", "HEAD"])
+        .args(["diff", "HEAD", "--", ":(exclude).ai-memory/*"])
         .output()
         .map_err(|e| format!("執行 git diff 失敗: {}", e))?;
 
@@ -21,7 +21,7 @@ fn get_git_diff() -> Result<Vec<u8>, String> {
     }
     if output.stdout.is_empty() {
         let head_prev = Command::new("git")
-            .args(["diff", "HEAD~1..HEAD"])
+            .args(["diff", "HEAD~1..HEAD", "--", ":(exclude).ai-memory/*"])
             .output()
             .map_err(|e| format!("執行 git diff HEAD~1 失敗: {}", e))?;
         return Ok(head_prev.stdout);
