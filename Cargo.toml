@@ -1,0 +1,11 @@
+[package]
+name = "rust-bricks"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mangala Hsu <m@example.tw>"]
+description = "Zero-dependency, 09-contract-compliant Rust function building blocks for high-performance cross-platform AI agent workflows"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mangala1728/rust-bricks"
+
+[dependencies]
+# 剛性約束：100% 零外部第三方依賴（Zero 3rd-party dependencies）
