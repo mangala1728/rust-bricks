@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 42,
+  "total_functions": 49,
   "modules": [
     {
       "module": "audio_dsp",
@@ -201,6 +201,48 @@
           "name": "verify_receipt",
           "signature": "pub fn verify_receipt(repo_root: &Path) -> Result<String, String>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "ring_buffer",
+      "file": "src/ring_buffer.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "with_capacity",
+          "signature": "pub fn with_capacity(capacity: usize) -> Result<Self, &'static str>",
+          "outputs": 2
+        },
+        {
+          "name": "available_read",
+          "signature": "pub fn available_read(&self) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "available_write",
+          "signature": "pub fn available_write(&self) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "push",
+          "signature": "pub fn push(&mut self, sample: i16) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "pop",
+          "signature": "pub fn pop(&mut self) -> Option<i16>",
+          "outputs": 2
+        },
+        {
+          "name": "write_chunk",
+          "signature": "pub fn write_chunk(&mut self, samples: &[i16]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "read_chunk",
+          "signature": "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize",
+          "outputs": 1
         }
       ]
     },

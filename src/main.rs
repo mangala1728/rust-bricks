@@ -5,8 +5,8 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, catalog, crypto_vault, guard, math_time, packet_checksum, sensor_motion, sys_path, text_cleaner,
-    vision_yuv,
+    audio_vad, catalog, crypto_vault, guard, math_time, packet_checksum, ring_buffer, sensor_motion, sys_path,
+    text_cleaner, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -19,7 +19,8 @@ fn verify_edge_sensors_and_packets() -> bool {
     let nv21_mock = vec![128u8; 16 * 16 * 3 / 2];
     let ok_vision = vision_yuv::nv21_extract_grayscale(&nv21_mock, 16, 16).is_ok();
     let ok_chk = packet_checksum::crc32_ieee(b"123456789") == 0xcbf4_3926;
-    ok_sensor && ok_vision && ok_chk
+    let ok_rb = ring_buffer::RingBufferPcm16::with_capacity(8).is_ok();
+    ok_sensor && ok_vision && ok_chk && ok_rb
 }
 
 /// @outputs: 1

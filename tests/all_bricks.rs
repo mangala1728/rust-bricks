@@ -316,3 +316,37 @@ fn test_packet_checksum_16bit_mutation_parity() {
     let adler16 = rust_bricks::packet_checksum::adler32_pcm16_le(&pcm);
     assert_eq!(adler16, 0x18f6_03fe);
 }
+
+#[test]
+fn test_ring_buffer_pcm16_lifecycle() {
+    let rb_res = rust_bricks::ring_buffer::RingBufferPcm16::with_capacity(4);
+    assert!(rb_res.is_ok());
+    // @safety-proof: rb_res 已驗證 is_ok()
+    let mut rb = rb_res.unwrap();
+    assert_eq!(rb.available_read(), 0);
+    assert_eq!(rb.available_write(), 4);
+
+    // 單點 push 與 pop
+    assert!(rb.push(100));
+    assert!(rb.push(200));
+    assert_eq!(rb.available_read(), 2);
+    assert_eq!(rb.pop(), Some(100));
+    assert_eq!(rb.pop(), Some(200));
+    assert_eq!(rb.pop(), None);
+
+    // 塊寫入與塊讀取 (Wrap-around 環繞測試)
+    let chunk_in = [1, 2, 3];
+    assert_eq!(rb.write_chunk(&chunk_in), 3);
+    assert_eq!(rb.available_read(), 3);
+    let mut chunk_out = [0i16; 2];
+    assert_eq!(rb.read_chunk(&mut chunk_out), 2);
+    assert_eq!(chunk_out, [1, 2]);
+    assert_eq!(rb.available_read(), 1);
+
+    // 溢出拒絕測試
+    let more = [10, 20, 30, 40];
+    let written = rb.write_chunk(&more);
+    assert_eq!(written, 3); // 只能再寫入 3 格達上限 4
+    assert_eq!(rb.available_write(), 0);
+    assert!(!rb.push(999));
+}

@@ -32,6 +32,7 @@
 | [`audio_vad`](src/audio_vad.rs) | PCM16 音訊取樣點能量 (RMS) 計算、靜音幀判定、CPS 字幕字速審查 | 語音活動檢測 (VAD)、即時翻譯 App、多模態字幕對齊 |
 | [`audio_dsp`](src/audio_dsp.rs) | 聲學功率、dBFS 能量、零交越率、Butterworth 高通濾波、語音預加重、軟削峰防破音 | 麥克風音訊前處理、即時降噪前置濾波、音訊串流 |
 | [`audio_wav`](src/audio_wav.rs) | 零依賴 16-bit PCM WAV 檔頭解析與二進位編碼 | 音訊錄音檔存檔、跨平台 WAV 串流解析 |
+| [`ring_buffer`](src/ring_buffer.rs) | 純記憶體無鎖固定容量 PCM16 環形緩衝區、批次讀寫、溢出守衛 | 手機麥克風串流 (Oboe/AudioRecord)、感測器事件佇列、消滅 GC 停頓 |
 | [`sensor_motion`](src/sensor_motion.rs) | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 | 手機小遊戲體感控制、防手震、GPS 經緯度去噪與定位 |
 | [`vision_yuv`](src/vision_yuv.rs) | Android Camera2 (NV21 / YUV420sp) 預覽幀灰階快速抽取、2x2 平均降採樣、亮度直方圖 | 手機相機邊緣運算、OCR 前處理、條碼辨識、自動曝光評估 |
 | [`packet_checksum`](src/packet_checksum.rs) | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 | 檔案總管校驗、感測器封包傳輸、PNG/ZIP 區塊校驗 |
@@ -118,7 +119,7 @@ cargo run -- patrol
 
 ## 六、多專案防撞車與核心策展管家協議（Curation & Integration）
 
-為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md) 與 [`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)）：
+為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
 
 1. **巡檢外部貢獻分支**：執行 `cargo run -- patrol` 主動拉取並檢查 `origin/contrib/*`。
 2. **機械防重發明輪子**：`guard.rs` 自動掃描全庫函式名稱，禁止重複命名。

@@ -15,6 +15,7 @@ pub mod guard;
 pub mod math_time;
 pub mod packet_checksum;
 pub mod receipt;
+pub mod ring_buffer;
 pub mod sensor_motion;
 pub mod sys_path;
 pub mod text_cleaner;
