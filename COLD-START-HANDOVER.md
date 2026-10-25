@@ -18,13 +18,13 @@
 
 ---
 
-## 2. 三位一體編制（Commander + Worker + Reviewer）
+## 2. 三位一體編制與策展整合（Curator + Engineer + Arbiter）
 
-轉譯方法論遵循四步閉環（詳見 [`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)）：
-1. 深入分析子庫原理 
-2. 純手刻零依賴 Rust 
-3. 原語言差分測試對齊 
-4. 8-bit/16-bit 邊界型別異變壓測
+本團隊兼任「核心策展管家（Core Curator & Integrator）」，落實四大防撞車職責（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md) 與 [`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)）：
+1. **外部巡檢**：`cargo run -- patrol` 監控 `origin/contrib/*`。
+2. **機械去重**：`guard.rs` 自動掃描全庫函式重名與重複造輪子。
+3. **無衝突變軌**：分支隔離 (`worker/*`)、`lib.rs` 字母排序防線、`rebase main`。
+4. **缺陷通報開單**：發現瑕疵開單 `incidents/INC-*.md (OPEN)` 觸發 Defect Gate。
 
 ```text
 ┌────────────────────────────────────────────────────────┐

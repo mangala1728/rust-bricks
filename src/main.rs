@@ -10,7 +10,7 @@ use rust_bricks::{
 };
 use std::env;
 use std::path::Path;
-use std::process;
+use std::process::{self, Command};
 
 /// @outputs: 1
 fn verify_edge_sensors_and_packets() -> bool {
@@ -135,12 +135,43 @@ fn run_verify_receipt_cmd() {
 }
 
 /// @outputs: 1
+fn run_patrol_cmd() {
+    println!("🚨 [rust-bricks] Running Remote Branch Patrol & Collision Check...");
+    let _ = Command::new("git").args(["fetch", "--all"]).output();
+    let branches_out = Command::new("git").args(["branch", "-r"]).output();
+    let stdout = match branches_out {
+        Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
+        Err(e) => {
+            eprintln!("❌ [rust-bricks] git branch -r 失敗: {}", e);
+            return;
+        }
+    };
+    let mut contrib_branches = Vec::new();
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("contrib/") {
+            contrib_branches.push(trimmed.to_string());
+        }
+    }
+    if contrib_branches.is_empty() {
+        println!("✨ [rust-bricks] 巡檢完成：無待處理之外部 contrib 分支，主分支保持純淨。");
+    } else {
+        println!("⚠️ [rust-bricks] 發現外部貢獻分支待檢驗整合：");
+        for b in contrib_branches {
+            println!("  - {}", b);
+        }
+        println!("請檢出並實施硬體級五項體檢：git checkout -b review-<name> <branch>");
+    }
+}
+
+/// @outputs: 1
 fn print_help() {
     println!("rust-bricks v0.1.0 — Pure Zero-Dependency Function Blocks (09 Contract)");
     println!("Usage:");
     println!("  cargo run -- selftest          # Run internal contract self-test");
     println!("  cargo run -- catalog           # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
     println!("  cargo run -- guard             # Run capacity & contract guard hook (Pure Rust)");
+    println!("  cargo run -- patrol            # Patrol external contrib branches & collisions");
     println!("  cargo run -- receipt <model>   # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt    # Verify Receipt against current Git Diff");
     println!("  cargo test                     # Run full unit test suite");
@@ -155,6 +186,7 @@ fn main() {
         "selftest" | "test" => run_selftest(),
         "catalog" => run_catalog_cmd(),
         "guard" => run_guard_cmd(),
+        "patrol" => run_patrol_cmd(),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

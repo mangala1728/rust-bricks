@@ -418,6 +418,78 @@ fn check_open_incidents(repo_root: &Path) -> Vec<String> {
 }
 
 /// @outputs: 2
+fn check_lib_rs_order(repo_root: &Path) -> Vec<String> {
+    let mut issues = Vec::new();
+    let lib_rs = repo_root.join("src").join("lib.rs");
+    let content = match fs::read_to_string(&lib_rs) {
+        Ok(c) => c,
+        Err(_) => return vec!["找不到 src/lib.rs".to_string()],
+    };
+    let mut mods: Vec<String> = Vec::new();
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("pub mod ") && trimmed.ends_with(';') {
+            let mod_name = trimmed.trim_start_matches("pub mod ").trim_end_matches(';').trim();
+            mods.push(mod_name.to_string());
+        }
+    }
+    for i in 1..mods.len() {
+        if mods[i] < mods[i - 1] {
+            issues.push(format!(
+                "【lib.rs 未依字母排序】pub mod 請依字母排序以防多分支衝突：{} 出現在 {} 之前",
+                mods[i - 1], mods[i]
+            ));
+            break;
+        }
+    }
+    issues
+}
+
+/// @outputs: 2
+fn check_function_deduplication(repo_root: &Path) -> Vec<String> {
+    let mut issues = Vec::new();
+    let src_dir = repo_root.join("src");
+    let entries = match fs::read_dir(&src_dir) {
+        Ok(e) => e,
+        Err(_) => return issues,
+    };
+    let mut seen: Vec<(String, String)> = Vec::new();
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            continue;
+        }
+        let fname = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        if fname == "main.rs" || fname == "guard.rs" || fname == "lib.rs" || fname == "receipt.rs" || fname == "catalog.rs" {
+            continue;
+        }
+        let content = match fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("pub fn ") {
+                if let Some(open_paren) = trimmed.find('(') {
+                    let fn_name = trimmed[7..open_paren].trim().to_string();
+                    for (prev_fn, prev_file) in &seen {
+                        if prev_fn == &fn_name && prev_file != &fname {
+                            issues.push(format!(
+                                "【重複命名/輪子衝突】函式「{}」在多個模組中重複定義：{} 與 {}。違反單一黃金版本去重原則！",
+                                fn_name, prev_file, fname
+                            ));
+                        }
+                    }
+                    seen.push((fn_name, fname.clone()));
+                }
+            }
+        }
+    }
+    issues
+}
+
+/// @outputs: 2
 fn run_unit_tests(repo_root: &Path) -> Result<(), String> {
     let output = match Command::new("cargo")
         .arg("test")
@@ -452,11 +524,15 @@ pub fn run_guard_checks(repo_root: &Path) -> Result<(), Vec<String>> {
     // 4. 防線三：未結缺陷懸案阻擋（incidents/ 狀態檢查）
     all_issues.extend(check_open_incidents(repo_root));
 
+    // 5. 防線四：防撞車與去重治理（lib.rs 字母排序、函式全域防重複輪子）
+    all_issues.extend(check_lib_rs_order(repo_root));
+    all_issues.extend(check_function_deduplication(repo_root));
+
     if !all_issues.is_empty() {
         return Err(all_issues);
     }
 
-    // 5. 單元測試驗證
+    // 6. 單元測試驗證
     if let Err(test_err) = run_unit_tests(repo_root) {
         all_issues.push(test_err);
         return Err(all_issues);

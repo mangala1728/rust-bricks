@@ -109,4 +109,19 @@ cargo run -- selftest
 
 # 執行全部單元測試
 cargo test
+
+# 巡檢外部 contrib 貢獻分支（防撞車與體檢驗收）
+cargo run -- patrol
 ```
+
+---
+
+## 六、多專案防撞車與核心策展管家協議（Curation & Integration）
+
+為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md) 與 [`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)）：
+
+1. **巡檢外部貢獻分支**：執行 `cargo run -- patrol` 主動拉取並檢查 `origin/contrib/*`。
+2. **機械防重發明輪子**：`guard.rs` 自動掃描全庫函式名稱，禁止重複命名。
+3. **`lib.rs` 字母排序防線**：`guard.rs` 自動審查 `src/lib.rs` 宣告排序，防止分支合併衝突。
+4. **分支隔離上線**：本地開 `worker/*` 或 `integrate/*` 分支開發，經 `rebase main` 與五板斧驗收後方可 merge。
+5. **缺陷硬鎖（Defect Gate）**：外部代碼有坑開單 `incidents/INC-*.md (OPEN)`，守衛剛性阻擋全庫入庫直至修復。
