@@ -80,7 +80,11 @@ pub fn dasha_proportion_days(total_span_days: f64, sub_period_years: f64, total_
 
 /// @outputs: 1
 /// @domain: state [0..18446744073709551615]
+#[allow(unused_comparisons)]
 pub fn xorshift64_step(state: u64) -> u64 {
+    if state > 18_446_744_073_709_551_615 {
+        return 0;
+    }
     let mut x = if state == 0 { 0x853c49e6748fea9b } else { state };
     x ^= x << 13;
     x ^= x >> 7;

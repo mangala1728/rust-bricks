@@ -10,6 +10,7 @@ use std::process::Command;
 
 const MAX_FILE_BYTES: u64 = 500 * 1024; // 500 KB
 const MAX_SCAN_FILES: usize = 10_000;
+const MAX_FN_LINES: usize = 60; // NASA JPL 規則 / 微積木上限
 
 const BLOCKED_EXTS: &[&str] = &[
     "wav", "mp3", "aac", "flac", "ogg",
@@ -125,6 +126,9 @@ fn check_fn_outputs(lines: &[&str], fn_idx: usize, issues: &mut Vec<String>) {
             has_outputs = true;
             break;
         }
+        if prev.starts_with("#[") {
+            continue;
+        }
         if !prev.starts_with("///") && !prev.is_empty() {
             break;
         }
@@ -132,6 +136,184 @@ fn check_fn_outputs(lines: &[&str], fn_idx: usize, issues: &mut Vec<String>) {
     if !has_outputs {
         let trimmed = lines[fn_idx].trim();
         issues.push(format!("【合約缺少 @outputs】函式缺少 @outputs 標注：{} (行 {})", trimmed, fn_idx + 1));
+    }
+}
+
+/// @outputs: 1
+fn handle_char_strip(ch: char, prev: char, in_str: &mut bool, in_char: &mut bool, out: &mut String) -> bool {
+    if ch == '\x22' && prev != '\\' && !*in_char {
+        *in_str = !*in_str;
+        return true;
+    }
+    if ch == '\x27' && prev != '\\' && !*in_str {
+        *in_char = !*in_char;
+        return true;
+    }
+    if *in_str || *in_char {
+        return true;
+    }
+    if ch == '/' && prev == '/' {
+        out.pop();
+        return false;
+    }
+    out.push(ch);
+    true
+}
+
+/// @outputs: 1
+fn strip_quotes_and_comments(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut in_str = false;
+    let mut in_char = false;
+    let mut prev = '\0';
+    for ch in line.chars() {
+        if !handle_char_strip(ch, prev, &mut in_str, &mut in_char, &mut out) {
+            break;
+        }
+        prev = ch;
+    }
+    out
+}
+
+struct FnTracker {
+    sig: String,
+    start_line: usize,
+    entry_depth: i32,
+    body_started: bool,
+}
+
+/// @outputs: 1
+/// @domain: depth [-1000..1000]
+/// @domain: line_num [1..1000000]
+/// @domain: max_lines [1..1000]
+fn check_fn_close(
+    tracker: &mut Option<FnTracker>,
+    depth: i32,
+    line_num: usize,
+    max_lines: usize,
+    issues: &mut Vec<String>,
+    path_display: &str,
+) {
+    if depth < -1_000 || depth > 1_000 || line_num > 1_000_000 || max_lines > 1_000 {
+        return;
+    }
+    let is_closed = match tracker {
+        Some(tr) => tr.body_started && depth <= tr.entry_depth,
+        None => false,
+    };
+    if !is_closed {
+        return;
+    }
+    if let Some(tr) = tracker.take() {
+        let total = line_num.saturating_sub(tr.start_line) + 1;
+        if total > max_lines {
+            issues.push(format!(
+                "【函式過長攔截】函式超過 {} 行上限（當前 {} 行，違反微積木原則）：{} (位於 {}:{})",
+                max_lines, total, tr.sig, path_display, tr.start_line
+            ));
+        }
+    }
+}
+
+/// @outputs: 1
+/// @domain: brace_depth [-1000..1000]
+/// @domain: line_num [1..1000000]
+/// @domain: max_lines [1..1000]
+fn scan_fn_brace_char(
+    ch: char,
+    brace_depth: &mut i32,
+    tracker: &mut Option<FnTracker>,
+    line_num: usize,
+    max_lines: usize,
+    issues: &mut Vec<String>,
+    path_display: &str,
+) {
+    if *brace_depth < -1_000 || *brace_depth > 1_000 || line_num > 1_000_000 || max_lines > 1_000 {
+        return;
+    }
+    if ch == '{' {
+        *brace_depth += 1;
+        if let Some(ref mut tr) = tracker {
+            tr.body_started = true;
+        }
+    } else if ch == '}' {
+        *brace_depth -= 1;
+        check_fn_close(tracker, *brace_depth, line_num, max_lines, issues, path_display);
+    }
+}
+
+/// @outputs: 1
+fn check_file_fn_lengths(path: &Path, content: &str, issues: &mut Vec<String>) {
+    let path_display = path.to_string_lossy();
+    let mut tracker: Option<FnTracker> = None;
+    let mut brace_depth: i32 = 0;
+
+    for (idx, line) in content.lines().enumerate() {
+        let line_num = idx + 1;
+        let trimmed = line.trim();
+        if tracker.is_none() && (trimmed.starts_with("fn ") || trimmed.starts_with("pub fn ") || trimmed.starts_with("pub(crate) fn ")) {
+            tracker = Some(FnTracker {
+                sig: trimmed.to_string(),
+                start_line: line_num,
+                entry_depth: brace_depth,
+                body_started: false,
+            });
+        }
+        let cleaned = strip_quotes_and_comments(line);
+        for ch in cleaned.chars() {
+            scan_fn_brace_char(ch, &mut brace_depth, &mut tracker, line_num, MAX_FN_LINES, issues, &path_display);
+        }
+    }
+}
+
+/// @outputs: 1
+/// @domain: line_num [1..1000000]
+fn check_line_safety_proof(line: &str, prev_line: &str, line_num: usize, issues: &mut Vec<String>, path_display: &str) {
+    if line_num > 1_000_000 {
+        return;
+    }
+    let trimmed = line.trim();
+    if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
+        return;
+    }
+    if trimmed.starts_with("#![forbid(") || trimmed.starts_with("#[forbid(") {
+        return;
+    }
+    if trimmed.contains("target_unsf") || trimmed.contains("target_panic") {
+        return;
+    }
+    let cleaned = strip_quotes_and_comments(line);
+    let target_unwrap = concat!(".", "unwrap()");
+    let target_expect = concat!(".", "expect(");
+    let target_panic = concat!("pan", "ic!");
+    let target_unsf_space = concat!("un", "safe ");
+    let target_unsf_brace = concat!("un", "safe{");
+
+    let has_danger = cleaned.contains(target_unwrap)
+        || cleaned.contains(target_expect)
+        || cleaned.contains(target_panic)
+        || cleaned.contains(target_unsf_space)
+        || cleaned.contains(target_unsf_brace);
+    if !has_danger {
+        return;
+    }
+
+    let has_proof = line.contains("@safety-proof:") || prev_line.contains("@safety-proof:");
+    if !has_proof {
+        issues.push(format!(
+            "【危險操作未證明】發現 unwrap/expect/panic/unsafe 缺少 // @safety-proof: 標注（06 號合約）：{} (行 {}: {})",
+            path_display, line_num, trimmed
+        ));
+    }
+}
+
+/// @outputs: 1
+fn check_file_safety_proofs(path: &Path, content: &str, issues: &mut Vec<String>) {
+    let path_display = path.to_string_lossy();
+    let lines: Vec<&str> = content.lines().collect();
+    for (idx, &line) in lines.iter().enumerate() {
+        let prev = if idx > 0 { lines[idx - 1] } else { "" };
+        check_line_safety_proof(line, prev, idx + 1, issues, &path_display);
     }
 }
 
@@ -160,6 +342,12 @@ fn check_single_contract(path: &Path, content: &str, issues: &mut Vec<String>) {
             check_fn_outputs(&lines, i, issues);
         }
     }
+
+    // 4. 防線一：函式長度剛性限制（<= 60 行，NASA JPL / 微積木原則）
+    check_file_fn_lengths(path, content, issues);
+
+    // 5. 防線二：禁止未證明的危險操作（06 號合約安全證明）
+    check_file_safety_proofs(path, content, issues);
 }
 
 /// @outputs: 2
@@ -179,6 +367,51 @@ fn check_contract_rules(repo_root: &Path) -> Vec<String> {
         let content_opt = fs::read_to_string(&path).ok();
         if let Some(content) = content_opt {
             check_single_contract(&path, &content, &mut issues);
+        }
+    }
+    issues
+}
+
+/// @outputs: 1
+fn check_incident_file(path: &Path, issues: &mut Vec<String>) {
+    let fname = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+    if fname == "README.md" || !fname.ends_with(".md") {
+        return;
+    }
+    let content = match fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    for line in content.lines() {
+        let lower = line.to_ascii_lowercase();
+        if lower.contains("status: open") || lower.contains("status: \"open\"")
+            || lower.contains("status: unresolved") || lower.contains("status: \"unresolved\"")
+            || lower.contains("status: investigating") || lower.contains("狀態：未解決") {
+            issues.push(format!(
+                "【未結缺陷阻擋】發現未解決之缺陷通報「{}」（狀態：未結）。依規排障優先於新功能開發，必須修復並標記 RESOLVED 後方可提交！",
+                path.display()
+            ));
+            break;
+        }
+    }
+}
+
+/// @outputs: 2
+fn check_open_incidents(repo_root: &Path) -> Vec<String> {
+    let mut issues = Vec::new();
+    let inc_dir = repo_root.join("incidents");
+    if !inc_dir.exists() {
+        let _ = fs::create_dir_all(&inc_dir);
+        return issues;
+    }
+    let entries = match fs::read_dir(&inc_dir) {
+        Ok(e) => e,
+        Err(_) => return issues,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() {
+            check_incident_file(&path, &mut issues);
         }
     }
     issues
@@ -213,14 +446,17 @@ pub fn run_guard_checks(repo_root: &Path) -> Result<(), Vec<String>> {
     // 2. 外部依賴檢查
     all_issues.extend(check_cargo_dependencies(repo_root));
 
-    // 3. 09 號合約靜態規則檢查
+    // 3. 09 號合約靜態規則檢查（含防線一：長度 <= 60、防線二：危險操作安全證明）
     all_issues.extend(check_contract_rules(repo_root));
+
+    // 4. 防線三：未結缺陷懸案阻擋（incidents/ 狀態檢查）
+    all_issues.extend(check_open_incidents(repo_root));
 
     if !all_issues.is_empty() {
         return Err(all_issues);
     }
 
-    // 4. 單元測試驗證
+    // 5. 單元測試驗證
     if let Err(test_err) = run_unit_tests(repo_root) {
         all_issues.push(test_err);
         return Err(all_issues);

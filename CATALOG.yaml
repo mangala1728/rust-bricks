@@ -128,8 +128,6 @@ modules:
       - name: "xorshift64_step"
         signature: "pub fn xorshift64_step(state: u64) -> u64"
         outputs: 1
-        domains:
-          state: "[0..18446744073709551615]"
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3
