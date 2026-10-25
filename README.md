@@ -78,27 +78,30 @@ fn main() {
 
 - **YAML 格式（推薦代理檢索）**：[`CATALOG.yaml`](CATALOG.yaml)
 - **JSON 格式（程式化讀取）**：[`CATALOG.json`](CATALOG.json)
-- **自動更新指令**：新增積木後請執行 `python scripts/generate_catalog.py` 同步最新索引。
+- **自動更新指令**：新增積木後請執行 `cargo run -- catalog` 秒級同步最新機器索引。
 
 ---
 
-## 五、倉庫容量與合約守門員（Brick-Guard Hook）
+## 五、倉庫容量與合約守門員（100% 純 Rust 內建守護）
 
-為防止 AI 代理隨意提交二進位大檔或破壞 09 合約，本庫內建剛性 Hook（[`scripts/brick-guard.py`](scripts/brick-guard.py)）：
+為防止 AI 代理隨意提交二進位大檔或破壞 09 合約，本庫內建純 Rust 剛性守門員（`cargo run -- guard`）並接線至 Git `pre-commit` 與 `.agents/hooks.json`：
 
 1. **二進位多媒體直擋**：嚴禁提交音訊（.wav/.mp3）、圖像（.png/.jpg）、封裝檔（.zip/.tar）或模型權重檔（.onnx/.pt）。
 2. **單檔 500 KB 硬上限**：嚴禁提交超大日誌或龐大硬編碼測試數據，測試數據一律在代碼中以虛擬陣列動態生成。
 3. **零外部依賴防線**：`Cargo.toml` 的 `[dependencies]` 必須為空。
-4. **09 號合約自動審查**：提交前自動執行 `rust-lint.py`。
+4. **09 號合約自動審查**：提交前自動檢查 `## Map`、`@outputs`、`@domain` 守衛，禁止 `static mut` 與遞迴。
 5. **單元測試全綠保證**：提交前自動執行 `cargo test`。
 
 ```bash
-# 手動執行守護檢查
-python scripts/brick-guard.py
+# 執行容量與合約守護檢查（100% 純 Rust）
+cargo run -- guard
 
-# 執行全部單元測試
-cargo test
+# 自動產生/更新機器索引（100% 純 Rust）
+cargo run -- catalog
 
 # 執行 CLI 自我檢驗程式
 cargo run -- selftest
+
+# 執行全部單元測試
+cargo test
 ```

@@ -1,6 +1,6 @@
 # ===================================================================
-# CATALOG.yaml — rust-bricks 函式積木庫 AI 代理專用索引檔（機器專讀）
-# 甩手掌櫃免讀！各專案 AI 碼工請讀取本檔以快速獲取現成可複用函式
+# CATALOG.yaml — rust-bricks 函式積木庫 AI 代理專用索引檔（Rust 自動產出）
+# 甩手掌櫃免讀！各專案 AI 碼工請讀取本檔以獲取現成可複用函式
 # ===================================================================
 catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
@@ -19,22 +19,19 @@ modules:
     functions:
       - name: "pcm16_rms_energy"
         signature: "pub fn pcm16_rms_energy(samples: &[i16]) -> u32"
-        description: ""
         outputs: 2
       - name: "is_silence_frame"
         signature: "pub fn is_silence_frame(rms: u32, threshold: u32) -> bool"
-        description: ""
         outputs: 2
         domains:
-          rms: "0..32768"
-          threshold: "0..32768"
+          rms: "[0..32768]"
+          threshold: "[0..32768]"
       - name: "cps_chars_per_second"
         signature: "pub fn cps_chars_per_second(char_count: u32, duration_ms: u32) -> Option<f64>"
-        description: ""
         outputs: 2
         domains:
-          char_count: "0..1000"
-          duration_ms: "1..3600000"
+          char_count: "[0..1000]"
+          duration_ms: "[1..3600000]"
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4
@@ -46,19 +43,15 @@ modules:
     functions:
       - name: "constant_time_eq"
         signature: "pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool"
-        description: ""
         outputs: 2
       - name: "sha256_digest"
         signature: "pub fn sha256_digest(data: &[u8]) -> [u8; 32]"
-        description: ""
         outputs: 1
       - name: "sha256_hex"
         signature: "pub fn sha256_hex(data: &[u8]) -> String"
-        description: ""
         outputs: 1
       - name: "xor_stream"
         signature: "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>"
-        description: ""
         outputs: 1
   - module: "math_time"
     file: "src/math_time.rs"
@@ -71,32 +64,28 @@ modules:
     functions:
       - name: "clamp_i64"
         signature: "pub fn clamp_i64(val: i64, min_val: i64, max_val: i64) -> i64"
-        description: ""
         outputs: 3
         domains:
-          val: "-1000000000000..1000000000000"
-          min_val: "-1000000000000..1000000000000"
-          max_val: "-1000000000000..1000000000000"
+          val: "[-1000000000000..1000000000000]"
+          min_val: "[-1000000000000..1000000000000]"
+          max_val: "[-1000000000000..1000000000000]"
       - name: "moving_average_f64"
         signature: "pub fn moving_average_f64(window: &[f64]) -> Option<f64>"
-        description: ""
         outputs: 2
       - name: "julian_day_from_ymd"
         signature: "pub fn julian_day_from_ymd(year: i32, month: u32, day: u32) -> Option<f64>"
-        description: ""
         outputs: 2
         domains:
-          year: "-4713..9999"
-          month: "1..12"
-          day: "1..31"
+          year: "[-4713..9999]"
+          month: "[1..12]"
+          day: "[1..31]"
       - name: "dasha_proportion_days"
         signature: "pub fn dasha_proportion_days(total_span_days: f64, sub_period_years: f64, total_dasha_years: f64) -> Option<f64>"
-        description: ""
         outputs: 2
         domains:
-          total_span_days: "0.001..365000.0"
-          sub_period_years: "0.001..200.0"
-          total_dasha_years: "0.001..200.0"
+          total_span_days: "[0.001..365000.0]"
+          sub_period_years: "[0.001..200.0]"
+          total_dasha_years: "[0.001..200.0]"
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3
@@ -108,15 +97,12 @@ modules:
     functions:
       - name: "is_safe_rel_path"
         signature: "pub fn is_safe_rel_path(path_str: &str) -> bool"
-        description: ""
         outputs: 2
       - name: "normalize_slashes"
         signature: "pub fn normalize_slashes(path_str: &str) -> String"
-        description: ""
         outputs: 1
       - name: "verify_append_only"
         signature: "pub fn verify_append_only(old_text: &str, new_text: &str) -> (bool, Option<usize>)"
-        description: ""
         outputs: 2
   - module: "text_cleaner"
     file: "src/text_cleaner.rs"
@@ -129,11 +115,9 @@ modules:
     functions:
       - name: "truncate_at_boundary"
         signature: "pub fn truncate_at_boundary(text: &str, max_bytes: usize) -> &str"
-        description: ""
         outputs: 1
         domains:
-          max_bytes: "0..1048576"
+          max_bytes: "[0..1048576]"
       - name: "count_cjk_characters"
         signature: "pub fn count_cjk_characters(text: &str) -> usize"
-        description: ""
         outputs: 1

@@ -1,7 +1,7 @@
 {
   "brick-capacity-guard": {
     "events": ["PreToolUse"],
-    "description": "攔截二進位多媒體檔、超大檔案 (>500KB)、第三方依賴引入與 09 合約破壞",
-    "command": "python scripts/brick-guard.py"
+    "description": "純 Rust 守門員：攔截二進位多媒體檔、超大檔案 (>500KB)、第三方依賴引入與 09 合約破壞",
+    "command": "cargo run --quiet -- guard"
   }
 }
