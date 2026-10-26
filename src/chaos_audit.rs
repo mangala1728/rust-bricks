@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -1043,6 +1043,27 @@ fn audit_codec_container_multimedia() -> bool {
 }
 
 /// @outputs: 1
+fn audit_control_systems_estimation() -> bool {
+    let mut ok = true;
+    ok &= control_systems_estimation::rts_smoother_gain_1d(-1.0, 1.0, 1.0).is_none();
+    ok &= control_systems_estimation::rts_smoother_gain_1d(1.0, 1.0, 0.0).is_none();
+    ok &= control_systems_estimation::rts_smoother_state_step_1d(f32::NAN, 0.5, 10.0, 8.0).is_nan();
+    ok &= control_systems_estimation::lqr_gain_step_1d(1.0, 1.0, -1.0, 1.0, 1.0).is_none();
+    ok &= control_systems_estimation::lqr_gain_step_1d(1.0, 1.0, 1.0, 0.0, 1.0).is_none();
+    let (x_next, _) = control_systems_estimation::state_space_step_2d([[1.0, 0.0], [0.0, 1.0]], [1.0, 0.0], [1.0, 0.0], 0.0, [f32::NAN, 0.0], 1.0);
+    ok &= x_next[0].is_nan();
+    ok &= control_systems_estimation::rls_parameter_step_1d(0.0, 1.0, 1.0, 1.0, 0.1).is_none();
+    ok &= control_systems_estimation::tustin_bilinear_first_order(0.0, 0.01).is_none();
+    ok &= control_systems_estimation::pid_anti_windup_back_calc_step(10.0, 5.0, 0.0, 2.0, 0.01) == 2.0;
+    ok &= control_systems_estimation::lead_lag_max_phase_lead_rad(0.0).is_none();
+    ok &= control_systems_estimation::lead_lag_max_phase_lead_rad(1.0).is_none();
+    ok &= control_systems_estimation::sliding_mode_saturation_control(5.0, 0.0, 10.0) == 0.0;
+    ok &= control_systems_estimation::ljung_box_q_stat_lag1(&[]).is_none();
+    ok &= control_systems_estimation::ljung_box_q_stat_lag1(&[1.0, 2.0]).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1122,6 +1143,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_fieldbus_building_automation(), "【樓宇自動化與智慧電表協定抽查失敗】存在CRC溢出或無效常數", total, passed, failures);
     check_audit_domain(audit_physics_gjk_epa_contact(), "【剛體動力學與GJK/EPA抽查失敗】存在除零溢出或法向發散", total, passed, failures);
     check_audit_domain(audit_codec_container_multimedia(), "【多媒體容器與封裝流抽查失敗】存在標頭溢出或VINT解析崩潰", total, passed, failures);
+    check_audit_domain(audit_control_systems_estimation(), "【控制系統與卡爾曼平滑抽查失敗】存在Riccati發散或除零崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

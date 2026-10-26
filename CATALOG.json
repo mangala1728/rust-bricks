@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 650,
+  "total_functions": 660,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1049,6 +1049,63 @@
         {
           "name": "bus_unpack_32bit_to_8bit_bytes",
           "signature": "pub fn bus_unpack_32bit_to_8bit_bytes(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "control_systems_estimation",
+      "file": "src/control_systems_estimation.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "rts_smoother_gain_1d",
+          "signature": "pub fn rts_smoother_gain_1d(cov_prior: f32, f_trans: f32, cov_pred: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "rts_smoother_state_step_1d",
+          "signature": "pub fn rts_smoother_state_step_1d(",
+          "outputs": 1
+        },
+        {
+          "name": "lqr_gain_step_1d",
+          "signature": "pub fn lqr_gain_step_1d(a: f32, b: f32, q: f32, r: f32, p_curr: f32) -> Option<(f32, f32)>",
+          "outputs": 1
+        },
+        {
+          "name": "state_space_step_2d",
+          "signature": "pub fn state_space_step_2d(",
+          "outputs": 1
+        },
+        {
+          "name": "rls_parameter_step_1d",
+          "signature": "pub fn rls_parameter_step_1d(",
+          "outputs": 1
+        },
+        {
+          "name": "tustin_bilinear_first_order",
+          "signature": "pub fn tustin_bilinear_first_order(tau: f32, ts: f32) -> Option<(f32, f32)>",
+          "outputs": 1
+        },
+        {
+          "name": "pid_anti_windup_back_calc_step",
+          "signature": "pub fn pid_anti_windup_back_calc_step(",
+          "outputs": 1
+        },
+        {
+          "name": "lead_lag_max_phase_lead_rad",
+          "signature": "pub fn lead_lag_max_phase_lead_rad(alpha: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "sliding_mode_saturation_control",
+          "signature": "pub fn sliding_mode_saturation_control(s_surface: f32, boundary_layer: f32, k_gain: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "ljung_box_q_stat_lag1",
+          "signature": "pub fn ljung_box_q_stat_lag1(residuals: &[f32]) -> Option<f32>",
           "outputs": 1
         }
       ]

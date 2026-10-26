@@ -4142,6 +4142,69 @@ fn test_codec_container_multimedia_bricks() {
     assert_eq!(ms_dur, 5000);
 }
 
+#[test]
+fn test_control_systems_estimation_bricks() {
+    use rust_bricks::control_systems_estimation::*;
+
+    // 1. RTS 卡爾曼反向平滑增益
+    // @safety-proof: 0.8 / 1.0 > 0
+    let c_k = rts_smoother_gain_1d(0.8, 1.0, 1.0).unwrap();
+    assert_eq!(c_k, 0.8);
+
+    // 2. RTS 狀態平滑步進
+    let x_sm = rts_smoother_state_step_1d(10.0, 0.8, 12.0, 11.0);
+    assert_eq!(x_sm, 10.8);
+
+    // 3. LQR 最佳增益與 Riccati 單步迭代
+    // @safety-proof: 參數皆為 1.0 > 0
+    let (p_next, k) = lqr_gain_step_1d(1.0, 1.0, 1.0, 1.0, 1.0).unwrap();
+    assert_eq!(k, 0.5);
+    assert_eq!(p_next, 1.5);
+
+    // 4. 2維狀態空間離散時間步進
+    let a_mat = [[1.0, 0.1], [0.0, 0.9]];
+    let b_vec = [0.0, 0.1];
+    let c_vec = [1.0, 0.0];
+    let (x_next, y) = state_space_step_2d(a_mat, b_vec, c_vec, 0.0, [10.0, 2.0], 1.0);
+    assert_eq!(x_next[0], 10.2);
+    assert_eq!(x_next[1], 1.9);
+    assert_eq!(y, 10.0);
+
+    // 5. RLS 參數估計單步
+    // @safety-proof: lambda=1.0 合法
+    let (th_new, p_new) = rls_parameter_step_1d(1.0, 1.0, 1.0, 2.0, 1.0).unwrap();
+    assert_eq!(th_new, 1.5);
+    assert_eq!(p_new, 0.5);
+
+    // 6. Tustin 雙線性一階濾波器
+    // @safety-proof: tau=0.1, ts=0.01 > 0
+    let (b0, a1) = tustin_bilinear_first_order(0.1, 0.01).unwrap();
+    assert!(b0 > 0.0);
+    assert!(a1 < 0.0);
+
+    // 7. PID 抗積分飽和
+    let i_next = pid_anti_windup_back_calc_step(12.0, 10.0, 1.0, 5.0, 0.1);
+    assert_eq!(i_next, 4.8);
+
+    // 8. 超前補償器最大相位超前角
+    // @safety-proof: alpha=0.1 介於 0..1
+    let phi_m = lead_lag_max_phase_lead_rad(0.1).unwrap();
+    assert!(phi_m > 0.8 && phi_m < 1.0);
+
+    // 9. 滑模控制邊界層連續化
+    let u_smc = sliding_mode_saturation_control(0.2, 0.1, 5.0);
+    assert_eq!(u_smc, -5.0);
+    let u_smc_lin = sliding_mode_saturation_control(0.05, 0.1, 5.0);
+    assert_eq!(u_smc_lin, -2.5);
+
+    // 10. Ljung-Box 殘差一階自相關 Q 檢定
+    let res = [1.0, 0.9, 0.8, 0.7, 0.6];
+    // @safety-proof: res 長度 5 >= 4
+    let q = ljung_box_q_stat_lag1(&res).unwrap();
+    assert!(q > 0.0);
+}
+
+
 
 
 

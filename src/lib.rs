@@ -31,6 +31,7 @@ pub mod codec_container_multimedia;
 pub mod codec_lossless_compression;
 pub mod comm_controller;
 pub mod comm_phy_bus;
+pub mod control_systems_estimation;
 pub mod crypto_dukpt;
 pub mod crypto_kdf;
 pub mod crypto_modern_wire;
