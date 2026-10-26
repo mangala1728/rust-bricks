@@ -7,7 +7,7 @@
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -461,6 +461,18 @@ fn verify_vision_optical_flow_homography() -> bool {
 }
 
 /// @outputs: 1
+fn verify_gnss_nmea_geodesy() -> bool {
+    let nmea_sent = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+    let chk = gnss_nmea_geodesy::gnss_nmea_checksum(nmea_sent);
+    let ok_chk = chk.is_some();
+    let lat = gnss_nmea_geodesy::gnss_nmea_lat_lon_to_decimal_deg(4807.038, b'N');
+    let ok_lat = matches!(lat, Some(v) if (v - 48.1173).abs() < 1e-3);
+    let ecef = gnss_nmea_geodesy::gnss_wgs84_llh_to_ecef(0.0, 0.0, 0.0);
+    let ok_ecef = matches!(ecef, Some([x, _, _]) if (x - 6378137.0).abs() < 1.0);
+    ok_chk && ok_lat && ok_ecef
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -502,6 +514,7 @@ fn verify_all_subsystems() -> bool {
         && verify_robotics_6dof_slerp()
         && verify_crypto_modern_wire()
         && verify_vision_optical_flow_homography()
+        && verify_gnss_nmea_geodesy()
 }
 
 /// @outputs: 1

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 426,
+  "total_functions": 436,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1092,6 +1092,63 @@
           "name": "point_in_polygon_raycast",
           "signature": "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "gnss_nmea_geodesy",
+      "file": "src/gnss_nmea_geodesy.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "gnss_nmea_checksum",
+          "signature": "pub fn gnss_nmea_checksum(sentence: &[u8]) -> Option<u8>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_nmea_lat_lon_to_decimal_deg",
+          "signature": "pub fn gnss_nmea_lat_lon_to_decimal_deg(nmea_coord: f64, direction: u8) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_wgs84_llh_to_ecef",
+          "signature": "pub fn gnss_wgs84_llh_to_ecef(lat_deg: f64, lon_deg: f64, alt_m: f64) -> Option<[f64; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_ecef_to_wgs84_llh",
+          "signature": "pub fn gnss_ecef_to_wgs84_llh(x: f64, y: f64, z: f64) -> Option<[f64; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_ecef_to_enu_step",
+          "signature": "pub fn gnss_ecef_to_enu_step(dx: f64, dy: f64, dz: f64, ref_lat_deg: f64, ref_lon_deg: f64) -> [f64; 3]",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_satellite_elevation_azimuth_deg",
+          "signature": "pub fn gnss_satellite_elevation_azimuth_deg(enu: [f64; 3]) -> Option<(f64, f64)>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_dilution_of_precision_dop",
+          "signature": "pub fn gnss_dilution_of_precision_dop(q_diag: [f64; 4]) -> Option<(f64, f64, f64)>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_great_circle_bearing_deg",
+          "signature": "pub fn gnss_great_circle_bearing_deg(lat1_deg: f64, lon1_deg: f64, lat2_deg: f64, lon2_deg: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_pseudorange_clock_bias_corr",
+          "signature": "pub fn gnss_pseudorange_clock_bias_corr(",
+          "outputs": 1
+        },
+        {
+          "name": "gnss_carrier_phase_cycle_slip_detector",
+          "signature": "pub fn gnss_carrier_phase_cycle_slip_detector(",
+          "outputs": 1
         }
       ]
     },

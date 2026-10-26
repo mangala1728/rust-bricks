@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 426
+total_functions: 436
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1066,6 +1066,70 @@ modules:
         domains:
           px: "[-10000.0..10000.0]"
           py: "[-10000.0..10000.0]"
+  - module: "gnss_nmea_geodesy"
+    file: "src/gnss_nmea_geodesy.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "gnss_nmea_checksum"
+        signature: "pub fn gnss_nmea_checksum(sentence: &[u8]) -> Option<u8>"
+        outputs: 1
+      - name: "gnss_nmea_lat_lon_to_decimal_deg"
+        signature: "pub fn gnss_nmea_lat_lon_to_decimal_deg(nmea_coord: f64, direction: u8) -> Option<f64>"
+        outputs: 1
+        domains:
+          nmea_coord: "[0.0, 18000.0]"
+      - name: "gnss_wgs84_llh_to_ecef"
+        signature: "pub fn gnss_wgs84_llh_to_ecef(lat_deg: f64, lon_deg: f64, alt_m: f64) -> Option<[f64; 3]>"
+        outputs: 1
+        domains:
+          lat_deg: "[-90.0, 90.0]"
+          lon_deg: "[-180.0, 180.0]"
+          alt_m: "[-10000.0, 1000000.0]"
+      - name: "gnss_ecef_to_wgs84_llh"
+        signature: "pub fn gnss_ecef_to_wgs84_llh(x: f64, y: f64, z: f64) -> Option<[f64; 3]>"
+        outputs: 1
+        domains:
+          x: "[-1e8, 1e8]"
+          y: "[-1e8, 1e8]"
+          z: "[-1e8, 1e8]"
+      - name: "gnss_ecef_to_enu_step"
+        signature: "pub fn gnss_ecef_to_enu_step(dx: f64, dy: f64, dz: f64, ref_lat_deg: f64, ref_lon_deg: f64) -> [f64; 3]"
+        outputs: 1
+        domains:
+          dx: "[-1e8, 1e8]"
+          dy: "[-1e8, 1e8]"
+          dz: "[-1e8, 1e8]"
+          ref_lat_deg: "[-90.0, 90.0]"
+          ref_lon_deg: "[-180.0, 180.0]"
+      - name: "gnss_satellite_elevation_azimuth_deg"
+        signature: "pub fn gnss_satellite_elevation_azimuth_deg(enu: [f64; 3]) -> Option<(f64, f64)>"
+        outputs: 1
+      - name: "gnss_dilution_of_precision_dop"
+        signature: "pub fn gnss_dilution_of_precision_dop(q_diag: [f64; 4]) -> Option<(f64, f64, f64)>"
+        outputs: 1
+      - name: "gnss_great_circle_bearing_deg"
+        signature: "pub fn gnss_great_circle_bearing_deg(lat1_deg: f64, lon1_deg: f64, lat2_deg: f64, lon2_deg: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          lat1_deg: "[-90.0, 90.0]"
+          lon1_deg: "[-180.0, 180.0]"
+          lat2_deg: "[-90.0, 90.0]"
+          lon2_deg: "[-180.0, 180.0]"
+      - name: "gnss_pseudorange_clock_bias_corr"
+        signature: "pub fn gnss_pseudorange_clock_bias_corr("
+        outputs: 1
+        domains:
+          pseudorange_m: "[0.0, 1e8]"
+          sat_clock_bias_s: "[-1.0, 1.0]"
+          iono_delay_m: "[-100.0, 500.0]"
+          tropo_delay_m: "[0.0, 100.0]"
+      - name: "gnss_carrier_phase_cycle_slip_detector"
+        signature: "pub fn gnss_carrier_phase_cycle_slip_detector("
+        outputs: 1
+        domains:
+          dt_s: "[0.001, 10.0]"
+          threshold_cycles: "[0.1, 100.0]"
   - module: "instrument_industrial"
     file: "src/instrument_industrial.rs"
     functions_count: 10

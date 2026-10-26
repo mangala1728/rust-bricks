@@ -2805,3 +2805,77 @@ fn test_vision_optical_flow_homography_bricks() {
     assert!((c - 1.0).abs() < 1e-4);
 }
 
+#[test]
+fn test_gnss_nmea_geodesy_bricks() {
+    use rust_bricks::gnss_nmea_geodesy::*;
+
+    // 1. NMEA 0183 校驗和驗證
+    // "$GPGLL,3751.65,S,14507.36,E*77"
+    let sentence = b"$GPGLL,3751.65,S,14507.36,E*77";
+    let chk = gnss_nmea_checksum(sentence);
+    assert_eq!(chk, Some(0x77));
+
+    // 2. NMEA 度分格式轉十進制度數 (2502.1234 N -> 25.03539)
+    let dec_lat = gnss_nmea_lat_lon_to_decimal_deg(2502.1234, b'N');
+    assert!(dec_lat.is_some());
+    assert!((dec_lat.unwrap() - (25.0 + 2.1234 / 60.0)).abs() < 1e-6);
+    let dec_lon_w = gnss_nmea_lat_lon_to_decimal_deg(12130.0, b'W');
+    assert!(dec_lon_w.is_some());
+    assert!((dec_lon_w.unwrap() - (-121.5)).abs() < 1e-6);
+
+    // 3. WGS84 經緯高轉 ECEF 直角坐標 (赤道本初子午線零高程)
+    let ecef0 = gnss_wgs84_llh_to_ecef(0.0, 0.0, 0.0);
+    assert!(ecef0.is_some());
+    let [x0, y0, z0] = ecef0.unwrap();
+    assert!((x0 - 6378137.0).abs() < 1.0);
+    assert!(y0.abs() < 1e-3);
+    assert!(z0.abs() < 1e-3);
+
+    // 4. ECEF 直角坐標逆轉 WGS84 大地坐標 (Bowring 演算法閉環驗證)
+    let llh_back = gnss_ecef_to_wgs84_llh(x0, y0, z0);
+    assert!(llh_back.is_some());
+    let [lat_b, lon_b, alt_b] = llh_back.unwrap();
+    assert!(lat_b.abs() < 1e-5);
+    assert!(lon_b.abs() < 1e-5);
+    assert!(alt_b.abs() < 1e-2);
+
+    // 5. ECEF 相對基準向量轉 ENU 坐標
+    let enu = gnss_ecef_to_enu_step(10.0, 20.0, 30.0, 0.0, 0.0);
+    // 在赤道經度0度: East = dy = 20, North = dz = 30, Up = dx = 10
+    assert!((enu[0] - 20.0).abs() < 1e-4);
+    assert!((enu[1] - 30.0).abs() < 1e-4);
+    assert!((enu[2] - 10.0).abs() < 1e-4);
+
+    // 6. 衛星仰角與方位角解算 (正東仰角45度: E=1000, N=0, U=1000)
+    let el_az = gnss_satellite_elevation_azimuth_deg([1000.0, 0.0, 1000.0]);
+    assert!(el_az.is_some());
+    let (elev, azim) = el_az.unwrap();
+    assert!((elev - 45.0).abs() < 1e-4);
+    assert!((azim - 90.0).abs() < 1e-4);
+
+    // 7. 幾何精度衰減因子 (DOP)
+    let dop = gnss_dilution_of_precision_dop([1.0, 1.0, 2.0, 1.0]);
+    assert!(dop.is_some());
+    let (pdop, hdop, vdop) = dop.unwrap();
+    assert!((hdop - 2.0f64.sqrt()).abs() < 1e-4);
+    assert!((vdop - 2.0f64.sqrt()).abs() < 1e-4);
+    assert!((pdop - 2.0).abs() < 1e-4);
+
+    // 8. 大圓大地線前向方位角 (赤道向正北方位角應為 0 度)
+    let bearing = gnss_great_circle_bearing_deg(0.0, 0.0, 10.0, 0.0);
+    assert!(bearing.is_some());
+    assert!(bearing.unwrap().abs() < 1e-4);
+
+    // 9. 偽距鐘差與延遲校正
+    let corr = gnss_pseudorange_clock_bias_corr(20_000_000.0, 1e-6, 5.0, 2.5);
+    let expected = 20_000_000.0 + 299792458.0 * 1e-6 - 5.0 - 2.5;
+    assert!((corr - expected).abs() < 1e-4);
+
+    // 10. RTK 載波相位周跳檢測 (多普勒與相位跳變超過門檻)
+    let slip = gnss_carrier_phase_cycle_slip_detector(105.0, 100.0, 0.0, 1.0, 1.0);
+    assert!(slip); // 實際差 5.0，預期 0.0，門檻 1.0 -> 檢測到周跳
+    let no_slip = gnss_carrier_phase_cycle_slip_detector(100.1, 100.0, -0.1, 1.0, 0.5);
+    assert!(!no_slip); // 實際差 0.1，預期 -(-0.1)*1 = 0.1 -> 無周跳
+}
+
+

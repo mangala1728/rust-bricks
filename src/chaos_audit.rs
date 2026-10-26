@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -701,6 +701,22 @@ fn audit_vision_optical_flow_homography() -> bool {
 }
 
 /// @outputs: 1
+fn audit_gnss_nmea_geodesy() -> bool {
+    let mut ok = true;
+    // 畸形 NMEA 語句
+    ok &= gnss_nmea_geodesy::gnss_nmea_checksum(b"NOT_NMEA").is_none();
+    // 緯度超出 90 度
+    ok &= gnss_nmea_geodesy::gnss_nmea_lat_lon_to_decimal_deg(9500.0, b'N').is_none();
+    // 經緯度 NaN
+    ok &= gnss_nmea_geodesy::gnss_wgs84_llh_to_ecef(f64::NAN, 0.0, 0.0).is_none();
+    // 地心零距離奇異點
+    ok &= gnss_nmea_geodesy::gnss_satellite_elevation_azimuth_deg([0.0, 0.0, 0.0]).is_none();
+    // 負協方差 DOP 崩潰防護
+    ok &= gnss_nmea_geodesy::gnss_dilution_of_precision_dop([-1.0, 1.0, 1.0, 1.0]).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -761,6 +777,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_crypto_modern_wire(), "【現代高階線路加密抽查失敗】存在置換越界或GF256崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_vision_optical_flow_homography(), "【視覺光流與透視單應抽查失敗】存在奇異矩陣或越界採樣崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_gnss_nmea_geodesy(), "【GNSS導航與大地測量抽查失敗】存在坐標奇異點或除零崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

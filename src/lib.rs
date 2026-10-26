@@ -37,6 +37,7 @@ pub mod fast_math;
 pub mod fieldbus_industrial_eth;
 pub mod fin_apdu_track;
 pub mod geo_collision;
+pub mod gnss_nmea_geodesy;
 pub mod guard;
 pub mod instrument_industrial;
 pub mod instrument_lxi_hislip;
