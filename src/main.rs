@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
     env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time,
     motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec, packet_checksum,
@@ -147,6 +147,16 @@ fn verify_tsn_and_macsec() -> bool {
 }
 
 /// @outputs: 1
+fn verify_ai_tensor_train() -> bool {
+    let mut probs = [0.0f32; 2];
+    let ok_sm = ai_tensor_train::softmax_stable(&[0.0, 0.0], &mut probs) && (probs[0] - 0.5).abs() < 1e-4;
+    let (rx, ry) = ai_tensor_train::rope_rotary_embedding_step((1.0, 0.0), 0.0);
+    let ok_rope = (rx - 1.0).abs() < 1e-4 && ry.abs() < 1e-4;
+    let ok_gelu = (ai_tensor_train::gelu_forward(0.0) - 0.0).abs() < 1e-4;
+    ok_sm && ok_rope && ok_gelu
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -159,6 +169,7 @@ fn verify_all_subsystems() -> bool {
         && verify_power_and_baro()
         && verify_lin_and_raycast_3d()
         && verify_tsn_and_macsec()
+        && verify_ai_tensor_train()
 }
 
 /// @outputs: 1

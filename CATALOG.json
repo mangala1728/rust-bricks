@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 165,
+  "total_functions": 173,
   "modules": [
     {
       "module": "agent_terminal",
@@ -23,6 +23,53 @@
         {
           "name": "pty_line_buffer_edit",
           "signature": "pub fn pty_line_buffer_edit(input: &[u8], out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "ai_tensor_train",
+      "file": "src/ai_tensor_train.rs",
+      "functions_count": 8,
+      "functions": [
+        {
+          "name": "softmax_stable",
+          "signature": "pub fn softmax_stable(logits: &[f32], out_probs: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "layer_norm",
+          "signature": "pub fn layer_norm(x: &[f32], gamma: &[f32], beta: &[f32], eps: f32, out: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "rmsnorm_step",
+          "signature": "pub fn rmsnorm_step(x: &[f32], weight: &[f32], eps: f32, out: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "rope_rotary_embedding_step",
+          "signature": "pub fn rope_rotary_embedding_step(vec_pair: (f32, f32), angle_rad: f32) -> (f32, f32)",
+          "outputs": 1
+        },
+        {
+          "name": "rope_frequency_theta",
+          "signature": "pub fn rope_frequency_theta(pos: usize, dim_idx: usize, head_dim: usize, base: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "adamw_step",
+          "signature": "pub fn adamw_step(",
+          "outputs": 2
+        },
+        {
+          "name": "cross_entropy_loss_and_grad",
+          "signature": "pub fn cross_entropy_loss_and_grad(logits: &[f32], target_idx: usize, out_grad: &mut [f32]) -> Option<f32>",
+          "outputs": 2
+        },
+        {
+          "name": "gelu_forward",
+          "signature": "pub fn gelu_forward(x: f32) -> f32",
           "outputs": 1
         }
       ]

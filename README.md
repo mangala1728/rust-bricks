@@ -33,6 +33,7 @@
 | 模組 | 職責 | 典型應用場景 |
 |---|---|---|
 | [`agent_terminal`](src/agent_terminal.rs) | 終端 ANSI 色彩碼脫色淨化、非遞迴極速 Glob 檔案搜尋、PTY 退格鍵與行編輯模擬 | AI 代理馬具 (Agent Harness)、虛擬終端路由、Shell 日誌純文字清洗 |
+| [`ai_tensor_train`](src/ai_tensor_train.rs) | 數值穩定 Softmax (防極端溢位)、LayerNorm/RMSNorm (LLaMA/Mistral 核心)、RoPE 旋轉位置編碼、AdamW 步進、融合交叉熵梯度、GELU 激活 | 零依賴 AI 模型訓練迴圈 (nanoGPT/llm.c/micrograd 架構)、邊緣 LLM 推論引擎、神經網路純 Rust 重現 |
 | [`math_time`](src/math_time.rs) | 高精度數值夾止、滑動均線、儒略日曆法轉換、占星大限 (Dasha) 比例運算、XorShift64 | 股市量化、時間序列平滑、極速亂數生成 |
 | [`audio_vad`](src/audio_vad.rs) | PCM16 音訊取樣點能量 (RMS) 計算、靜音幀判定、CPS 字幕字速審查 | 語音活動檢測 (VAD)、即時翻譯 App、多模態字幕對齊 |
 | [`audio_dsp`](src/audio_dsp.rs) | 聲學功率、dBFS 能量、零交越率、Butterworth 高通濾波、語音預加重、軟削峰防破音 | 麥克風音訊前處理、即時降噪前置濾波、音訊串流 |

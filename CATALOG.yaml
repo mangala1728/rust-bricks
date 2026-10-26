@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 165
+total_functions: 173
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -33,6 +33,53 @@ modules:
         outputs: 1
         domains:
           input_len: "[0..65536]"
+  - module: "ai_tensor_train"
+    file: "src/ai_tensor_train.rs"
+    functions_count: 8
+    architecture_map:
+      - "Role: ai/ai_tensor_train — 零依賴神經網絡與 Transformer 核心訓練及推論算子微積木 (AI Tensor Training Micro-Bricks)。"
+      - "Inputs: Logits 切片、張量激活值、優化器狀態參數 (梯度、動量、學習率)。"
+      - "Outputs: 數值穩定 Softmax 機率、LayerNorm/RMSNorm 標準化特徵、RoPE 旋轉編碼、AdamW 參數步進、交叉熵損失與梯度。"
+      - "Invariants: 零外部依賴、純 Rust 實現、防浮點溢位 (Log-Sum-Exp 技巧)、零全域可變狀態、單一函式 <= 60 行。"
+    functions:
+      - name: "softmax_stable"
+        signature: "pub fn softmax_stable(logits: &[f32], out_probs: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          logits.len(): "[1..65536]"
+      - name: "layer_norm"
+        signature: "pub fn layer_norm(x: &[f32], gamma: &[f32], beta: &[f32], eps: f32, out: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          eps: "[1e-9..1.0]"
+      - name: "rmsnorm_step"
+        signature: "pub fn rmsnorm_step(x: &[f32], weight: &[f32], eps: f32, out: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          eps: "[1e-9..1.0]"
+      - name: "rope_rotary_embedding_step"
+        signature: "pub fn rope_rotary_embedding_step(vec_pair: (f32, f32), angle_rad: f32) -> (f32, f32)"
+        outputs: 1
+      - name: "rope_frequency_theta"
+        signature: "pub fn rope_frequency_theta(pos: usize, dim_idx: usize, head_dim: usize, base: f32) -> f32"
+        outputs: 1
+        domains:
+          pos: "[0..1000000]"
+          base: "[1.0..10000000.0]"
+      - name: "adamw_step"
+        signature: "pub fn adamw_step("
+        outputs: 2
+        domains:
+          step: "[1..10000000]"
+          lr: "[1e-7..10.0]"
+      - name: "cross_entropy_loss_and_grad"
+        signature: "pub fn cross_entropy_loss_and_grad(logits: &[f32], target_idx: usize, out_grad: &mut [f32]) -> Option<f32>"
+        outputs: 2
+        domains:
+          logits.len(): "[1..65536]"
+      - name: "gelu_forward"
+        signature: "pub fn gelu_forward(x: f32) -> f32"
+        outputs: 1
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
     functions_count: 8

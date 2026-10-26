@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
     fast_math, fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
     motor_stepper, net_ethernet, net_tsn_macsec, physics_raycast_3d, sensor_baro_als,
@@ -216,6 +216,31 @@ fn audit_agent_and_system() -> bool {
     ok
 }
 
+/// @outputs: 1
+fn audit_ai_tensor_train() -> bool {
+    let mut ok = true;
+    let mut out_probs = [0.0f32; 3];
+    ok &= !ai_tensor_train::softmax_stable(&[], &mut []);
+    ok &= !ai_tensor_train::softmax_stable(&[1.0, f32::NAN, 3.0], &mut out_probs);
+    ok &= !ai_tensor_train::softmax_stable(&[1.0, 2.0], &mut out_probs);
+    let mut ln_out = [0.0f32; 2];
+    ok &= !ai_tensor_train::layer_norm(&[1.0, 2.0], &[1.0, 1.0], &[0.0, 0.0], -1e-5, &mut ln_out);
+    ok &= !ai_tensor_train::layer_norm(&[f32::NAN, 2.0], &[1.0, 1.0], &[0.0, 0.0], 1e-5, &mut ln_out);
+    ok &= !ai_tensor_train::rmsnorm_step(&[], &[], 1e-5, &mut []);
+    let rope_nan = ai_tensor_train::rope_rotary_embedding_step((f32::NAN, 1.0), 0.5);
+    ok &= rope_nan == (0.0, 0.0);
+    ok &= ai_tensor_train::rope_frequency_theta(10, 100, 64, 10000.0) == 0.0;
+    let mut p = 1.0f32;
+    let mut m = 0.0f32;
+    let mut v = 0.0f32;
+    ok &= !ai_tensor_train::adamw_step(&mut p, 0.1, &mut m, &mut v, -0.01, 0.9, 0.999, 0.01, 1e-8, 1);
+    ok &= !ai_tensor_train::adamw_step(&mut p, 0.1, &mut m, &mut v, 0.001, 0.9, 0.999, 0.01, 1e-8, 0);
+    let mut grad = [0.0f32; 2];
+    ok &= ai_tensor_train::cross_entropy_loss_and_grad(&[1.0, 2.0], 99, &mut grad).is_none();
+    ok &= (ai_tensor_train::gelu_forward(f32::NAN) - 0.0).abs() < 1e-6;
+    ok
+}
+
 /// @outputs: 2
 /// @domain: dummy_level [0..10]
 pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
@@ -261,6 +286,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }
+
+    total += 1;
+    if audit_ai_tensor_train() { passed += 1; } else { failures.push("【AI訓練張量算子抽查失敗】存在溢出除零或NaN穿透".to_string()); }
 
     if !failures.is_empty() {
         return Err(failures);

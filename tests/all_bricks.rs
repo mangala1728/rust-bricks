@@ -1247,3 +1247,71 @@ fn test_net_tsn_macsec_bricks() {
     assert!(!rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 50, 32));
     assert!(!rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 0, 32));
 }
+
+
+#[test]
+fn test_ai_tensor_train_softmax_norm_rope() {
+    use rust_bricks::ai_tensor_train;
+
+    // 1. 數值穩定 Softmax (防極端大數溢位)
+    let logits = [1000.0, 1001.0, 1002.0];
+    let mut probs = [0.0f32; 3];
+    assert!(ai_tensor_train::softmax_stable(&logits, &mut probs));
+    let sum: f32 = probs.iter().sum();
+    assert!((sum - 1.0).abs() < 1e-5);
+    assert!(probs[2] > probs[1] && probs[1] > probs[0]);
+
+    // 2. LayerNorm 前向傳播
+    let x = [2.0, 4.0, 6.0];
+    let gamma = [1.0, 1.0, 1.0];
+    let beta = [0.0, 0.0, 0.0];
+    let mut ln_out = [0.0f32; 3];
+    assert!(ai_tensor_train::layer_norm(&x, &gamma, &beta, 1e-5, &mut ln_out));
+    let ln_mean = (ln_out[0] + ln_out[1] + ln_out[2]) / 3.0;
+    assert!(ln_mean.abs() < 1e-5);
+
+    // 3. RMSNorm 前向傳播
+    let mut rms_out = [0.0f32; 3];
+    assert!(ai_tensor_train::rmsnorm_step(&x, &gamma, 1e-5, &mut rms_out));
+    assert!(rms_out[0] > 0.0 && rms_out[2] > rms_out[1]);
+
+    // 4. RoPE 旋轉位置編碼 (正交旋轉保模長)
+    let pair = (3.0f32, 4.0f32);
+    let orig_norm_sq = pair.0 * pair.0 + pair.1 * pair.1;
+    let rotated = ai_tensor_train::rope_rotary_embedding_step(pair, 0.785398); // pi / 4
+    let rot_norm_sq = rotated.0 * rotated.0 + rotated.1 * rotated.1;
+    assert!((orig_norm_sq - rot_norm_sq).abs() < 1e-4);
+
+    // 5. RoPE 頻率角計算
+    let theta = ai_tensor_train::rope_frequency_theta(1, 0, 64, 10000.0);
+    assert!((theta - 1.0).abs() < 1e-5);
+}
+
+#[test]
+fn test_ai_tensor_train_adamw_loss_gelu() {
+    use rust_bricks::ai_tensor_train;
+
+    // 1. AdamW 優化器步進
+    let mut param = 2.0f32;
+    let mut m = 0.0f32;
+    let mut v = 0.0f32;
+    let grad = 0.5f32;
+    assert!(ai_tensor_train::adamw_step(&mut param, grad, &mut m, &mut v, 0.01, 0.9, 0.999, 0.01, 1e-8, 1));
+    assert!(param < 2.0); // 梯度為正，參數應向下步進
+
+    // 2. 融合交叉熵損失與梯度
+    let logits = [1.0, 2.0, 0.5];
+    let mut grad_out = [0.0f32; 3];
+    let loss_opt = ai_tensor_train::cross_entropy_loss_and_grad(&logits, 1, &mut grad_out);
+    assert!(loss_opt.is_some());
+    // @safety-proof: loss_opt 已驗證 is_some()
+    let loss = loss_opt.unwrap();
+    assert!(loss > 0.0);
+    let grad_sum: f32 = grad_out.iter().sum();
+    assert!(grad_sum.abs() < 1e-5); // Softmax 機率和 1 - 1 = 0
+
+    // 3. GELU 激活函式
+    assert_eq!(ai_tensor_train::gelu_forward(0.0), 0.0);
+    assert!(ai_tensor_train::gelu_forward(3.0) > 2.9);
+    assert!(ai_tensor_train::gelu_forward(-3.0).abs() < 0.05);
+}
