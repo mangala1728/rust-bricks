@@ -86,6 +86,7 @@
 | [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
 | [`crypto_dukpt`](src/crypto_dukpt.rs) | ANSI X9.24 DUKPT 交易金鑰衍生、21-bit 交易計數器管理、PIN/Data 變體金鑰生成 | 金融刷卡機 POS、ATM 提款機每筆交易動態密鑰（防前向破解） |
 | [`motor_stepper`](src/motor_stepper.rs) | 步進馬達梯形加減速微秒延遲計算、正交 AB 編碼器 4x 倍頻狀態機、行程換算 | 3D 列印機、CNC 雕刻機、送錫機、工控滑台高精度運動控制 |
+| [`robotics_motion_profile`](src/robotics_motion_profile.rs) | 2-Link 平面機械臂逆向/正向運動學 (IK/FK)、雅可比奇異點檢測、梯形與 S-curve 躍度運動曲線、Q15 步進微步電流比、關節軟極限、滾珠螺桿導程 | 工業機械手臂 (SCARA/Delta)、六軸協作機器人逆解、高階 CNC 運動控制器 |
 | [`env_sensor`](src/env_sensor.rs) | SHT3x 溫濕度 CRC8 校驗、Magnus-Tetens 露點溫度計算、美國/台灣 EPA PM2.5 AQI 換算 | 恆溫恆濕環境試驗箱、防凝露結霜控制、智慧家庭環境儀 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |

@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_biomed_dsp, radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
 };
@@ -325,6 +325,17 @@ fn verify_quant_finance_market() -> bool {
 }
 
 /// @outputs: 1
+fn verify_robotics_motion_profile() -> bool {
+    let ik = robotics_motion_profile::robotics_planar_2link_ik(1.0, 1.0, 1.0, 1.0, false);
+    let ok_ik = ik.is_some();
+    let d = robotics_motion_profile::robotics_trapezoidal_profile_distance(1.0, 10.0, 10.0, 100.0);
+    let ok_d = matches!(d, Some(v) if (v - 5.0).abs() < 1e-3);
+    let (s, c) = robotics_motion_profile::robotics_stepper_microstep_sin_cos(0, 16).unwrap_or((0, 0));
+    let ok_step = s == 0 && c == 32767;
+    ok_ik && ok_d && ok_step
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -354,6 +365,7 @@ fn verify_all_subsystems() -> bool {
         && verify_cad_geom_model()
         && verify_spc_six_sigma_msa()
         && verify_quant_finance_market()
+        && verify_robotics_motion_profile()
 }
 
 /// @outputs: 1

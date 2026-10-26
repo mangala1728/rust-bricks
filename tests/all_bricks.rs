@@ -2107,3 +2107,55 @@ fn test_quant_finance_market_bricks() {
     let fx_ret = quant_finance_market::quant_fx_adjusted_return(0.10, 30.0, 31.5).unwrap();
     assert!((fx_ret - 0.155).abs() < 1e-4);
 }
+
+#[test]
+fn test_robotics_motion_profile_bricks() {
+    use rust_bricks::robotics_motion_profile;
+
+    // 1. 2-Link 平面機械臂逆向運動學 (IK) 與正向驗證 (FK)
+    let (t1, t2) = robotics_motion_profile::robotics_planar_2link_ik(1.0, 1.0, 1.0, 1.0, false).unwrap();
+    let (fk_x, fk_y) = robotics_motion_profile::robotics_planar_2link_fk(t1, t2, 1.0, 1.0).unwrap();
+    assert!((fk_x - 1.0).abs() < 1e-4);
+    assert!((fk_y - 1.0).abs() < 1e-4);
+
+    // 2. 雅可比行列式奇異點判定 (手肘伸直 theta2 = 0 奇異點 det = 0)
+    let det_singular = robotics_motion_profile::robotics_planar_2link_jacobian_det(0.0, 1.0, 1.0);
+    assert!(det_singular.abs() < 1e-6);
+    let det_normal = robotics_motion_profile::robotics_planar_2link_jacobian_det(std::f64::consts::FRAC_PI_2, 1.0, 1.0);
+    assert!((det_normal - 1.0).abs() < 1e-4);
+
+    // 3. 梯形運動輪廓即時位移
+    let d_acc = robotics_motion_profile::robotics_trapezoidal_profile_distance(1.0, 10.0, 10.0, 100.0).unwrap();
+    assert!((d_acc - 5.0).abs() < 1e-3);
+    let d_cruise = robotics_motion_profile::robotics_trapezoidal_profile_distance(2.0, 10.0, 10.0, 100.0).unwrap();
+    assert!((d_cruise - 15.0).abs() < 1e-3);
+
+    // 4. S曲線 第一階段躍度 (Jerk) 速度
+    let v_jerk = robotics_motion_profile::robotics_scurve_jerk_velocity(0.5, 100.0).unwrap();
+    assert!((v_jerk - 12.5).abs() < 1e-4);
+
+    // 5. 步進馬達 Q15 微步正余弦驅動查表
+    let (s0, c0) = robotics_motion_profile::robotics_stepper_microstep_sin_cos(0, 16).unwrap();
+    assert_eq!(s0, 0);
+    assert_eq!(c0, 32767);
+    let (s16, c16) = robotics_motion_profile::robotics_stepper_microstep_sin_cos(16, 16).unwrap();
+    assert_eq!(s16, 32767);
+    assert_eq!(c16, 0);
+
+    // 6. 關節軟極限夾止與警告區
+    let (clamped, warn) = robotics_motion_profile::robotics_joint_soft_limit_clamp(3.14, 0.0, 3.0, 0.2);
+    assert_eq!(clamped, 3.0);
+    assert!(warn);
+
+    // 7. 滾珠螺桿導程線性位移
+    let dist = robotics_motion_profile::robotics_lead_screw_linear_distance(10.0, 5.0, 2.0).unwrap();
+    assert_eq!(dist, 25.0);
+
+    // 8. 機械臂負載力矩
+    let torque = robotics_motion_profile::robotics_arm_payload_torque(1.0, 10.0, 9.8, 2.0).unwrap();
+    assert_eq!(torque, 98.0 + 20.0);
+
+    // 9. SCARA Z 軸進給率
+    let feed = robotics_motion_profile::robotics_scara_z_axis_feed_rate(10.0, 600.0).unwrap();
+    assert_eq!(feed, 100.0);
+}

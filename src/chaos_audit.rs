@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_biomed_dsp, radar_cfar_doppler, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
 };
 
@@ -481,6 +481,23 @@ fn audit_quant_finance_market() -> bool {
 }
 
 /// @outputs: 1
+fn audit_robotics_motion_profile() -> bool {
+    let mut ok = true;
+    ok &= robotics_motion_profile::robotics_planar_2link_ik(100.0, 100.0, 1.0, 1.0, false).is_none();
+    ok &= robotics_motion_profile::robotics_planar_2link_fk(0.0, 0.0, 0.0, 1.0).is_none();
+    ok &= (robotics_motion_profile::robotics_planar_2link_jacobian_det(f64::NAN, 1.0, 1.0) - 0.0).abs() < 1e-6;
+    ok &= robotics_motion_profile::robotics_trapezoidal_profile_distance(-1.0, 10.0, 5.0, 100.0).is_none();
+    ok &= robotics_motion_profile::robotics_scurve_jerk_velocity(1.0, 0.0).is_none();
+    ok &= robotics_motion_profile::robotics_stepper_microstep_sin_cos(0, 0).is_none();
+    let (_, warn) = robotics_motion_profile::robotics_joint_soft_limit_clamp(10.0, 5.0, 0.0, 0.1);
+    ok &= warn;
+    ok &= robotics_motion_profile::robotics_lead_screw_linear_distance(10.0, 0.0, 1.0).is_none();
+    ok &= robotics_motion_profile::robotics_arm_payload_torque(0.0, 1.0, 9.8, 1.0).is_none();
+    ok &= robotics_motion_profile::robotics_scara_z_axis_feed_rate(0.0, 1000.0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -529,6 +546,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

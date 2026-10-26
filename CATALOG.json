@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 307,
+  "total_functions": 317,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1541,6 +1541,63 @@
         {
           "name": "read_chunk",
           "signature": "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "robotics_motion_profile",
+      "file": "src/robotics_motion_profile.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "robotics_planar_2link_ik",
+          "signature": "pub fn robotics_planar_2link_ik(",
+          "outputs": 2
+        },
+        {
+          "name": "robotics_planar_2link_fk",
+          "signature": "pub fn robotics_planar_2link_fk(",
+          "outputs": 2
+        },
+        {
+          "name": "robotics_planar_2link_jacobian_det",
+          "signature": "pub fn robotics_planar_2link_jacobian_det(theta2_rad: f64, l1: f64, l2: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "robotics_trapezoidal_profile_distance",
+          "signature": "pub fn robotics_trapezoidal_profile_distance(",
+          "outputs": 1
+        },
+        {
+          "name": "robotics_scurve_jerk_velocity",
+          "signature": "pub fn robotics_scurve_jerk_velocity(time_s: f64, jerk: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "robotics_stepper_microstep_sin_cos",
+          "signature": "pub fn robotics_stepper_microstep_sin_cos(",
+          "outputs": 2
+        },
+        {
+          "name": "robotics_joint_soft_limit_clamp",
+          "signature": "pub fn robotics_joint_soft_limit_clamp(",
+          "outputs": 2
+        },
+        {
+          "name": "robotics_lead_screw_linear_distance",
+          "signature": "pub fn robotics_lead_screw_linear_distance(",
+          "outputs": 1
+        },
+        {
+          "name": "robotics_arm_payload_torque",
+          "signature": "pub fn robotics_arm_payload_torque(",
+          "outputs": 1
+        },
+        {
+          "name": "robotics_scara_z_axis_feed_rate",
+          "signature": "pub fn robotics_scara_z_axis_feed_rate(lead_mm: f64, motor_rpm: f64) -> Option<f64>",
           "outputs": 1
         }
       ]

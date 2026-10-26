@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 307
+total_functions: 317
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1585,6 +1585,69 @@ modules:
       - name: "read_chunk"
         signature: "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize"
         outputs: 1
+  - module: "robotics_motion_profile"
+    file: "src/robotics_motion_profile.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: robot/motion_profile — 機器人逆向/正向運動學 (2-Link IK/FK)、雅可比奇異點、S-curve 躍度、步進馬達微步正余弦驅動微積木。"
+      - "Inputs: 目標座標 (x, y)、連桿長度、關節角度、加載力矩、梯形/S曲線時序、導程與齒輪比。"
+      - "Outputs: 關節角 (rad)、末端座標、雅可比行列式值、即時位移、Q15 微步電流比、線性導程速度 (mm/s)。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、無溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "robotics_planar_2link_ik"
+        signature: "pub fn robotics_planar_2link_ik("
+        outputs: 2
+        domains:
+          l1: "[0.001..1000.0]"
+          l2: "[0.001..1000.0]"
+      - name: "robotics_planar_2link_fk"
+        signature: "pub fn robotics_planar_2link_fk("
+        outputs: 2
+        domains:
+          l1: "[0.001..1000.0]"
+          l2: "[0.001..1000.0]"
+      - name: "robotics_planar_2link_jacobian_det"
+        signature: "pub fn robotics_planar_2link_jacobian_det(theta2_rad: f64, l1: f64, l2: f64) -> f64"
+        outputs: 1
+        domains:
+          l1: "[0.001..1000.0]"
+          l2: "[0.001..1000.0]"
+      - name: "robotics_trapezoidal_profile_distance"
+        signature: "pub fn robotics_trapezoidal_profile_distance("
+        outputs: 1
+        domains:
+          v_max: "[0.001..10000.0]"
+          a_max: "[0.001..10000.0]"
+      - name: "robotics_scurve_jerk_velocity"
+        signature: "pub fn robotics_scurve_jerk_velocity(time_s: f64, jerk: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          jerk: "[0.001..1.0e6]"
+      - name: "robotics_stepper_microstep_sin_cos"
+        signature: "pub fn robotics_stepper_microstep_sin_cos("
+        outputs: 2
+        domains:
+          microsteps_per_step: "[1..256]"
+      - name: "robotics_joint_soft_limit_clamp"
+        signature: "pub fn robotics_joint_soft_limit_clamp("
+        outputs: 2
+      - name: "robotics_lead_screw_linear_distance"
+        signature: "pub fn robotics_lead_screw_linear_distance("
+        outputs: 1
+        domains:
+          pitch_mm: "[0.001..1000.0]"
+          gear_ratio: "[0.001..1000.0]"
+      - name: "robotics_arm_payload_torque"
+        signature: "pub fn robotics_arm_payload_torque("
+        outputs: 1
+        domains:
+          arm_length_m: "[0.001..100.0]"
+          payload_kg: "[0.0..10000.0]"
+      - name: "robotics_scara_z_axis_feed_rate"
+        signature: "pub fn robotics_scara_z_axis_feed_rate(lead_mm: f64, motor_rpm: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          lead_mm: "[0.001..1000.0]"
   - module: "rpa_screen_control"
     file: "src/rpa_screen_control.rs"
     functions_count: 7
