@@ -1534,3 +1534,41 @@ fn test_rpa_screen_control_bricks() {
     let tx_time = rpa_screen_control::rs485_calc_char_tx_time_us(115200, 8, 1, false);
     assert_eq!(tx_time, 86);
 }
+
+
+#[test]
+fn test_wishes_audio_and_text_bricks() {
+    use rust_bricks::{audio_dsp, text_cleaner};
+
+    // 1. WISH-003: 頻譜噪聲估計與頻譜減法增益計算
+    let mut noise_profile = [0.1f32; 256];
+    let frame_mag = [0.5f32; 256];
+    audio_dsp::update_noise_spectrum(&mut noise_profile, &frame_mag, 0.9);
+    assert!((noise_profile[0] - 0.14).abs() < 1e-4);
+
+    let mut gain_out = [0.0f32; 256];
+    audio_dsp::compute_spectral_subtraction_gain(&frame_mag, &noise_profile, 1.5, 0.05, &mut gain_out);
+    assert!(gain_out[0] > 0.05 && gain_out[0] < 1.0);
+
+    // 2. WISH-004: 多相降取樣 48k -> 16k (3:1)
+    let input_48k = vec![1000i16; 300];
+    let mut output_16k = [0i16; 100];
+    let count = audio_dsp::downsample_3to1_pcm16(&input_48k, &mut output_16k);
+    assert_eq!(count, 100);
+    assert_eq!(output_16k[0], 1000);
+
+    // 3. WISH-004: AGC 自動增益控制
+    let mut quiet_signal = vec![500i16; 100];
+    audio_dsp::agc_apply_gain_pcm16(&mut quiet_signal, -12.0, 4.0);
+    assert!(quiet_signal[0] > 500);
+
+    // 4. WISH-005: 有界 Levenshtein 編輯距離
+    assert_eq!(text_cleaner::levenshtein_distance_bounded("kitten", "sitting", 5), 3);
+    assert_eq!(text_cleaner::levenshtein_distance_bounded("hello", "hello", 2), 0);
+    assert_eq!(text_cleaner::levenshtein_distance_bounded("abc", "xyz", 1), 1);
+
+    // 5. WISH-005: 前綴模糊匹配
+    assert!(text_cleaner::fuzzy_prefix_match("translat", "translation"));
+    assert!(text_cleaner::fuzzy_prefix_match("interp", "interpreter"));
+    assert!(!text_cleaner::fuzzy_prefix_match("xyz", "apple"));
+}

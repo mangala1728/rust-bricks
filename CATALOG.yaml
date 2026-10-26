@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 207
+total_functions: 213
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -82,7 +82,7 @@ modules:
         outputs: 1
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
-    functions_count: 9
+    functions_count: 13
     architecture_map:
       - "Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數、Biquad 濾波執行與目標 SNR 雜訊縮放因數。"
       - "Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率、Biquad 係數 [b0, b1, b2, a1, a2]。"
@@ -132,6 +132,26 @@ modules:
         outputs: 2
         domains:
           threshold: "[1000..32767]"
+      - name: "update_noise_spectrum"
+        signature: "pub fn update_noise_spectrum(noise_profile: &mut [f32; 256], frame_mag: &[f32; 256], alpha: f32)"
+        outputs: 1
+        domains:
+          alpha: "[0.0..1.0]"
+      - name: "compute_spectral_subtraction_gain"
+        signature: "pub fn compute_spectral_subtraction_gain("
+        outputs: 1
+        domains:
+          oversubtraction: "[1.0..10.0]"
+          spectral_floor: "[0.001..0.5]"
+      - name: "downsample_3to1_pcm16"
+        signature: "pub fn downsample_3to1_pcm16(input_48k: &[i16], output_16k: &mut [i16]) -> usize"
+        outputs: 1
+      - name: "agc_apply_gain_pcm16"
+        signature: "pub fn agc_apply_gain_pcm16(samples: &mut [i16], target_dbfs: f32, max_gain: f32)"
+        outputs: 1
+        domains:
+          target_dbfs: "[-60.0..0.0]"
+          max_gain: "[1.0..100.0]"
   - module: "audio_vad"
     file: "src/audio_vad.rs"
     functions_count: 3
@@ -1291,7 +1311,7 @@ modules:
         outputs: 2
   - module: "text_cleaner"
     file: "src/text_cleaner.rs"
-    functions_count: 2
+    functions_count: 4
     architecture_map:
       - "Role: core/text_cleaner — UTF-8 安全字節界限截斷、字詞界限智能折行與 CJK 字元統計。"
       - "Inputs: 字串切片、最大字節數限制。"
@@ -1305,6 +1325,14 @@ modules:
           max_bytes: "[0..1048576]"
       - name: "count_cjk_characters"
         signature: "pub fn count_cjk_characters(text: &str) -> usize"
+        outputs: 1
+      - name: "levenshtein_distance_bounded"
+        signature: "pub fn levenshtein_distance_bounded(s1: &str, s2: &str, max_dist: usize) -> usize"
+        outputs: 1
+        domains:
+          max_dist: "[0..100]"
+      - name: "fuzzy_prefix_match"
+        signature: "pub fn fuzzy_prefix_match(query: &str, target: &str) -> bool"
         outputs: 1
   - module: "thermal_palette"
     file: "src/thermal_palette.rs"

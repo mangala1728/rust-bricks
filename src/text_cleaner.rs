@@ -32,3 +32,66 @@ pub fn count_cjk_characters(text: &str) -> usize {
     }
     count
 }
+
+
+/// @outputs: 1
+/// @domain: max_dist [0..100]
+pub fn levenshtein_distance_bounded(s1: &str, s2: &str, max_dist: usize) -> usize {
+    if max_dist > 100 {
+        return max_dist;
+    }
+    let chars1: Vec<char> = s1.chars().collect();
+    let chars2: Vec<char> = s2.chars().collect();
+    let n1 = chars1.len();
+    let n2 = chars2.len();
+
+    if (n1 as isize - n2 as isize).abs() as usize > max_dist {
+        return max_dist;
+    }
+    if n1 == 0 {
+        return n2.min(max_dist);
+    }
+    if n2 == 0 {
+        return n1.min(max_dist);
+    }
+
+    let mut prev_row = vec![0usize; n2 + 1];
+    let mut curr_row = vec![0usize; n2 + 1];
+
+    for j in 0..=n2 {
+        prev_row[j] = j;
+    }
+
+    for i in 1..=n1 {
+        curr_row[0] = i;
+        let mut min_val = i;
+        for j in 1..=n2 {
+            let cost = if chars1[i - 1] == chars2[j - 1] { 0 } else { 1 };
+            curr_row[j] = (prev_row[j] + 1).min(curr_row[j - 1] + 1).min(prev_row[j - 1] + cost);
+            if curr_row[j] < min_val {
+                min_val = curr_row[j];
+            }
+        }
+        if min_val > max_dist {
+            return max_dist;
+        }
+        prev_row.copy_from_slice(&curr_row);
+    }
+    prev_row[n2].min(max_dist)
+}
+
+/// @outputs: 1
+pub fn fuzzy_prefix_match(query: &str, target: &str) -> bool {
+    let q_chars: Vec<char> = query.chars().collect();
+    let t_chars: Vec<char> = target.chars().collect();
+    if q_chars.is_empty() {
+        return true;
+    }
+    if t_chars.is_empty() {
+        return false;
+    }
+    let prefix_len = q_chars.len().min(t_chars.len());
+    let t_sub: String = t_chars[..prefix_len].iter().collect();
+    let dist = levenshtein_distance_bounded(query, &t_sub, 2);
+    dist <= if q_chars.len() <= 3 { 0 } else if q_chars.len() <= 6 { 1 } else { 2 }
+}

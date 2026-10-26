@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 207,
+  "total_functions": 213,
   "modules": [
     {
       "module": "agent_terminal",
@@ -77,7 +77,7 @@
     {
       "module": "audio_dsp",
       "file": "src/audio_dsp.rs",
-      "functions_count": 9,
+      "functions_count": 13,
       "functions": [
         {
           "name": "pcm16_frame_power",
@@ -123,6 +123,26 @@
           "name": "soft_clip_i16",
           "signature": "pub fn soft_clip_i16(sample: i32, threshold: i32) -> i16",
           "outputs": 2
+        },
+        {
+          "name": "update_noise_spectrum",
+          "signature": "pub fn update_noise_spectrum(noise_profile: &mut [f32; 256], frame_mag: &[f32; 256], alpha: f32)",
+          "outputs": 1
+        },
+        {
+          "name": "compute_spectral_subtraction_gain",
+          "signature": "pub fn compute_spectral_subtraction_gain(",
+          "outputs": 1
+        },
+        {
+          "name": "downsample_3to1_pcm16",
+          "signature": "pub fn downsample_3to1_pcm16(input_48k: &[i16], output_16k: &mut [i16]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "agc_apply_gain_pcm16",
+          "signature": "pub fn agc_apply_gain_pcm16(samples: &mut [i16], target_dbfs: f32, max_gain: f32)",
+          "outputs": 1
         }
       ]
     },
@@ -1227,7 +1247,7 @@
     {
       "module": "text_cleaner",
       "file": "src/text_cleaner.rs",
-      "functions_count": 2,
+      "functions_count": 4,
       "functions": [
         {
           "name": "truncate_at_boundary",
@@ -1237,6 +1257,16 @@
         {
           "name": "count_cjk_characters",
           "signature": "pub fn count_cjk_characters(text: &str) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "levenshtein_distance_bounded",
+          "signature": "pub fn levenshtein_distance_bounded(s1: &str, s2: &str, max_dist: usize) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "fuzzy_prefix_match",
+          "signature": "pub fn fuzzy_prefix_match(query: &str, target: &str) -> bool",
           "outputs": 1
         }
       ]

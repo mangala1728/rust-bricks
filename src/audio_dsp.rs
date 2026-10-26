@@ -206,3 +206,92 @@ pub fn soft_clip_i16(sample: i32, threshold: i32) -> i16 {
     (sign * final_val) as i16
 }
 
+
+
+/// @outputs: 1
+/// @domain: alpha [0.0..1.0]
+pub fn update_noise_spectrum(noise_profile: &mut [f32; 256], frame_mag: &[f32; 256], alpha: f32) {
+    if alpha < 0.0 || alpha > 1.0 || !alpha.is_finite() {
+        return;
+    }
+    let one_minus_alpha = 1.0 - alpha;
+    for i in 0..256 {
+        if frame_mag[i].is_finite() && frame_mag[i] >= 0.0 {
+            noise_profile[i] = alpha * noise_profile[i] + one_minus_alpha * frame_mag[i];
+        }
+    }
+}
+
+/// @outputs: 1
+/// @domain: oversubtraction [1.0..10.0]
+/// @domain: spectral_floor [0.001..0.5]
+pub fn compute_spectral_subtraction_gain(
+    frame_mag: &[f32; 256],
+    noise_profile: &[f32; 256],
+    oversubtraction: f32,
+    spectral_floor: f32,
+    gain_out: &mut [f32; 256],
+) {
+    if oversubtraction < 1.0 || spectral_floor <= 0.0 || spectral_floor > 0.5 || !oversubtraction.is_finite() {
+        for g in gain_out.iter_mut() {
+            *g = 1.0;
+        }
+        return;
+    }
+    for i in 0..256 {
+        let f = frame_mag[i];
+        let n = noise_profile[i];
+        if f <= 1e-9 || !f.is_finite() || !n.is_finite() {
+            gain_out[i] = spectral_floor;
+        } else {
+            let snr_sub = 1.0 - oversubtraction * (n / f);
+            gain_out[i] = snr_sub.max(spectral_floor).min(1.0);
+        }
+    }
+}
+
+/// @outputs: 1
+pub fn downsample_3to1_pcm16(input_48k: &[i16], output_16k: &mut [i16]) -> usize {
+    if input_48k.len() < 3 || output_16k.is_empty() {
+        return 0;
+    }
+    let max_out = (input_48k.len() / 3).min(output_16k.len());
+    for i in 0..max_out {
+        let center = i * 3 + 1;
+        let prev = input_48k[center - 1] as i32;
+        let mid = input_48k[center] as i32;
+        let next = if center + 1 < input_48k.len() { input_48k[center + 1] as i32 } else { mid };
+        let filtered = (prev + 2 * mid + next) / 4;
+        output_16k[i] = filtered.clamp(-32768, 32767) as i16;
+    }
+    max_out
+}
+
+/// @outputs: 1
+/// @domain: target_dbfs [-60.0..0.0]
+/// @domain: max_gain [1.0..100.0]
+pub fn agc_apply_gain_pcm16(samples: &mut [i16], target_dbfs: f32, max_gain: f32) {
+    if samples.is_empty() || target_dbfs < -60.0 || target_dbfs > 0.0 || max_gain < 1.0 || !max_gain.is_finite() {
+        return;
+    }
+    let mut sum_sq = 0.0f64;
+    for &s in samples.iter() {
+        sum_sq += (s as f64) * (s as f64);
+    }
+    let mean_sq = sum_sq / (samples.len() as f64);
+    let rms = mean_sq.sqrt();
+    if rms < 1.0 {
+        return;
+    }
+    let current_dbfs = (20.0 * (rms / 32768.0).log10()) as f32;
+    if current_dbfs >= target_dbfs {
+        return;
+    }
+    let gain_needed = 10.0f32.powf((target_dbfs - current_dbfs) / 20.0);
+    let gain = gain_needed.min(max_gain);
+
+    for s in samples.iter_mut() {
+        let amplified = (*s as f32) * gain;
+        *s = soft_clip_i16(amplified as i32, 30000);
+    }
+}
