@@ -7,9 +7,9 @@
 use rust_bricks::{
     agent_terminal, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
-    env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time,
-    motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec, packet_checksum,
-    physics_raycast_3d, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion,
+    env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna, iso7816_smartcard, math_time,
+    motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec,
+    packet_checksum, pcb_cad_fem, physics_raycast_3d, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
 };
@@ -157,6 +157,36 @@ fn verify_ai_tensor_train() -> bool {
 }
 
 /// @outputs: 1
+fn verify_instrument_scpi_vna() -> bool {
+    let ok_scpi = matches!(instrument_scpi_vna::scpi_parse_command(b"*IDN?"), Some((cmd, true)) if cmd == b"*IDN");
+    let (gr, gi) = instrument_scpi_vna::vna_s11_to_complex(-20.0, 0.0);
+    let ok_vna = (gr - 0.1).abs() < 0.01 && gi.abs() < 1e-4;
+    let ok_vswr = matches!(instrument_scpi_vna::vna_calc_vswr_and_return_loss(0.1), Some((v, r)) if v > 1.2 && r > 19.0);
+    ok_scpi && ok_vna && ok_vswr
+}
+
+/// @outputs: 1
+fn verify_pcb_cad_fem() -> bool {
+    let z0 = pcb_cad_fem::microstrip_impedance_hammerstad(3.0, 1.6, 4.4);
+    let ok_z0 = matches!(z0, Some((z, _)) if z > 40.0 && z < 60.0);
+    let dt = pcb_cad_fem::openems_fdtd_cfl_max_timestep_sec(1e-3, 1e-3, 1e-3);
+    let ok_dt = matches!(dt, Some(t) if t > 1e-12);
+    let ok_gerber = pcb_cad_fem::gerber_coord_to_microns(b"100000", 4) == Some(254000);
+    ok_z0 && ok_dt && ok_gerber
+}
+
+/// @outputs: 1
+fn verify_motion_render_timeline() -> bool {
+    let ms = motion_render_timeline::remotion_frame_to_ms(30, 30, 1);
+    let ok_ms = ms == 1000;
+    let mut tc = [0u8; 11];
+    let ok_tc = motion_render_timeline::smpte_timecode_format(30, 30, &mut tc) && &tc == b"00:00:01:00";
+    let bez = motion_render_timeline::css_cubic_bezier_solve(0.25, 0.1, 0.25, 1.0, 0.5);
+    let ok_bez = bez > 0.3 && bez < 0.9;
+    ok_ms && ok_tc && ok_bez
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -170,6 +200,9 @@ fn verify_all_subsystems() -> bool {
         && verify_lin_and_raycast_3d()
         && verify_tsn_and_macsec()
         && verify_ai_tensor_train()
+        && verify_instrument_scpi_vna()
+        && verify_pcb_cad_fem()
+        && verify_motion_render_timeline()
 }
 
 /// @outputs: 1

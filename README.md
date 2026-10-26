@@ -45,14 +45,17 @@
 | [`net_telemetry`](src/net_telemetry.rs) | RTT 網路延遲與抖動平滑、零配置 IPv4/IPv6 CIDR 子網比對、私有網段判定 | Wi-Fi/LTE 串流動態緩衝、局域網設備識別、IP 安全檢核 |
 | [`vision_yuv`](src/vision_yuv.rs) | Android Camera2 (NV21 / YUV420sp) 預覽幀灰階快速抽取、2x2 平均降採樣、亮度直方圖 | 手機相機邊緣運算、OCR 前處理、條碼辨識、自動曝光評估 |
 | [`packet_checksum`](src/packet_checksum.rs) | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 | 檔案總管校驗、感測器封包傳輸、PNG/ZIP 區塊校驗 |
+| [`pcb_cad_fem`](src/pcb_cad_fem.rs) | Hammerstad 50Ω 微帶線阻抗求解、OpenEMS FDTD CFL 數值時間步長極限、Gerber 座標微米解析、RF 倒角補償、2D 多邊形面積 | KiCad / FreeCAD / OpenEMS 開源 EDA 工具鏈、PCB 高頻射頻走線設計、電磁仿真網格計算 |
 | [`crypto_vault`](src/crypto_vault.rs) | 零依賴 SHA-256 摘要、常數時間比較 (防時序側信道攻擊)、XOR 流式混淆 | 機密分片校驗、快照雜湊校驗、敏感字串安全防護 |
 | [`sys_path`](src/sys_path.rs) | 跨平台相對路徑防穿越校驗、史實層只增不刪 (Append-Only) 差異校驗 | 檔案系統守衛、檔案總管路徑校驗、日誌保鮮關卡 |
 | [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
 | [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
 | [`bezier_curve`](src/bezier_curve.rs) | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 | 網頁 Wasm 動態圖表、AI 簡報路徑平滑動畫、粒子幾何軌跡 |
 | [`motion_dead_reckon`](src/motion_dead_reckon.rs) | 手機慣性導航零速更新 (ZUPT)、一維航位推算積分、觸覺震動馬達多模式時序生成 | 手機遊戲體感位移、步態/停頓消除漂移、馬達短震/警示反饋 |
+| [`motion_render_timeline`](src/motion_render_timeline.rs) | Remotion 影格與時間戳雙向精確整數換算、SMPTE 時間碼格式化、CSS Cubic-Bezier 曲線牛頓法求值、SVG 描邊動畫、FFMPEG 剪輯時間字串 | React Remotion 視訊動態渲染、Headless 瀏覽器/Wasm 動態動畫、FFMPEG 影音剪輯管線 |
 | [`fast_math`](src/fast_math.rs) | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep | 邊緣手遊物理引擎、粒子光照著色、UI 動畫平滑過渡 |
 | [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
+| [`instrument_scpi_vna`](src/instrument_scpi_vna.rs) | SCPI 儀器指令解析、六位半電表讀值統計、VNA S11 反射係數與 Smith 圓圖阻抗解算、VSWR/回波損耗、示波器過零頻率 | 實驗室儀器自動化 (Keysight/Siglent)、向量網絡分析儀 (LiteVNA)、示波器/六位半電表邊緣控制 |
 | [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
 | [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
 | [`can_lin_bus`](src/can_lin_bus.rs) | 車載 LIN 2.x PID 同位計算、Classic/Enhanced 增強校驗和、I2S 32-bit 數位音訊立體聲解包 | 車身車門/後視鏡/車窗 LIN 控制器、I2S 數位麥克風與音訊編解碼晶片 |

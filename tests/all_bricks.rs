@@ -1325,3 +1325,131 @@ fn test_audio_dsp_biquad_apply() {
     assert_eq!(filtered.len(), 100);
     assert_eq!(filtered[0], 1000);
 }
+
+
+#[test]
+fn test_instrument_scpi_vna_bricks() {
+    use rust_bricks::instrument_scpi_vna;
+
+    // 1. SCPI 指令解析
+    let cmd = b"MEAS:VOLT:DC?\r\n";
+    let parsed = instrument_scpi_vna::scpi_parse_command(cmd);
+    assert!(parsed.is_some());
+    // @safety-proof: parsed 已驗證 is_some()
+    let (name, is_query) = parsed.unwrap();
+    assert_eq!(name, b"MEAS:VOLT:DC");
+    assert!(is_query);
+
+    // 2. SCPI 數值解析 (科學記號)
+    let val_opt = instrument_scpi_vna::scpi_parse_numeric_value(b"-12.5E-3");
+    assert!(val_opt.is_some());
+    // @safety-proof: val_opt 已驗證 is_some()
+    assert!((val_opt.unwrap() - (-0.0125)).abs() < 1e-6);
+
+    // 3. 六位半電表讀值統計
+    let readings = [10.00001, 10.00002, 10.00003, 10.00004];
+    let stats_opt = instrument_scpi_vna::dmm_reading_stats(&readings);
+    assert!(stats_opt.is_some());
+    // @safety-proof: stats_opt 已驗證 is_some()
+    let (min, max, mean, std) = stats_opt.unwrap();
+    assert!((min - 10.00001).abs() < 1e-7);
+    assert!((max - 10.00004).abs() < 1e-7);
+    assert!((mean - 10.000025).abs() < 1e-7);
+    assert!(std > 0.0);
+
+    // 4. VNA S11 與 Smith 圓圖阻抗解算 (50 歐姆匹配點 Gamma=(0, 0) -> Z=(50, 0))
+    let (gr, gi) = instrument_scpi_vna::vna_s11_to_complex(-100.0, 0.0);
+    assert!(gr.abs() < 1e-4 && gi.abs() < 1e-4);
+    let z_opt = instrument_scpi_vna::vna_reflection_to_impedance(0.0, 0.0, 50.0);
+    assert!(z_opt.is_some());
+    // @safety-proof: z_opt 已驗證 is_some()
+    let (r, x) = z_opt.unwrap();
+    assert!((r - 50.0).abs() < 1e-4 && x.abs() < 1e-4);
+
+    // 5. VSWR 與 Return Loss
+    let vswr_opt = instrument_scpi_vna::vna_calc_vswr_and_return_loss(0.1);
+    assert!(vswr_opt.is_some());
+    // @safety-proof: vswr_opt 已驗證 is_some()
+    let (vswr, rl) = vswr_opt.unwrap();
+    assert!((vswr - 1.2222).abs() < 0.01);
+    assert!((rl - 20.0).abs() < 0.1);
+
+    // 6. 示波器過零頻率解算 (1kHz 方波取樣率 100kHz)
+    let mut wave = Vec::new();
+    for i in 0..400 {
+        let v = if (i / 50) % 2 == 0 { 2.0f32 } else { -2.0f32 };
+        wave.push(v);
+    }
+    let freq_opt = instrument_scpi_vna::oscilloscope_calc_frequency_hz(&wave, 100_000.0, 0.0, 0.5);
+    assert!(freq_opt.is_some());
+    // @safety-proof: freq_opt 已驗證 is_some()
+    assert!((freq_opt.unwrap() - 1000.0).abs() < 1.0);
+}
+
+#[test]
+fn test_pcb_cad_fem_bricks() {
+    use rust_bricks::pcb_cad_fem;
+
+    // 1. Hammerstad 微帶線阻抗 (標準 50 歐姆 FR4 走線)
+    let imp_opt = pcb_cad_fem::microstrip_impedance_hammerstad(3.0, 1.6, 4.4);
+    assert!(imp_opt.is_some());
+    // @safety-proof: imp_opt 已驗證 is_some()
+    let (z0, eps) = imp_opt.unwrap();
+    assert!(z0 > 45.0 && z0 < 55.0);
+    assert!(eps > 3.0 && eps < 4.0);
+
+    // 2. OpenEMS FDTD CFL 最大時間步長 (1mm 立方網格)
+    let dt_opt = pcb_cad_fem::openems_fdtd_cfl_max_timestep_sec(0.001, 0.001, 0.001);
+    assert!(dt_opt.is_some());
+    // @safety-proof: dt_opt 已驗證 is_some()
+    let dt = dt_opt.unwrap();
+    assert!(dt > 1.9e-12 && dt < 2.0e-12); // ~1.92 ps
+
+    // 3. Gerber 座標轉微米 (2.4 英吋格式，100000 = 10.0000 inch = 254,000 微米)
+    let um_opt = pcb_cad_fem::gerber_coord_to_microns(b"100000", 4);
+    assert_eq!(um_opt, Some(254_000));
+
+    // 4. PCB 45 度倒角補償比例
+    let frac = pcb_cad_fem::pcb_rf_mitered_bend_fraction(1.0, 1.0);
+    assert!(frac.is_some());
+    // @safety-proof: frac 已驗證 is_some()
+    assert!(frac.unwrap() > 0.5 && frac.unwrap() < 0.9);
+
+    // 5. 2D 多邊形鞋帶公式面積 (4x4 矩形)
+    let poly = [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)];
+    let area_opt = pcb_cad_fem::polygon_shoelace_area_2d(&poly);
+    assert_eq!(area_opt, Some(16.0));
+}
+
+#[test]
+fn test_motion_render_timeline_bricks() {
+    use rust_bricks::motion_render_timeline;
+
+    // 1. Remotion 影格與毫秒互轉 (30 fps)
+    let ms = motion_render_timeline::remotion_frame_to_ms(45, 30, 1);
+    assert_eq!(ms, 1500);
+    let frame = motion_render_timeline::remotion_ms_to_frame(1500, 30, 1);
+    assert_eq!(frame, 45);
+
+    // 2. SMPTE 時間碼 (第 1845 幀，30fps -> 00:01:01:15)
+    let mut tc = [0u8; 11];
+    assert!(motion_render_timeline::smpte_timecode_format(1845, 30, &mut tc));
+    assert_eq!(&tc, b"00:01:01:15");
+
+    // 3. CSS Cubic-Bezier 曲線求值 (ease-in-out: 0.42, 0.0, 0.58, 1.0)
+    let val_start = motion_render_timeline::css_cubic_bezier_solve(0.42, 0.0, 0.58, 1.0, 0.0);
+    let val_end = motion_render_timeline::css_cubic_bezier_solve(0.42, 0.0, 0.58, 1.0, 1.0);
+    let val_mid = motion_render_timeline::css_cubic_bezier_solve(0.42, 0.0, 0.58, 1.0, 0.5);
+    assert_eq!(val_start, 0.0);
+    assert_eq!(val_end, 1.0);
+    assert!((val_mid - 0.5).abs() < 0.05);
+
+    // 4. SVG 描邊動畫 dashoffset (長度 200，進度 75% -> 剩餘 50)
+    let dash = motion_render_timeline::svg_stroke_dashoffset(200.0, 0.75);
+    assert!((dash - 50.0).abs() < 1e-4);
+
+    // 5. FFMPEG 精確剪輯時間字串 (3,661,250 ms -> 01:01:01.250)
+    let mut seek_buf = [0u8; 12];
+    assert!(motion_render_timeline::ffmpeg_time_seek_str(3_661_250, &mut seek_buf));
+    assert_eq!(&seek_buf, b"01:01:01.250");
+}

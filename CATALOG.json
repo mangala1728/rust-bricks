@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 174,
+  "total_functions": 192,
   "modules": [
     {
       "module": "agent_terminal",
@@ -566,6 +566,48 @@
       ]
     },
     {
+      "module": "instrument_scpi_vna",
+      "file": "src/instrument_scpi_vna.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "scpi_parse_command<'a>",
+          "signature": "pub fn scpi_parse_command<'a>(cmd: &'a [u8]) -> Option<(&'a [u8], bool)>",
+          "outputs": 2
+        },
+        {
+          "name": "scpi_parse_numeric_value",
+          "signature": "pub fn scpi_parse_numeric_value(val_str: &[u8]) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "dmm_reading_stats",
+          "signature": "pub fn dmm_reading_stats(readings: &[f64]) -> Option<(f64, f64, f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "vna_s11_to_complex",
+          "signature": "pub fn vna_s11_to_complex(db_mag: f64, phase_deg: f64) -> (f64, f64)",
+          "outputs": 1
+        },
+        {
+          "name": "vna_reflection_to_impedance",
+          "signature": "pub fn vna_reflection_to_impedance(gamma_r: f64, gamma_i: f64, z0: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "vna_calc_vswr_and_return_loss",
+          "signature": "pub fn vna_calc_vswr_and_return_loss(gamma_mag: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "oscilloscope_calc_frequency_hz",
+          "signature": "pub fn oscilloscope_calc_frequency_hz(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "iso7816_smartcard",
       "file": "src/iso7816_smartcard.rs",
       "functions_count": 6,
@@ -652,6 +694,43 @@
         {
           "name": "haptic_vibration_timing",
           "signature": "pub fn haptic_vibration_timing(pattern_id: u8, elapsed_ms: u32) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "motion_render_timeline",
+      "file": "src/motion_render_timeline.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "remotion_frame_to_ms",
+          "signature": "pub fn remotion_frame_to_ms(frame: u64, fps_num: u32, fps_den: u32) -> u64",
+          "outputs": 1
+        },
+        {
+          "name": "remotion_ms_to_frame",
+          "signature": "pub fn remotion_ms_to_frame(ms: u64, fps_num: u32, fps_den: u32) -> u64",
+          "outputs": 1
+        },
+        {
+          "name": "smpte_timecode_format",
+          "signature": "pub fn smpte_timecode_format(frame: u64, fps_int: u32, out_buf: &mut [u8; 11]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "css_cubic_bezier_solve",
+          "signature": "pub fn css_cubic_bezier_solve(x1: f64, y1: f64, x2: f64, y2: f64, x: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "svg_stroke_dashoffset",
+          "signature": "pub fn svg_stroke_dashoffset(total_length: f32, progress: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "ffmpeg_time_seek_str",
+          "signature": "pub fn ffmpeg_time_seek_str(total_ms: u64, out_buf: &mut [u8; 12]) -> bool",
           "outputs": 2
         }
       ]
@@ -793,6 +872,38 @@
           "name": "adler32_pcm16_le",
           "signature": "pub fn adler32_pcm16_le(samples: &[i16]) -> u32",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "pcb_cad_fem",
+      "file": "src/pcb_cad_fem.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "microstrip_impedance_hammerstad",
+          "signature": "pub fn microstrip_impedance_hammerstad(width_mm: f64, height_mm: f64, er: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "openems_fdtd_cfl_max_timestep_sec",
+          "signature": "pub fn openems_fdtd_cfl_max_timestep_sec(dx_m: f64, dy_m: f64, dz_m: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "gerber_coord_to_microns",
+          "signature": "pub fn gerber_coord_to_microns(coord_str: &[u8], frac_digits: usize) -> Option<i64>",
+          "outputs": 2
+        },
+        {
+          "name": "pcb_rf_mitered_bend_fraction",
+          "signature": "pub fn pcb_rf_mitered_bend_fraction(width_mm: f64, height_mm: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "polygon_shoelace_area_2d",
+          "signature": "pub fn polygon_shoelace_area_2d(vertices: &[(f64, f64)]) -> Option<f64>",
+          "outputs": 2
         }
       ]
     },

@@ -7,10 +7,10 @@
 use crate::{
     agent_terminal, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
-    fast_math, fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, net_tsn_macsec, physics_raycast_3d, sensor_baro_als,
-    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
-    thermal_palette, thermal_pid,
+    fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna, iso7816_smartcard, math_time,
+    motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_tsn_macsec,
+    pcb_cad_fem, physics_raycast_3d, sensor_baro_als, sensor_hardware, sensor_motion,
+    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -241,6 +241,60 @@ fn audit_ai_tensor_train() -> bool {
     ok
 }
 
+/// @outputs: 1
+fn audit_instrument_scpi_vna() -> bool {
+    let mut ok = true;
+    ok &= instrument_scpi_vna::scpi_parse_command(b"").is_none();
+    ok &= instrument_scpi_vna::scpi_parse_numeric_value(b"").is_none();
+    ok &= instrument_scpi_vna::scpi_parse_numeric_value(b"12.34.56").is_none();
+    ok &= instrument_scpi_vna::dmm_reading_stats(&[]).is_none();
+    ok &= instrument_scpi_vna::dmm_reading_stats(&[1.0]).is_none();
+    ok &= instrument_scpi_vna::dmm_reading_stats(&[1.0, f64::NAN]).is_none();
+    let (gr, gi) = instrument_scpi_vna::vna_s11_to_complex(f64::NAN, 0.0);
+    ok &= gr == 0.0 && gi == 0.0;
+    ok &= instrument_scpi_vna::vna_reflection_to_impedance(1.0, 0.0, 50.0).is_none();
+    ok &= instrument_scpi_vna::vna_calc_vswr_and_return_loss(-1.0).is_none();
+    ok &= instrument_scpi_vna::vna_calc_vswr_and_return_loss(1.5).is_none();
+    ok &= instrument_scpi_vna::oscilloscope_calc_frequency_hz(&[1.0, 2.0], 1000.0, 0.0, 0.1).is_none();
+    ok
+}
+
+/// @outputs: 1
+fn audit_pcb_cad_fem() -> bool {
+    let mut ok = true;
+    ok &= pcb_cad_fem::microstrip_impedance_hammerstad(-1.0, 1.6, 4.4).is_none();
+    ok &= pcb_cad_fem::microstrip_impedance_hammerstad(1.0, 0.0, 4.4).is_none();
+    ok &= pcb_cad_fem::microstrip_impedance_hammerstad(1.0, 1.6, 0.5).is_none();
+    ok &= pcb_cad_fem::openems_fdtd_cfl_max_timestep_sec(0.0, 1e-3, 1e-3).is_none();
+    ok &= pcb_cad_fem::gerber_coord_to_microns(b"", 4).is_none();
+    ok &= pcb_cad_fem::gerber_coord_to_microns(b"X123", 4).is_none();
+    ok &= pcb_cad_fem::pcb_rf_mitered_bend_fraction(-1.0, 1.0).is_none();
+    ok &= pcb_cad_fem::polygon_shoelace_area_2d(&[(0.0, 0.0), (1.0, 1.0)]).is_none();
+    ok
+}
+
+/// @outputs: 1
+fn audit_motion_render_timeline() -> bool {
+    let mut ok = true;
+    ok &= motion_render_timeline::remotion_frame_to_ms(100, 0, 1) == 0;
+    ok &= motion_render_timeline::remotion_ms_to_frame(1000, 30, 0) == 0;
+    let mut tc = [0u8; 11];
+    ok &= !motion_render_timeline::smpte_timecode_format(100, 0, &mut tc);
+    ok &= motion_render_timeline::css_cubic_bezier_solve(0.25, 0.1, 0.25, 1.0, f64::NAN) == 0.0;
+    ok &= motion_render_timeline::svg_stroke_dashoffset(-100.0, 0.5) == 0.0;
+    ok
+}
+
+/// @outputs: 1
+fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
+    *total += 1;
+    if ok {
+        *passed += 1;
+    } else {
+        failures.push(fail_msg.to_string());
+    }
+}
+
 /// @outputs: 2
 /// @domain: dummy_level [0..10]
 pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
@@ -251,44 +305,22 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     let mut total = 0usize;
     let mut passed = 0usize;
 
-    total += 1;
-    if audit_math_and_geometry() { passed += 1; } else { failures.push("【數值幾何黑箱抽查失敗】存在未防護之邊界發散".to_string()); }
-
-    total += 1;
-    if audit_audio_and_sensors() { passed += 1; } else { failures.push("【音訊感測器黑箱抽查失敗】存在畸形輸入崩潰".to_string()); }
-
-    total += 1;
-    if audit_thermal_and_dsp() { passed += 1; } else { failures.push("【熱成像DSP黑箱抽查失敗】存在溢位或倒置崩潰".to_string()); }
-
-    total += 1;
-    if audit_security_and_firmware() { passed += 1; } else { failures.push("【金融韌體黑箱抽查失敗】存在安全性或長度溢出".to_string()); }
-
-    total += 1;
-    if audit_ble_and_crypto() { passed += 1; } else { failures.push("【藍芽密碼黑箱抽查失敗】存在Padding或截斷漏洞".to_string()); }
-
-    total += 1;
-    if audit_motor_env_and_dukpt() { passed += 1; } else { failures.push("【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰".to_string()); }
-
-    total += 1;
-    if audit_comm_and_clock() { passed += 1; } else { failures.push("【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰".to_string()); }
-
-    total += 1;
-    if audit_ethernet_and_apdu() { passed += 1; } else { failures.push("【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞".to_string()); }
-
-    total += 1;
-    if audit_power_and_baro() { passed += 1; } else { failures.push("【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰".to_string()); }
-
-    total += 1;
-    if audit_lin_and_raycast_3d() { passed += 1; } else { failures.push("【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰".to_string()); }
-
-    total += 1;
-    if audit_tsn_and_macsec() { passed += 1; } else { failures.push("【TSN與MACsec黑箱抽查失敗】存在時間倒流或重放漏洞".to_string()); }
-
-    total += 1;
-    if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }
-
-    total += 1;
-    if audit_ai_tensor_train() { passed += 1; } else { failures.push("【AI訓練張量算子抽查失敗】存在溢出除零或NaN穿透".to_string()); }
+    check_audit_domain(audit_math_and_geometry(), "【數值幾何黑箱抽查失敗】存在未防護之邊界發散", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_audio_and_sensors(), "【音訊感測器黑箱抽查失敗】存在畸形輸入崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_thermal_and_dsp(), "【熱成像DSP黑箱抽查失敗】存在溢位或倒置崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_security_and_firmware(), "【金融韌體黑箱抽查失敗】存在安全性或長度溢出", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_ble_and_crypto(), "【藍芽密碼黑箱抽查失敗】存在Padding或截斷漏洞", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_motor_env_and_dukpt(), "【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_comm_and_clock(), "【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_ethernet_and_apdu(), "【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_power_and_baro(), "【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_lin_and_raycast_3d(), "【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_tsn_and_macsec(), "【TSN與MACsec黑箱抽查失敗】存在時間倒流或重放漏洞", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_agent_and_system(), "【代理馬具終端抽查失敗】存在路徑穿越或退格下溢", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_ai_tensor_train(), "【AI訓練張量算子抽查失敗】存在溢出除零或NaN穿透", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_instrument_scpi_vna(), "【儀器控制SCPI與VNA抽查失敗】存在除零或阻抗奇異點", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_pcb_cad_fem(), "【PCB與電磁FDTD抽查失敗】存在CFL除零或無效介電常數", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_motion_render_timeline(), "【影音動態Remotion時序抽查失敗】存在FPS除零或牛頓法發散", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);
