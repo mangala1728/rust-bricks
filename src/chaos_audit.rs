@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -918,6 +918,21 @@ fn audit_ai_rl_policy_gradient() -> bool {
 }
 
 /// @outputs: 1
+fn audit_rpa_desktop_macro_driver() -> bool {
+    let mut ok = true;
+    ok &= rpa_desktop_macro_driver::rpa_win32_vk_code_map("").is_none();
+    ok &= rpa_desktop_macro_driver::rpa_x11_keysym_map("INVALID_KEY").is_none();
+    let (nx, ny) = rpa_desktop_macro_driver::rpa_screen_coords_to_sendinput_normalized(-10, 0, 1920, 1080);
+    ok &= nx == 0 && ny == 0;
+    ok &= rpa_desktop_macro_driver::rpa_mouse_event_flags_encode(99, true) == 0;
+    ok &= rpa_desktop_macro_driver::rpa_keyboard_modifiers_mask(false, false, false, false) == 0;
+    ok &= rpa_desktop_macro_driver::rpa_ocr_text_levenshtein_distance("", "") == 0;
+    ok &= rpa_desktop_macro_driver::rpa_screen_find_first_color(&[], 0, 0, [0, 0, 0], 5).is_none();
+    ok &= rpa_desktop_macro_driver::rpa_key_delay_jitter_ms(0, 10, 5) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -990,6 +1005,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_numerical_optimization_gradient(), "【數值最佳化與梯度求解抽查失敗】存在奇異發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_fieldbus_motion_cia402(), "【工業驅動器CiA402運動協議抽查失敗】存在狀態機或換算崩潰", total, passed, failures);
     check_audit_domain(audit_ai_rl_policy_gradient(), "【強化學習與策略梯度抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
+    check_audit_domain(audit_rpa_desktop_macro_driver(), "【桌面RPA與虛擬輸入抽查失敗】存在坐標越界或鍵碼崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

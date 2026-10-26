@@ -3732,6 +3732,60 @@ fn test_ai_rl_policy_gradient_bricks() {
     assert_eq!(huber_large, 2.5);
 }
 
+#[test]
+fn test_rpa_desktop_macro_driver_bricks() {
+    use rust_bricks::rpa_desktop_macro_driver::*;
+
+    // 1. Win32 虛擬鍵碼映射
+    assert_eq!(rpa_win32_vk_code_map("ENTER"), Some(0x0D));
+    assert_eq!(rpa_win32_vk_code_map("ESC"), Some(0x1B));
+    assert_eq!(rpa_win32_vk_code_map("A"), Some(0x41));
+    assert_eq!(rpa_win32_vk_code_map("UNKNOWN"), None);
+
+    // 2. Linux X11 Keysym 映射
+    assert_eq!(rpa_x11_keysym_map("RETURN"), Some(0xFF0D));
+    assert_eq!(rpa_x11_keysym_map("SPACE"), Some(0x0020));
+
+    // 3. 擬人二次貝茲曲線軌跡步進 (p0=(0,0), p1=(50,100), p2=(100,100), t=0.5)
+    let (bx, by) = rpa_mouse_bezier_human_step((0.0, 0.0), (50.0, 100.0), (100.0, 100.0), 0.5);
+    assert_eq!(bx, 50);
+    assert_eq!(by, 75);
+
+    // 4. SendInput 絕對坐標歸一化 (1920x1080 螢幕)
+    let (nx, ny) = rpa_screen_coords_to_sendinput_normalized(1919, 1079, 1920, 1080);
+    assert_eq!(nx, 65535);
+    assert_eq!(ny, 65535);
+    let (nx0, ny0) = rpa_screen_coords_to_sendinput_normalized(0, 0, 1920, 1080);
+    assert_eq!(nx0, 0);
+    assert_eq!(ny0, 0);
+
+    // 5. 滑鼠動作標誌封裝
+    assert_eq!(rpa_mouse_event_flags_encode(0, true), 0x0002);
+    assert_eq!(rpa_mouse_event_flags_encode(0, false), 0x0004);
+    assert_eq!(rpa_mouse_event_flags_encode(1, true), 0x0008);
+
+    // 6. 鍵盤修飾符掩碼
+    let mask = rpa_keyboard_modifiers_mask(true, true, false, false);
+    assert_eq!(mask, 0x03);
+
+    // 7. OCR 文字 Levenshtein 編輯距離
+    let dist = rpa_ocr_text_levenshtein_distance("kitten", "sitting");
+    assert_eq!(dist, 3);
+    assert_eq!(rpa_ocr_text_levenshtein_distance("OK", "OK"), 0);
+
+    // 8. 螢幕像素流首個目標顏色搜尋 (2x2 影像)
+    let pixels = [
+        255, 0, 0,    0, 255, 0,
+        0, 0, 255,    100, 100, 100
+    ];
+    let blue_pt = rpa_screen_find_first_color(&pixels, 2, 2, [0, 0, 255], 10);
+    assert_eq!(blue_pt, Some((0, 1)));
+
+    // 9. 按鍵延遲抖動 (base=100ms, jitter=20% -> 範圍 80..120ms)
+    let jittered = rpa_key_delay_jitter_ms(100, 20, 10);
+    assert!(jittered >= 80 && jittered <= 120);
+}
+
 
 
 

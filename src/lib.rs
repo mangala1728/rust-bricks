@@ -77,6 +77,7 @@ pub mod ring_buffer;
 pub mod robotics_6dof_slerp;
 pub mod robotics_dynamics_jacobian;
 pub mod robotics_motion_profile;
+pub mod rpa_desktop_macro_driver;
 pub mod rpa_mobile_touch_macro;
 pub mod rpa_screen_control;
 pub mod sensor_baro_als;

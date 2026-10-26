@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 585
+total_functions: 594
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2808,6 +2808,48 @@ modules:
         outputs: 1
         domains:
           lead_mm: "[0.001..1000.0]"
+  - module: "rpa_desktop_macro_driver"
+    file: "src/rpa_desktop_macro_driver.rs"
+    functions_count: 9
+    architecture_map:
+    functions:
+      - name: "rpa_win32_vk_code_map"
+        signature: "pub fn rpa_win32_vk_code_map(key_name: &str) -> Option<u16>"
+        outputs: 1
+      - name: "rpa_x11_keysym_map"
+        signature: "pub fn rpa_x11_keysym_map(key_name: &str) -> Option<u32>"
+        outputs: 1
+      - name: "rpa_mouse_bezier_human_step"
+        signature: "pub fn rpa_mouse_bezier_human_step("
+        outputs: 1
+        domains:
+          t: "[0.0, 1.0]"
+      - name: "rpa_screen_coords_to_sendinput_normalized"
+        signature: "pub fn rpa_screen_coords_to_sendinput_normalized("
+        outputs: 1
+        domains:
+          x: "[0, 100000], y [0, 100000], screen_width [1, 100000], screen_height [1, 100000]"
+      - name: "rpa_mouse_event_flags_encode"
+        signature: "pub fn rpa_mouse_event_flags_encode(button: u8, is_down: bool) -> u32"
+        outputs: 1
+        domains:
+          button: "[0, 2]"
+      - name: "rpa_keyboard_modifiers_mask"
+        signature: "pub fn rpa_keyboard_modifiers_mask(shift: bool, ctrl: bool, alt: bool, win: bool) -> u8"
+        outputs: 1
+      - name: "rpa_ocr_text_levenshtein_distance"
+        signature: "pub fn rpa_ocr_text_levenshtein_distance(s1: &str, s2: &str) -> usize"
+        outputs: 1
+      - name: "rpa_screen_find_first_color"
+        signature: "pub fn rpa_screen_find_first_color("
+        outputs: 1
+        domains:
+          tolerance: "[0, 255]"
+      - name: "rpa_key_delay_jitter_ms"
+        signature: "pub fn rpa_key_delay_jitter_ms(base_ms: u64, jitter_percent: u8, random_factor: u32) -> u64"
+        outputs: 1
+        domains:
+          base_ms: "[1, 1000000], jitter_percent [0, 50]"
   - module: "rpa_mobile_touch_macro"
     file: "src/rpa_mobile_touch_macro.rs"
     functions_count: 10

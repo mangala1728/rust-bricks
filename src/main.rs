@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
@@ -652,6 +652,17 @@ fn verify_ai_rl_policy_gradient() -> bool {
 }
 
 /// @outputs: 1
+fn verify_rpa_desktop_macro_driver() -> bool {
+    let vk = rpa_desktop_macro_driver::rpa_win32_vk_code_map("ENTER");
+    let ok_vk = vk == Some(0x0D);
+    let (nx, ny) = rpa_desktop_macro_driver::rpa_screen_coords_to_sendinput_normalized(1919, 1079, 1920, 1080);
+    let ok_norm = nx == 65535 && ny == 65535;
+    let dist = rpa_desktop_macro_driver::rpa_ocr_text_levenshtein_distance("kitten", "sitting");
+    let ok_dist = dist == 3;
+    ok_vk && ok_norm && ok_dist
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -709,6 +720,7 @@ fn verify_all_subsystems() -> bool {
         && verify_numerical_optimization_gradient()
         && verify_fieldbus_motion_cia402()
         && verify_ai_rl_policy_gradient()
+        && verify_rpa_desktop_macro_driver()
 }
 
 /// @outputs: 1
