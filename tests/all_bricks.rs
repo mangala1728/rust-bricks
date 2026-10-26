@@ -1785,3 +1785,57 @@ fn test_ai_autograd_train_bricks() {
     let lse = ai_autograd_train::log_sum_exp_f32(&[1000.0, 1000.0]).unwrap();
     assert!((lse - (1000.0 + std::f32::consts::LN_2)).abs() < 1e-3);
 }
+
+#[test]
+fn test_comm_phy_bus_bricks() {
+    use rust_bricks::comm_phy_bus;
+
+    // 1. MIPI CSI-2 短封包封裝與 6-bit ECC 校驗
+    let pkt = comm_phy_bus::mipi_csi2_short_packet_header(0x00, 0, 0x0000); // Frame Start
+    assert_eq!(pkt[0], 0x00);
+    assert_eq!(pkt[1], 0x00);
+    assert_eq!(pkt[2], 0x00);
+    assert_eq!(pkt[3], 0x00); // 全零 ECC 應為 0
+
+    let pkt_data = comm_phy_bus::mipi_csi2_short_packet_header(0x12, 1, 0x0400);
+    assert_eq!(pkt_data[0], (1 << 6) | 0x12);
+    assert_eq!(pkt_data[1], 0x00);
+    assert_eq!(pkt_data[2], 0x04);
+
+    // 2. MIPI CSI-2 長封包 CRC16
+    let crc = comm_phy_bus::mipi_csi2_packet_crc16(b"123456789");
+    assert_ne!(crc, 0);
+
+    // 3. MIPI D-PHY 低功耗狀態解碼
+    assert_eq!(comm_phy_bus::mipi_dphy_lp_state_decode(false, false), 0);
+    assert_eq!(comm_phy_bus::mipi_dphy_lp_state_decode(false, true), 1);
+    assert_eq!(comm_phy_bus::mipi_dphy_lp_state_decode(true, false), 2);
+    assert_eq!(comm_phy_bus::mipi_dphy_lp_state_decode(true, true), 3);
+
+    // 4. DSPI 與 QPI 模式訊框
+    let dspi = comm_phy_bus::dspi_dual_read_command_frame(0xBB, 0x010203, 4);
+    assert_eq!(dspi, [0xBB, 0x01, 0x02, 0x03, 4]);
+    assert_eq!(comm_phy_bus::qpi_quad_enable_frame(), [0x38, 0x01]);
+
+    // 5. RGMII 延遲抽頭解算與速率控制位元
+    assert_eq!(comm_phy_bus::rgmii_tx_delay_skew_taps(1500, 50), Some(30));
+    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(1000, true), Some(0b1110));
+    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(100, false), Some(0b1001));
+
+    // 6. SGMII 自協商廣告字
+    let sgmii = comm_phy_bus::sgmii_auto_negotiation_advertisement(true, true, 2);
+    assert_eq!(sgmii & 0x8001, 0x8001); // Link Up (bit 15) + Bit 0
+
+    // 7. 跨 CPU 架構 8-bit 與 32-bit FIFO 記憶體打包與解包
+    let raw_bytes = [0x11, 0x22, 0x33, 0x44, 0xAA, 0xBB, 0xCC, 0xDD];
+    let mut words_be = [0u32; 2];
+    let words_n = comm_phy_bus::bus_pack_8bit_to_32bit_words(&raw_bytes, &mut words_be, true);
+    assert_eq!(words_n, 2);
+    assert_eq!(words_be[0], 0x11223344);
+    assert_eq!(words_be[1], 0xAABBCCDD);
+
+    let mut unpacked_bytes = [0u8; 8];
+    let bytes_n = comm_phy_bus::bus_unpack_32bit_to_8bit_bytes(&words_be, &mut unpacked_bytes, true);
+    assert_eq!(bytes_n, 8);
+    assert_eq!(unpacked_bytes, raw_bytes);
+}

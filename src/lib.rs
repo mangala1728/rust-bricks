@@ -20,6 +20,7 @@ pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;
 pub mod comm_controller;
+pub mod comm_phy_bus;
 pub mod crypto_dukpt;
 pub mod crypto_kdf;
 pub mod crypto_vault;

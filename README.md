@@ -60,6 +60,7 @@
 | [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
 | [`can_lin_bus`](src/can_lin_bus.rs) | 車載 LIN 2.x PID 同位計算、Classic/Enhanced 增強校驗和、I2S 32-bit 數位音訊立體聲解包 | 車身車門/後視鏡/車窗 LIN 控制器、I2S 數位麥克風與音訊編解碼晶片 |
 | [`comm_controller`](src/comm_controller.rs) | I2C 7-bit 讀寫訊框、SPI Mode 0..3 映射、5 線 SPI D/C 螢幕命令訊框、QSPI 0xEB 快速讀取、UART 波特率定點除數、DMA 跨架構記憶體對齊 | OLED/TFT 螢幕驅動、QSPI Flash 晶片、串口通信、8/16/32/64-bit CPU DMA 對齊 |
+| [`comm_phy_bus`](src/comm_phy_bus.rs) | MIPI CSI-2 短封包 (含 6-bit ECC)、長封包 CRC16、MIPI D-PHY LP 低功耗狀態解碼、DSPI 雙通道讀取、QPI 四線啟用、RGMII 延遲抽頭 (Skew Taps) 與速率控制字、SGMII 1.25Gbps 自協商廣告字、跨架構 8/32-bit FIFO 打包解包 | 相機影像感測器 (CSI-2)、千兆以太網 PHY 介面 (RGMII/SGMII)、雙/四線 SPI Flash、跨 CPU 字長記憶體對齊 |
 | [`clock_pll_rtc`](src/clock_pll_rtc.rs) | 晶振 PLL 鎖相迴路 (M, N, P) 最優倍頻分頻求解、RTC 32.768kHz 晶振拋物線溫漂補償、NTP 雙向網路時鐘對齊與延遲計算 | MCU 系統時鐘樹初始化、高精度 RTC 溫漂校準、物聯網網際網路系統時鐘同步 |
 | [`physics_raycast_3d`](src/physics_raycast_3d.rs) | Möller–Trumbore 3D 射線-三角形高速相交、向量鏡面反射、點面有號距離 | 3D VR/AR 頭顯空間選取、雷射筆射線拾取、遊戲光照彈射物理模擬 |
 | [`radar_cfar_doppler`](src/radar_cfar_doppler.rs) | 1D CA-CFAR 恒虛警率目標檢測、都卜勒速度解算、微都卜勒呼吸胸腔微動位移、點雲距離分群、MIMO 虛擬孔徑合成 | 毫米波雷達 (77GHz/60GHz)、智慧醫療呼吸心跳非接觸監測、ADAS 自駕車避障、點雲聚類 |

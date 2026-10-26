@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d,
@@ -385,6 +385,24 @@ fn audit_ai_autograd_train() -> bool {
 }
 
 /// @outputs: 1
+fn audit_comm_phy_bus() -> bool {
+    let mut ok = true;
+    let hdr = comm_phy_bus::mipi_csi2_short_packet_header(0x12, 0, 0x1234);
+    ok &= hdr[0] == 0x12;
+    ok &= comm_phy_bus::mipi_csi2_packet_crc16(&[]) == 0xFFFF;
+    ok &= comm_phy_bus::mipi_dphy_lp_state_decode(true, true) == 3;
+    ok &= comm_phy_bus::rgmii_tx_delay_skew_taps(20000, 100).is_none();
+    ok &= comm_phy_bus::rgmii_tx_delay_skew_taps(1500, 0).is_none();
+    ok &= comm_phy_bus::rgmii_speed_duplex_control_byte(999, true).is_none();
+    ok &= comm_phy_bus::sgmii_auto_negotiation_advertisement(true, true, 2) & 1 == 1;
+    let mut words = [0u32; 2];
+    ok &= comm_phy_bus::bus_pack_8bit_to_32bit_words(&[1, 2], &mut words, true) == 0;
+    let mut bytes = [0u8; 8];
+    ok &= comm_phy_bus::bus_unpack_32bit_to_8bit_bytes(&[], &mut bytes, true) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -427,6 +445,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_decision_mcts(), "【MCTS蒙地卡羅決策抽查失敗】存在無效路徑或零拜訪崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_curve_fit_trend(), "【曲線擬合與趨勢分析抽查失敗】存在除零或核半徑崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_ai_autograd_train(), "【自動求導與神經訓練抽查失敗】存在除零溢出或NaN穿透", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_comm_phy_bus(), "【實體層總線MIPI與RGMII抽查失敗】存在除零溢出或無效速率", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

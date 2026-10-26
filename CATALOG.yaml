@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 246
+total_functions: 256
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -446,6 +446,57 @@ modules:
         outputs: 1
         domains:
           align_bytes: "[1..64]"
+  - module: "comm_phy_bus"
+    file: "src/comm_phy_bus.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: hw/comm_phy_bus — 高速串列通信實體層 (MIPI D-PHY/CSI-2, RGMII, SGMII, DSPI, QPI) 與跨架構 FIFO 對齊微積木。"
+      - "Inputs: 虛擬通道、資料型別、長度與位址、時延皮秒 (ps)、鏈路速率、8/32-bit 暫存器緩衝區。"
+      - "Outputs: MIPI 短封包 (含 6-bit ECC)、長封包 CRC16、RGMII/SGMII 控制字、跨字長對齊字組數。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、無溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "mipi_csi2_short_packet_header"
+        signature: "pub fn mipi_csi2_short_packet_header(data_type: u8, virtual_channel: u8, data_field: u16) -> [u8; 4]"
+        outputs: 1
+        domains:
+          virtual_channel: "[0..3]"
+          data_type: "[0..63]"
+      - name: "mipi_csi2_packet_crc16"
+        signature: "pub fn mipi_csi2_packet_crc16(payload: &[u8]) -> u16"
+        outputs: 1
+      - name: "mipi_dphy_lp_state_decode"
+        signature: "pub fn mipi_dphy_lp_state_decode(dp: bool, dn: bool) -> u8"
+        outputs: 1
+      - name: "dspi_dual_read_command_frame"
+        signature: "pub fn dspi_dual_read_command_frame(cmd: u8, addr_24bit: u32, dummy_clocks: u8) -> [u8; 5]"
+        outputs: 1
+        domains:
+          addr_24bit: "[0..16777215]"
+      - name: "qpi_quad_enable_frame"
+        signature: "pub fn qpi_quad_enable_frame() -> [u8; 2]"
+        outputs: 1
+      - name: "rgmii_tx_delay_skew_taps"
+        signature: "pub fn rgmii_tx_delay_skew_taps(delay_ps: u32, tap_resolution_ps: u32) -> Option<u8>"
+        outputs: 1
+        domains:
+          delay_ps: "[0..10000]"
+          tap_resolution_ps: "[1..1000]"
+      - name: "rgmii_speed_duplex_control_byte"
+        signature: "pub fn rgmii_speed_duplex_control_byte(speed_mbps: u16, duplex_full: bool) -> Option<u8>"
+        outputs: 1
+        domains:
+          speed_mbps: "[10..1000]"
+      - name: "sgmii_auto_negotiation_advertisement"
+        signature: "pub fn sgmii_auto_negotiation_advertisement(link_up: bool, duplex_full: bool, speed_code: u8) -> u16"
+        outputs: 1
+        domains:
+          speed_code: "[0..3]"
+      - name: "bus_pack_8bit_to_32bit_words"
+        signature: "pub fn bus_pack_8bit_to_32bit_words("
+        outputs: 1
+      - name: "bus_unpack_32bit_to_8bit_bytes"
+        signature: "pub fn bus_unpack_32bit_to_8bit_bytes("
+        outputs: 1
   - module: "crypto_dukpt"
     file: "src/crypto_dukpt.rs"
     functions_count: 4

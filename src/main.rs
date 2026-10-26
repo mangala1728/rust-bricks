@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
@@ -259,6 +259,17 @@ fn verify_ai_autograd_train() -> bool {
 }
 
 /// @outputs: 1
+fn verify_comm_phy_bus() -> bool {
+    let hdr = comm_phy_bus::mipi_csi2_short_packet_header(0x24, 1, 0x00FF);
+    let ok_mipi = hdr[0] == ((1 << 6) | 0x24);
+    let taps = comm_phy_bus::rgmii_tx_delay_skew_taps(1500, 50);
+    let ok_rgmii = taps == Some(30);
+    let sgmii = comm_phy_bus::sgmii_auto_negotiation_advertisement(true, true, 2);
+    let ok_sgmii = (sgmii & (1 << 15)) != 0 && (sgmii & 1) == 1;
+    ok_mipi && ok_rgmii && ok_sgmii
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -282,6 +293,7 @@ fn verify_all_subsystems() -> bool {
         && verify_decision_mcts()
         && verify_curve_fit_trend()
         && verify_ai_autograd_train()
+        && verify_comm_phy_bus()
 }
 
 /// @outputs: 1
