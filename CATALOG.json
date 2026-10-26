@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 387,
+  "total_functions": 397,
   "modules": [
     {
       "module": "agent_terminal",
@@ -929,6 +929,63 @@
           "name": "smoothstep_f32",
           "signature": "pub fn smoothstep_f32(edge0: f32, edge1: f32, x: f32) -> f32",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "fieldbus_industrial_eth",
+      "file": "src/fieldbus_industrial_eth.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "ethercat_frame_header_pack",
+          "signature": "pub fn ethercat_frame_header_pack(length: u16, out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "ethercat_datagram_header_pack",
+          "signature": "pub fn ethercat_datagram_header_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "ethercat_working_counter_verify",
+          "signature": "pub fn ethercat_working_counter_verify(actual_wkc: u16, expected_wkc: u16) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "ethercat_mailbox_coe_header_pack",
+          "signature": "pub fn ethercat_mailbox_coe_header_pack(service: u8, out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "profinet_rt_frame_id_classify",
+          "signature": "pub fn profinet_rt_frame_id_classify(frame_id: u16) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "profinet_io_cycle_counter_step",
+          "signature": "pub fn profinet_io_cycle_counter_step(last_counter: u16, current_counter: u16) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "powerlink_soc_packet_pack",
+          "signature": "pub fn powerlink_soc_packet_pack(rel_time_us: u32, out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "powerlink_preq_pres_parse",
+          "signature": "pub fn powerlink_preq_pres_parse(payload: &[u8]) -> Option<(u8, u8, u16)>",
+          "outputs": 1
+        },
+        {
+          "name": "modbus_tcp_mbap_header_pack",
+          "signature": "pub fn modbus_tcp_mbap_header_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "modbus_tcp_mbap_header_unpack",
+          "signature": "pub fn modbus_tcp_mbap_header_unpack(buf: &[u8]) -> Option<(u16, u8, u16)>",
+          "outputs": 1
         }
       ]
     },

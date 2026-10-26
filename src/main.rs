@@ -7,7 +7,7 @@
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -415,6 +415,17 @@ fn verify_spc_msa_advanced() -> bool {
 }
 
 /// @outputs: 1
+fn verify_fieldbus_industrial_eth() -> bool {
+    let mut ec_buf = [0u8; 4];
+    let ok_ec = fieldbus_industrial_eth::ethercat_frame_header_pack(100, &mut ec_buf) == 2
+        && (ec_buf[0] as u16 | ((ec_buf[1] as u16) << 8)) == (100 | (1 << 12));
+    let mut mbap_buf = [0u8; 8];
+    let ok_mbap = fieldbus_industrial_eth::modbus_tcp_mbap_header_pack(1, 2, 5, &mut mbap_buf) == 7
+        && fieldbus_industrial_eth::modbus_tcp_mbap_header_unpack(&mbap_buf) == Some((1, 2, 5));
+    ok_ec && ok_mbap
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -452,6 +463,7 @@ fn verify_all_subsystems() -> bool {
         && verify_audio_mfcc_pitch()
         && verify_instrument_lxi_hislip()
         && verify_spc_msa_advanced()
+        && verify_fieldbus_industrial_eth()
 }
 
 /// @outputs: 1

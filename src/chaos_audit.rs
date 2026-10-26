@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -631,6 +631,23 @@ fn audit_spc_msa_advanced() -> bool {
 }
 
 /// @outputs: 1
+fn audit_fieldbus_industrial_eth() -> bool {
+    let mut ok = true;
+    let mut buf = [0u8; 1];
+    ok &= fieldbus_industrial_eth::ethercat_frame_header_pack(2000, &mut buf) == 0; // 超界
+    ok &= fieldbus_industrial_eth::ethercat_datagram_header_pack(1, 0, 0, 2000, false, 0, &mut buf) == 0;
+    ok &= !fieldbus_industrial_eth::ethercat_working_counter_verify(0, 0); // WKC 必須 > 0
+    ok &= fieldbus_industrial_eth::ethercat_mailbox_coe_header_pack(20, &mut buf) == 0; // 服務號 > 15
+    ok &= fieldbus_industrial_eth::profinet_rt_frame_id_classify(0) == 0; // 無效 ID
+    ok &= fieldbus_industrial_eth::profinet_io_cycle_counter_step(0, 0) == 0;
+    ok &= fieldbus_industrial_eth::powerlink_soc_packet_pack(0, &mut buf) == 0;
+    ok &= fieldbus_industrial_eth::powerlink_preq_pres_parse(&[0x05, 0, 0]).is_none(); // 非 PReq/PRes
+    ok &= fieldbus_industrial_eth::modbus_tcp_mbap_header_pack(1, 1, 0, &mut buf) == 0; // 空間不足
+    ok &= fieldbus_industrial_eth::modbus_tcp_mbap_header_unpack(&[0; 5]).is_none(); // 長度不足 7
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -687,6 +704,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

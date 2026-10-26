@@ -2550,3 +2550,71 @@ fn test_spc_msa_advanced_bricks() {
     let pct_pv = spc_msa_advanced::spc_msa_part_to_part_variation(8.0, 10.0).unwrap();
     assert_eq!(pct_pv, 80.0);
 }
+
+#[test]
+fn test_fieldbus_industrial_eth_bricks() {
+    use rust_bricks::fieldbus_industrial_eth;
+
+    // 1. EtherCAT 訊框頭
+    let mut ec_buf = [0u8; 4];
+    assert_eq!(fieldbus_industrial_eth::ethercat_frame_header_pack(500, &mut ec_buf), 2);
+    let ec_hdr = (ec_buf[0] as u16) | ((ec_buf[1] as u16) << 8);
+    assert_eq!(ec_hdr & 0x07FF, 500); // 500
+    assert_eq!((ec_hdr >> 12) & 0x0F, 1); // Type 1
+
+    // 2. EtherCAT 10-byte 數據報頭
+    let mut dgram_buf = [0u8; 16];
+    let dgram_len = fieldbus_industrial_eth::ethercat_datagram_header_pack(
+        0x02, // APRD (Auto-Increment Read)
+        1,
+        0x00010000,
+        64,
+        false,
+        0x0000,
+        &mut dgram_buf,
+    );
+    assert_eq!(dgram_len, 10);
+    assert_eq!(dgram_buf[0], 0x02);
+    assert_eq!(dgram_buf[1], 1);
+
+    // 3. EtherCAT WKC 驗證
+    assert!(fieldbus_industrial_eth::ethercat_working_counter_verify(3, 3));
+    assert!(!fieldbus_industrial_eth::ethercat_working_counter_verify(2, 3));
+
+    // 4. EtherCAT CoE 頭 (Service=2 -> 0x2000)
+    let mut coe_buf = [0u8; 4];
+    assert_eq!(fieldbus_industrial_eth::ethercat_mailbox_coe_header_pack(2, &mut coe_buf), 2);
+    let coe_val = (coe_buf[0] as u16) | ((coe_buf[1] as u16) << 8);
+    assert_eq!(coe_val >> 12, 2);
+
+    // 5. PROFINET RT FrameID 分類
+    assert_eq!(fieldbus_industrial_eth::profinet_rt_frame_id_classify(0x0200), 3); // RTC3 Isochronous
+    assert_eq!(fieldbus_industrial_eth::profinet_rt_frame_id_classify(0x8050), 1); // RTC1
+    assert_eq!(fieldbus_industrial_eth::profinet_rt_frame_id_classify(0xC010), 2); // RTC2
+
+    // 6. PROFINET 週期計數器步進 (0xFFFF -> 0x0001 -> diff 2)
+    let cycle_diff = fieldbus_industrial_eth::profinet_io_cycle_counter_step(0xFFFF, 0x0001);
+    assert_eq!(cycle_diff, 2);
+
+    // 7. POWERLINK SoC 封包封裝
+    let mut soc_buf = [0u8; 16];
+    assert_eq!(fieldbus_industrial_eth::powerlink_soc_packet_pack(1000, &mut soc_buf), 8);
+    assert_eq!(soc_buf[0], 0x01); // Message Type SoC
+    assert_eq!(soc_buf[2], 0xF0); // MN Node ID
+
+    // 8. POWERLINK PReq / PRes 解析
+    let preq_data = [0x03, 0x01, 0xF0, 0x00, 0x12, 0x34];
+    let (dst, src, srv) = fieldbus_industrial_eth::powerlink_preq_pres_parse(&preq_data).unwrap();
+    assert_eq!(dst, 1);
+    assert_eq!(src, 0xF0);
+    assert_eq!(srv, 0x1234);
+
+    // 9. Modbus TCP MBAP 頭封裝與解碼
+    let mut mbap_buf = [0u8; 16];
+    let enc_sz = fieldbus_industrial_eth::modbus_tcp_mbap_header_pack(100, 1, 6, &mut mbap_buf);
+    assert_eq!(enc_sz, 7);
+    let (trans, unit, pdu) = fieldbus_industrial_eth::modbus_tcp_mbap_header_unpack(&mbap_buf[..enc_sz]).unwrap();
+    assert_eq!(trans, 100);
+    assert_eq!(unit, 1);
+    assert_eq!(pdu, 6);
+}
