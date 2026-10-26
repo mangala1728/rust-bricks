@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 337
+total_functions: 347
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1546,6 +1546,54 @@ modules:
         domains:
           fx_start: "[0.0001..1.0e6]"
           fx_end: "[0.0001..1.0e6]"
+  - module: "radar_aoa_mti"
+    file: "src/radar_aoa_mti.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "radar_mti_two_pulse_canceler_step"
+        signature: "pub fn radar_mti_two_pulse_canceler_step(curr_sample: f32, prev_sample: f32) -> f32"
+        outputs: 1
+      - name: "radar_mti_three_pulse_canceler_step"
+        signature: "pub fn radar_mti_three_pulse_canceler_step(curr_sample: f32, prev1_sample: f32, prev2_sample: f32) -> f32"
+        outputs: 1
+      - name: "radar_aoa_phase_monopulse"
+        signature: "pub fn radar_aoa_phase_monopulse(delta_phase_rad: f32, wavelength_m: f32, d_spacing_m: f32) -> Option<f32>"
+        outputs: 1
+        domains:
+          wavelength_m: "[0.0001, 10.0]"
+          d_spacing_m: "[0.0001, 10.0]"
+      - name: "radar_monopulse_ratio_slope"
+        signature: "pub fn radar_monopulse_ratio_slope(delta_i: f32, delta_q: f32, sigma_i: f32, sigma_q: f32) -> Option<f32>"
+        outputs: 1
+      - name: "radar_blind_speed_mps"
+        signature: "pub fn radar_blind_speed_mps(wavelength_m: f32, prf_hz: f32, n_blind: u32) -> Option<f32>"
+        outputs: 1
+        domains:
+          wavelength_m: "[0.0001, 10.0]"
+          prf_hz: "[1.0, 1000000.0]"
+      - name: "radar_range_doppler_index_to_physical"
+        signature: "pub fn radar_range_doppler_index_to_physical("
+        outputs: 1
+      - name: "radar_clutter_to_signal_ratio_db"
+        signature: "pub fn radar_clutter_to_signal_ratio_db(clutter_power: f32, signal_power: f32) -> Option<f32>"
+        outputs: 1
+      - name: "radar_fmcw_max_unambiguous_range"
+        signature: "pub fn radar_fmcw_max_unambiguous_range("
+        outputs: 1
+        domains:
+          sampling_rate_hz: "[1000.0, 100000000.0]"
+          chirp_bandwidth_hz: "[100000.0, 10000000000.0]"
+          chirp_duration_s: "[0.000001, 1.0]"
+      - name: "radar_fmcw_max_unambiguous_velocity"
+        signature: "pub fn radar_fmcw_max_unambiguous_velocity(chirp_interval_s: f32, carrier_freq_hz: f32) -> Option<f32>"
+        outputs: 1
+        domains:
+          chirp_interval_s: "[0.000001, 1.0]"
+          carrier_freq_hz: "[1000000.0, 300000000000.0]"
+      - name: "radar_doppler_centroid_hz"
+        signature: "pub fn radar_doppler_centroid_hz(power_spectrum: &[f32], freq_step_hz: f32) -> Option<f32>"
+        outputs: 1
   - module: "radar_biomed_dsp"
     file: "src/radar_biomed_dsp.rs"
     functions_count: 10

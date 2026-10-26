@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
 };
 
@@ -544,6 +544,22 @@ fn audit_iot_wire_protocol() -> bool {
 }
 
 /// @outputs: 1
+fn audit_radar_aoa_mti() -> bool {
+    let mut ok = true;
+    ok &= (radar_aoa_mti::radar_mti_two_pulse_canceler_step(f32::NAN, 1.0) - 0.0).abs() < 1e-6;
+    ok &= (radar_aoa_mti::radar_mti_three_pulse_canceler_step(1.0, f32::NAN, 0.0) - 0.0).abs() < 1e-6;
+    ok &= radar_aoa_mti::radar_aoa_phase_monopulse(10.0, 0.001, 0.0005).is_none(); // 超出 -1..1
+    ok &= radar_aoa_mti::radar_monopulse_ratio_slope(1.0, 0.0, 0.0, 0.0).is_none(); // 除零
+    ok &= radar_aoa_mti::radar_blind_speed_mps(0.001, 0.0, 1).is_none(); // PRF 超界
+    ok &= radar_aoa_mti::radar_range_doppler_index_to_physical(1, 10, 1.0, 1.0, 4).is_none(); // 越界
+    ok &= radar_aoa_mti::radar_clutter_to_signal_ratio_db(-1.0, 10.0).is_none(); // 負功率
+    ok &= radar_aoa_mti::radar_fmcw_max_unambiguous_range(10.0, 1e6, 0.001).is_none(); // 採樣率超界
+    ok &= radar_aoa_mti::radar_fmcw_max_unambiguous_velocity(0.0, 77e9).is_none(); // 區間超界
+    ok &= radar_aoa_mti::radar_doppler_centroid_hz(&[], 1.0).is_none(); // 空陣列
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -595,6 +611,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

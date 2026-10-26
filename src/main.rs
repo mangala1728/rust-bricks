@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
 };
@@ -363,6 +363,17 @@ fn verify_iot_wire_protocol() -> bool {
 }
 
 /// @outputs: 1
+fn verify_radar_aoa_mti() -> bool {
+    let mti2 = radar_aoa_mti::radar_mti_two_pulse_canceler_step(10.0, 10.0);
+    let ok_mti = mti2.abs() < 1e-6;
+    let aoa = radar_aoa_mti::radar_aoa_phase_monopulse(0.0, 0.0039, 0.00195);
+    let ok_aoa = matches!(aoa, Some(th) if th.abs() < 1e-4);
+    let v_blind = radar_aoa_mti::radar_blind_speed_mps(0.004, 10000.0, 1);
+    let ok_blind = matches!(v_blind, Some(v) if (v - 20.0).abs() < 1e-3);
+    ok_mti && ok_aoa && ok_blind
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -395,6 +406,7 @@ fn verify_all_subsystems() -> bool {
         && verify_robotics_motion_profile()
         && verify_ai_tensor_gemm()
         && verify_iot_wire_protocol()
+        && verify_radar_aoa_mti()
 }
 
 /// @outputs: 1

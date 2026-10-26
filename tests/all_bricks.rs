@@ -2290,3 +2290,47 @@ fn test_iot_wire_protocol_bricks() {
     assert_eq!(dec_sz, Some(original.len()));
     assert_eq!(&slip_dec[..dec_sz.unwrap()], &original);
 }
+
+#[test]
+fn test_radar_aoa_mti_bricks() {
+    use rust_bricks::radar_aoa_mti;
+
+    // 1. MTI 雙脈衝與三脈衝消除器
+    let cancel2 = radar_aoa_mti::radar_mti_two_pulse_canceler_step(10.0, 10.0);
+    assert_eq!(cancel2, 0.0);
+    let diff2 = radar_aoa_mti::radar_mti_two_pulse_canceler_step(15.0, 10.0);
+    assert_eq!(diff2, 5.0);
+
+    let cancel3 = radar_aoa_mti::radar_mti_three_pulse_canceler_step(10.0, 10.0, 10.0);
+    assert_eq!(cancel3, 0.0);
+
+    // 2. 雙天線相位單脈衝測角 (波長 4mm, 陣元間距 2mm, 相位差 0 -> 0 rad)
+    let theta0 = radar_aoa_mti::radar_aoa_phase_monopulse(0.0, 0.004, 0.002).unwrap();
+    assert!(theta0.abs() < 1e-4);
+
+    // 3. 和差單脈衝比值斜率
+    let slope = radar_aoa_mti::radar_monopulse_ratio_slope(2.0, 0.0, 10.0, 0.0).unwrap();
+    assert!((slope - 0.2).abs() < 1e-4);
+
+    // 4. 雷達盲速解算 (77GHz -> 波長 ~3.9mm, PRF 10kHz, n=1 -> ~19.5 m/s)
+    let v_blind = radar_aoa_mti::radar_blind_speed_mps(0.0039, 10000.0, 1).unwrap();
+    assert!((v_blind - 19.5).abs() < 0.1);
+
+    // 5. Range-Doppler 座標換算 (Range bin 5, res 0.5m -> 2.5m; Doppler bin 8, num 16 -> 0 m/s)
+    let (r, v) = radar_aoa_mti::radar_range_doppler_index_to_physical(5, 8, 0.5, 0.2, 16).unwrap();
+    assert_eq!(r, 2.5);
+    assert_eq!(v, 0.0);
+
+    // 6. CSR 雜波訊號比 (Pc=1000, Ps=10 -> 20 dB)
+    let csr_db = radar_aoa_mti::radar_clutter_to_signal_ratio_db(1000.0, 10.0).unwrap();
+    assert!((csr_db - 20.0).abs() < 0.2);
+
+    // 7. FMCW 最大無模糊距離
+    let r_max = radar_aoa_mti::radar_fmcw_max_unambiguous_range(10_000_000.0, 1_000_000_000.0, 0.0001).unwrap();
+    assert!(r_max > 0.0);
+
+    // 8. 都卜勒頻心估算
+    let spectrum = [0.0f32, 10.0, 100.0, 10.0, 0.0];
+    let centroid = radar_aoa_mti::radar_doppler_centroid_hz(&spectrum, 100.0).unwrap();
+    assert!((centroid - 200.0).abs() < 5.0);
+}

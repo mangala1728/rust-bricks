@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 337,
+  "total_functions": 347,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1507,6 +1507,63 @@
         {
           "name": "quant_fx_adjusted_return",
           "signature": "pub fn quant_fx_adjusted_return(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "radar_aoa_mti",
+      "file": "src/radar_aoa_mti.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "radar_mti_two_pulse_canceler_step",
+          "signature": "pub fn radar_mti_two_pulse_canceler_step(curr_sample: f32, prev_sample: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "radar_mti_three_pulse_canceler_step",
+          "signature": "pub fn radar_mti_three_pulse_canceler_step(curr_sample: f32, prev1_sample: f32, prev2_sample: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "radar_aoa_phase_monopulse",
+          "signature": "pub fn radar_aoa_phase_monopulse(delta_phase_rad: f32, wavelength_m: f32, d_spacing_m: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_monopulse_ratio_slope",
+          "signature": "pub fn radar_monopulse_ratio_slope(delta_i: f32, delta_q: f32, sigma_i: f32, sigma_q: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_blind_speed_mps",
+          "signature": "pub fn radar_blind_speed_mps(wavelength_m: f32, prf_hz: f32, n_blind: u32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_range_doppler_index_to_physical",
+          "signature": "pub fn radar_range_doppler_index_to_physical(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_clutter_to_signal_ratio_db",
+          "signature": "pub fn radar_clutter_to_signal_ratio_db(clutter_power: f32, signal_power: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_fmcw_max_unambiguous_range",
+          "signature": "pub fn radar_fmcw_max_unambiguous_range(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_fmcw_max_unambiguous_velocity",
+          "signature": "pub fn radar_fmcw_max_unambiguous_velocity(chirp_interval_s: f32, carrier_freq_hz: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_doppler_centroid_hz",
+          "signature": "pub fn radar_doppler_centroid_hz(power_spectrum: &[f32], freq_step_hz: f32) -> Option<f32>",
           "outputs": 1
         }
       ]
