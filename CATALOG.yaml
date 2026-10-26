@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 680
+total_functions: 690
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3605,6 +3605,41 @@ modules:
         domains:
           pv: "[0.0..1.0e9]"
           grr: "[1.0e-12..1.0e9]"
+  - module: "storage_block_geometry"
+    file: "src/storage_block_geometry.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "mbr_chs_to_lba"
+        signature: "pub fn mbr_chs_to_lba("
+        outputs: 1
+      - name: "mbr_partition_entry_parse"
+        signature: "pub fn mbr_partition_entry_parse(entry: &[u8; 16]) -> Option<(bool, u8, u32, u32)>"
+        outputs: 1
+      - name: "gpt_header_signature_valid"
+        signature: "pub fn gpt_header_signature_valid(bytes: &[u8]) -> bool"
+        outputs: 1
+      - name: "gpt_partition_span_sectors"
+        signature: "pub fn gpt_partition_span_sectors(start_lba: u64, end_lba: u64) -> Option<u64>"
+        outputs: 1
+      - name: "raid5_parity_block_xor_step"
+        signature: "pub fn raid5_parity_block_xor_step(p_acc: &mut [u8], data_block: &[u8]) -> bool"
+        outputs: 1
+      - name: "raid6_syndrome_q_step"
+        signature: "pub fn raid6_syndrome_q_step(q_acc: &mut [u8], data_block: &[u8], gf_mult: u8) -> bool"
+        outputs: 1
+      - name: "storage_sector_alignment_offset"
+        signature: "pub fn storage_sector_alignment_offset("
+        outputs: 1
+      - name: "nvme_lbad_to_sector_size"
+        signature: "pub fn nvme_lbad_to_sector_size(lbad_exp: u8) -> Option<u32>"
+        outputs: 1
+      - name: "flash_wear_leveling_health_pct"
+        signature: "pub fn flash_wear_leveling_health_pct(erase_count: u32, max_erase_cycles: u32) -> Option<f32>"
+        outputs: 1
+      - name: "storage_capacity_gib_from_lba"
+        signature: "pub fn storage_capacity_gib_from_lba(total_sectors: u64, sector_size_bytes: u32) -> Option<f64>"
+        outputs: 1
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3

@@ -11,7 +11,7 @@ use crate::{
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, storage_block_geometry, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
 
@@ -1102,6 +1102,24 @@ fn audit_audio_beamforming_doa() -> bool {
 }
 
 /// @outputs: 1
+fn audit_storage_block_geometry() -> bool {
+    let mut ok = true;
+    ok &= storage_block_geometry::mbr_chs_to_lba(0, 0, 0, 16, 63).is_none();
+    ok &= storage_block_geometry::mbr_chs_to_lba(0, 16, 1, 16, 63).is_none();
+    ok &= storage_block_geometry::mbr_partition_entry_parse(&[0xFF; 16]).is_none();
+    ok &= !storage_block_geometry::gpt_header_signature_valid(&[]);
+    ok &= !storage_block_geometry::gpt_header_signature_valid(&[0u8; 16]);
+    ok &= storage_block_geometry::gpt_partition_span_sectors(100, 50).is_none();
+    ok &= !storage_block_geometry::raid5_parity_block_xor_step(&mut [], &[]);
+    ok &= !storage_block_geometry::raid6_syndrome_q_step(&mut [], &[], 2);
+    ok &= storage_block_geometry::storage_sector_alignment_offset(100, 0, 4096).is_none();
+    ok &= storage_block_geometry::nvme_lbad_to_sector_size(8).is_none();
+    ok &= storage_block_geometry::flash_wear_leveling_health_pct(100, 0).is_none();
+    ok &= storage_block_geometry::storage_capacity_gib_from_lba(1000, 100).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1184,6 +1202,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_control_systems_estimation(), "【控制系統與卡爾曼平滑抽查失敗】存在Riccati發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_geo_spatial_projection(), "【地理空間與大地投影抽查失敗】存在奇異點發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_audio_beamforming_doa(), "【聲學陣列與波束成形抽查失敗】存在除零溢出或相位發散", total, passed, failures);
+    check_audit_domain(audit_storage_block_geometry(), "【儲存幾何與磁碟分區抽查失敗】存在溢出或非法邊界", total, passed, failures);
 }
 
 /// @outputs: 2

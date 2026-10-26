@@ -96,6 +96,7 @@ pub mod sensor_power_meter;
 pub mod spatial_physics;
 pub mod spc_msa_advanced;
 pub mod spc_six_sigma_msa;
+pub mod storage_block_geometry;
 pub mod sys_path;
 pub mod text_cleaner;
 pub mod thermal_palette;

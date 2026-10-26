@@ -4319,6 +4319,67 @@ fn test_audio_beamforming_doa_bricks() {
     assert_eq!(diff, 2.0);
 }
 
+#[test]
+fn test_storage_block_geometry_bricks() {
+    use rust_bricks::storage_block_geometry::*;
+
+    // 1. CHS 轉 LBA
+    // @safety-proof: CHS 邊界合法
+    let lba = mbr_chs_to_lba(10, 2, 5, 16, 63).unwrap();
+    assert_eq!(lba, (10 * 16 + 2) * 63 + 4);
+
+    // 2. MBR 分區項目解析
+    let mut entry = [0u8; 16];
+    entry[0] = 0x80;
+    entry[4] = 0x83;
+    entry[8..12].copy_from_slice(&2048u32.to_le_bytes());
+    entry[12..16].copy_from_slice(&100_000u32.to_le_bytes());
+    // @safety-proof: entry[0]=0x80 合法
+    let (boot, ptype, start, count) = mbr_partition_entry_parse(&entry).unwrap();
+    assert!(boot);
+    assert_eq!(ptype, 0x83);
+    assert_eq!(start, 2048);
+    assert_eq!(count, 100_000);
+
+    // 3. GPT 標頭有效性
+    assert!(gpt_header_signature_valid(b"EFI PART\x00\x00\x01\x00\x5c\x00\x00\x00"));
+    assert!(!gpt_header_signature_valid(b"BAD PART\x00\x00\x01\x00"));
+
+    // 4. GPT 跨度磁區數
+    // @safety-proof: 3000 >= 2048
+    let span = gpt_partition_span_sectors(2048, 3047).unwrap();
+    assert_eq!(span, 1000);
+
+    // 5. RAID 5 異或同位原地累加
+    let mut p = [0xAA, 0x55];
+    assert!(raid5_parity_block_xor_step(&mut p, &[0xFF, 0x00]));
+    assert_eq!(p, [0x55, 0x55]);
+
+    // 6. RAID 6 Q-同位乘累加
+    let mut q = [0x00, 0x00];
+    assert!(raid6_syndrome_q_step(&mut q, &[0x02, 0x80], 2));
+    assert_eq!(q, [0x04, 0x1D]);
+
+    // 7. 4K 對齊偏移
+    // @safety-proof: 參數大於 0
+    let offset = storage_sector_alignment_offset(2048, 512, 4096).unwrap();
+    assert_eq!(offset, 0);
+
+    // 8. NVMe LBA 指數轉磁區大小
+    assert_eq!(nvme_lbad_to_sector_size(12), Some(4096));
+
+    // 9. Flash 抹除壽命健康度
+    // @safety-proof: max_erase_cycles > 0
+    let health = flash_wear_leveling_health_pct(1000, 10000).unwrap();
+    assert_eq!(health, 90.0);
+
+    // 10. 儲存設備容量 GiB
+    // @safety-proof: 2097152 * 512 = 1 GiB
+    let gib = storage_capacity_gib_from_lba(2097152, 512).unwrap();
+    assert_eq!(gib, 1.0);
+}
+
+
 
 
 

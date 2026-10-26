@@ -11,7 +11,7 @@ use rust_bricks::{
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, storage_block_geometry, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
 use std::env;
@@ -776,6 +776,18 @@ fn verify_audio_beamforming_doa() -> bool {
 }
 
 /// @outputs: 1
+fn verify_storage_block_geometry() -> bool {
+    let lba = storage_block_geometry::mbr_chs_to_lba(0, 1, 1, 16, 63);
+    let ok_lba = matches!(lba, Some(63));
+    let mut p = [0u8; 4];
+    let ok_r5 = storage_block_geometry::raid5_parity_block_xor_step(&mut p, &[1, 2, 3, 4]);
+    let ok_sig = storage_block_geometry::gpt_header_signature_valid(b"EFI PART\x00\x00\x01\x00\x5c\x00\x00\x00");
+    let sz = storage_block_geometry::nvme_lbad_to_sector_size(12);
+    let ok_sz = matches!(sz, Some(4096));
+    ok_lba && ok_r5 && ok_sig && ok_sz
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -847,6 +859,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_control_systems_estimation()
         && verify_geo_spatial_projection()
         && verify_audio_beamforming_doa()
+        && verify_storage_block_geometry()
 }
 
 /// @outputs: 1
