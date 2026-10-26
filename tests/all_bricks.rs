@@ -3300,6 +3300,67 @@ fn test_ai_transformer_attention_bricks() {
     assert!(loss.unwrap() > 0.0);
 }
 
+#[test]
+fn test_analyzer_sigrok_protocol_bricks() {
+    use rust_bricks::analyzer_sigrok_protocol::*;
+
+    // 1. 數位邏輯邊緣檢測
+    let (r0, f0) = analyzer_digital_edge_detect(0b0000_0000, 0b0000_0001, 0);
+    assert!(r0 && !f0);
+    let (r1, f1) = analyzer_digital_edge_detect(0b0000_0010, 0b0000_0000, 1);
+    assert!(!r1 && f1);
+
+    // 2. 數位毛刺抑制濾波
+    let mut filt = 0u8;
+    assert!(!analyzer_glitch_filter_sample(true, &mut filt, 4));
+    assert!(!analyzer_glitch_filter_sample(true, &mut filt, 4));
+    assert!(analyzer_glitch_filter_sample(true, &mut filt, 4)); // 累積過半門檻
+
+    // 3. UART 位元取樣中心點偏移
+    let uart = analyzer_uart_sample_point_offset(115200, 1152000);
+    assert_eq!(uart, Some((10, 5)));
+
+    // 4. I2C 總線條件判定 (START & STOP)
+    let cond_start = analyzer_i2c_bus_condition(true, true, true, false);
+    assert_eq!(cond_start, 1);
+    let cond_stop = analyzer_i2c_bus_condition(true, true, false, true);
+    assert_eq!(cond_stop, 2);
+    let cond_data = analyzer_i2c_bus_condition(false, true, true, true);
+    assert_eq!(cond_data, 3);
+
+    // 5. SPI CPOL/CPHA 取樣邊緣
+    let (s_rise, shift_rise) = analyzer_spi_sample_edge(0, 0); // Mode 0
+    assert!(s_rise);
+    assert!(!shift_rise);
+
+    // 6. 1-Wire 脈衝寬度解碼
+    assert_eq!(analyzer_onewire_bit_decode(5.0), Some(true));  // 5 us -> bit 1
+    assert_eq!(analyzer_onewire_bit_decode(80.0), Some(false)); // 80 us -> bit 0
+    assert_eq!(analyzer_onewire_bit_decode(500.0), None);       // Reset pulse
+
+    // 7. Manchester 雙相碼躍變解碼
+    let m_bit1 = analyzer_manchester_decode_transition(false, true, true); // Low->High in IEEE
+    assert_eq!(m_bit1, Some(true));
+
+    // 8. RLE 行程長度編碼壓縮步進
+    let mut last = 0u8;
+    let mut run = 0u32;
+    assert_eq!(analyzer_rle_compress_step(0xAA, &mut last, &mut run, 100), None);
+    assert_eq!(analyzer_rle_compress_step(0xAA, &mut last, &mut run, 100), None);
+    let emit = analyzer_rle_compress_step(0x55, &mut last, &mut run, 100);
+    assert_eq!(emit, Some((0xAA, 2)));
+
+    // 9. 遮罩式樣式比對觸發
+    assert!(analyzer_pattern_trigger_match(0b1100_1010, 0b1111_0000, 0b1100_0000));
+    assert!(!analyzer_pattern_trigger_match(0b1100_1010, 0b1111_0000, 0b1101_0000));
+
+    // 10. CAN 總線時間量子與採樣點
+    let (tq, ratio) = analyzer_can_bit_timing_sample_point(5, 6, 4);
+    assert_eq!(tq, 16); // 1 + 5 + 6 + 4 = 16
+    assert!((ratio - 0.75).abs() < 1e-4); // (1 + 5 + 6) / 16 = 12 / 16 = 0.75 (75%)
+}
+
+
 
 
 

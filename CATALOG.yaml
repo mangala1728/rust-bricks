@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 506
+total_functions: 516
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -230,6 +230,59 @@ modules:
         domains:
           prob_true: "[1e-12, 1.0]"
           smoothing_alpha: "[0.0, 0.5]"
+  - module: "analyzer_sigrok_protocol"
+    file: "src/analyzer_sigrok_protocol.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "analyzer_digital_edge_detect"
+        signature: "pub fn analyzer_digital_edge_detect("
+        outputs: 2
+        domains:
+          channel_bit: "[0, 7]"
+      - name: "analyzer_glitch_filter_sample"
+        signature: "pub fn analyzer_glitch_filter_sample("
+        outputs: 1
+        domains:
+          threshold_samples: "[1, 16]"
+      - name: "analyzer_uart_sample_point_offset"
+        signature: "pub fn analyzer_uart_sample_point_offset("
+        outputs: 2
+        domains:
+          baud_rate: "[300, 10000000]"
+          sample_rate_hz: "[1000, 100000000]"
+      - name: "analyzer_i2c_bus_condition"
+        signature: "pub fn analyzer_i2c_bus_condition("
+        outputs: 1
+      - name: "analyzer_spi_sample_edge"
+        signature: "pub fn analyzer_spi_sample_edge(cpol: u8, cpha: u8) -> (bool, bool)"
+        outputs: 2
+        domains:
+          cpol: "[0, 1]"
+          cpha: "[0, 1]"
+      - name: "analyzer_onewire_bit_decode"
+        signature: "pub fn analyzer_onewire_bit_decode(low_pulse_us: f32) -> Option<bool>"
+        outputs: 1
+        domains:
+          low_pulse_us: "[0.1, 10000.0]"
+      - name: "analyzer_manchester_decode_transition"
+        signature: "pub fn analyzer_manchester_decode_transition("
+        outputs: 1
+      - name: "analyzer_rle_compress_step"
+        signature: "pub fn analyzer_rle_compress_step("
+        outputs: 1
+        domains:
+          max_run: "[1, 65535]"
+      - name: "analyzer_pattern_trigger_match"
+        signature: "pub fn analyzer_pattern_trigger_match(sample: u8, pattern_mask: u8, pattern_level: u8) -> bool"
+        outputs: 1
+      - name: "analyzer_can_bit_timing_sample_point"
+        signature: "pub fn analyzer_can_bit_timing_sample_point("
+        outputs: 2
+        domains:
+          prop_seg: "[1, 8]"
+          phase_seg1: "[1, 8]"
+          phase_seg2: "[1, 8]"
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
     functions_count: 13

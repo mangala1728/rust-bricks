@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -553,6 +553,17 @@ fn verify_ai_transformer_attention() -> bool {
 }
 
 /// @outputs: 1
+fn verify_analyzer_sigrok_protocol() -> bool {
+    let (r, f) = analyzer_sigrok_protocol::analyzer_digital_edge_detect(0b0000_0000, 0b0000_0001, 0);
+    let ok_edge = r && !f;
+    let uart = analyzer_sigrok_protocol::analyzer_uart_sample_point_offset(115200, 1152000);
+    let ok_uart = matches!(uart, Some((10, 5)));
+    let i2c = analyzer_sigrok_protocol::analyzer_i2c_bus_condition(true, true, true, false);
+    let ok_i2c = i2c == 1; // START
+    ok_edge && ok_uart && ok_i2c
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -602,6 +613,7 @@ fn verify_all_subsystems() -> bool {
         && verify_robotics_dynamics_jacobian()
         && verify_nfc_iso14443_ndef()
         && verify_ai_transformer_attention()
+        && verify_analyzer_sigrok_protocol()
 }
 
 /// @outputs: 1

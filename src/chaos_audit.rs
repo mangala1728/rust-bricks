@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -809,6 +809,20 @@ fn audit_ai_transformer_attention() -> bool {
 }
 
 /// @outputs: 1
+fn audit_analyzer_sigrok_protocol() -> bool {
+    let mut ok = true;
+    let (r, f) = analyzer_sigrok_protocol::analyzer_digital_edge_detect(0, 1, 9); // 通道大於 7
+    ok &= !r && !f;
+    ok &= analyzer_sigrok_protocol::analyzer_uart_sample_point_offset(0, 1000).is_none();
+    ok &= analyzer_sigrok_protocol::analyzer_onewire_bit_decode(-5.0).is_none();
+    ok &= analyzer_sigrok_protocol::analyzer_manchester_decode_transition(true, true, true).is_none(); // 無跳變
+    let mut last = 0;
+    let mut run = 0;
+    ok &= analyzer_sigrok_protocol::analyzer_rle_compress_step(5, &mut last, &mut run, 0).is_none(); // 零長度
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -873,6 +887,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_robotics_dynamics_jacobian(), "【機器人動力學與雅可比抽查失敗】存在除零溢出或發散", total, passed, failures);
     check_audit_domain(audit_nfc_iso14443_ndef(), "【NFC非接觸協議與NDEF抽查失敗】存在CRC溢出或前綴解析崩潰", total, passed, failures);
     check_audit_domain(audit_ai_transformer_attention(), "【AI注意力與大模型運算抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
+    check_audit_domain(audit_analyzer_sigrok_protocol(), "【邏輯分析儀與協議解碼抽查失敗】存在除零溢出或無效通道", total, passed, failures);
 }
 
 /// @outputs: 2
