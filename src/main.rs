@@ -7,7 +7,7 @@
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
     radar_biomed_dsp, radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -281,6 +281,17 @@ fn verify_radar_biomed_dsp() -> bool {
 }
 
 /// @outputs: 1
+fn verify_instrument_industrial() -> bool {
+    let val = instrument_industrial::scpi_parse_scientific_float(b"+1.23456E+02");
+    let ok_scpi = matches!(val, Some(v) if (v - 123.456).abs() < 1e-3);
+    let lrc = instrument_industrial::modbus_ascii_compute_lrc(&[0x01, 0x03, 0x00, 0x01]);
+    let ok_lrc = lrc != 0;
+    let sweep = instrument_industrial::litevna_frequency_sweep_step(100_000, 1_000_000, 10, 0);
+    let ok_sweep = sweep == Some(100_000);
+    ok_scpi && ok_lrc && ok_sweep
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -306,6 +317,7 @@ fn verify_all_subsystems() -> bool {
         && verify_ai_autograd_train()
         && verify_comm_phy_bus()
         && verify_radar_biomed_dsp()
+        && verify_instrument_industrial()
 }
 
 /// @outputs: 1

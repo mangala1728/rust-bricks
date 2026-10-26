@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 266,
+  "total_functions": 276,
   "modules": [
     {
       "module": "agent_terminal",
@@ -807,6 +807,63 @@
           "name": "point_in_polygon_raycast",
           "signature": "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "instrument_industrial",
+      "file": "src/instrument_industrial.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "scpi_parse_scientific_float",
+          "signature": "pub fn scpi_parse_scientific_float(ascii_bytes: &[u8]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "scpi_format_dmm_voltage_range_cmd",
+          "signature": "pub fn scpi_format_dmm_voltage_range_cmd(",
+          "outputs": 1
+        },
+        {
+          "name": "canopen_sdo_download_expedited_req",
+          "signature": "pub fn canopen_sdo_download_expedited_req(",
+          "outputs": 1
+        },
+        {
+          "name": "canopen_sdo_parse_download_response",
+          "signature": "pub fn canopen_sdo_parse_download_response(frame_data: &[u8; 8]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "canopen_heartbeat_producer_frame",
+          "signature": "pub fn canopen_heartbeat_producer_frame(node_id: u8, nmt_state: u8) -> (u16, [u8; 1])",
+          "outputs": 1
+        },
+        {
+          "name": "modbus_ascii_compute_lrc",
+          "signature": "pub fn modbus_ascii_compute_lrc(frame_chars: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "modbus_rtu_build_read_holding_registers",
+          "signature": "pub fn modbus_rtu_build_read_holding_registers(",
+          "outputs": 1
+        },
+        {
+          "name": "modbus_decode_float32_registers",
+          "signature": "pub fn modbus_decode_float32_registers(reg_hi: u16, reg_lo: u16, swap_words: bool) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "dslogic_sample_depth_to_time_ms",
+          "signature": "pub fn dslogic_sample_depth_to_time_ms(samples: u32, sample_rate_hz: u32) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "litevna_frequency_sweep_step",
+          "signature": "pub fn litevna_frequency_sweep_step(",
+          "outputs": 1
         }
       ]
     },

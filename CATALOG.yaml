@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 266
+total_functions: 276
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -832,6 +832,59 @@ modules:
         domains:
           px: "[-10000.0..10000.0]"
           py: "[-10000.0..10000.0]"
+  - module: "instrument_industrial"
+    file: "src/instrument_industrial.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: inst/industrial — 工控儀器通訊 (Keysight/Siglent DMM, CANopen, Modbus RTU/ASCII, DSLogic, LiteVNA) 協議解析與訊框構造微積木。"
+      - "Inputs: SCPI 科學計數法位元組串、CANopen 節點與索引、Modbus 暫存器、邏輯分析儀取樣率、VNA 掃頻參數。"
+      - "Outputs: 浮點讀值、CANopen COB-ID 與 SDO 訊框、Modbus RTU 查詢訊框、取樣時間 (ms)、VNA 掃頻頻率 (Hz)。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、無溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "scpi_parse_scientific_float"
+        signature: "pub fn scpi_parse_scientific_float(ascii_bytes: &[u8]) -> Option<f64>"
+        outputs: 1
+      - name: "scpi_format_dmm_voltage_range_cmd"
+        signature: "pub fn scpi_format_dmm_voltage_range_cmd("
+        outputs: 1
+        domains:
+          range_v: "[0.001..1000.0]"
+          resolution_v: "[1.0e-7..1.0]"
+      - name: "canopen_sdo_download_expedited_req"
+        signature: "pub fn canopen_sdo_download_expedited_req("
+        outputs: 1
+        domains:
+          node_id: "[1..127]"
+      - name: "canopen_sdo_parse_download_response"
+        signature: "pub fn canopen_sdo_parse_download_response(frame_data: &[u8; 8]) -> bool"
+        outputs: 1
+      - name: "canopen_heartbeat_producer_frame"
+        signature: "pub fn canopen_heartbeat_producer_frame(node_id: u8, nmt_state: u8) -> (u16, [u8; 1])"
+        outputs: 1
+        domains:
+          node_id: "[1..127]"
+      - name: "modbus_ascii_compute_lrc"
+        signature: "pub fn modbus_ascii_compute_lrc(frame_chars: &[u8]) -> u8"
+        outputs: 1
+      - name: "modbus_rtu_build_read_holding_registers"
+        signature: "pub fn modbus_rtu_build_read_holding_registers("
+        outputs: 1
+        domains:
+          slave_addr: "[1..247]"
+          reg_count: "[1..125]"
+      - name: "modbus_decode_float32_registers"
+        signature: "pub fn modbus_decode_float32_registers(reg_hi: u16, reg_lo: u16, swap_words: bool) -> f32"
+        outputs: 1
+      - name: "dslogic_sample_depth_to_time_ms"
+        signature: "pub fn dslogic_sample_depth_to_time_ms(samples: u32, sample_rate_hz: u32) -> Option<f64>"
+        outputs: 1
+        domains:
+          sample_rate_hz: "[1..1000000000]"
+      - name: "litevna_frequency_sweep_step"
+        signature: "pub fn litevna_frequency_sweep_step("
+        outputs: 1
+        domains:
+          points: "[2..10001]"
   - module: "instrument_scpi_vna"
     file: "src/instrument_scpi_vna.rs"
     functions_count: 7

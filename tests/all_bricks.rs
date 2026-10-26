@@ -1884,3 +1884,66 @@ fn test_radar_biomed_dsp_bricks() {
     let f64_half = radar_biomed_dsp::dsp_dequantize_q31_to_f64(q31_half);
     assert!((f64_half - 0.5).abs() < 1e-6);
 }
+
+#[test]
+fn test_instrument_industrial_bricks() {
+    use rust_bricks::instrument_industrial;
+
+    // 1. SCPI 科學計數法浮點解析
+    let v_pos = instrument_industrial::scpi_parse_scientific_float(b"+1.234567E+01\r\n").unwrap();
+    assert!((v_pos - 12.34567).abs() < 1e-4);
+    let v_neg = instrument_industrial::scpi_parse_scientific_float(b"-5.0e-03").unwrap();
+    assert!((v_neg - (-0.005)).abs() < 1e-5);
+
+    // 2. 六位半電表 SCPI 指令格式化
+    let mut cmd_buf = [0u8; 32];
+    let cmd_len = instrument_industrial::scpi_format_dmm_voltage_range_cmd(10.0, 0.00001, &mut cmd_buf);
+    assert!(cmd_len > 0);
+    assert_eq!(&cmd_buf[..cmd_len], b"CONF:VOLT:DC 10,DEF\n");
+
+    // 3. CANopen SDO 下載加速訊框與成功回應解析
+    let (cob_id, sdo_req) = instrument_industrial::canopen_sdo_download_expedited_req(1, 0x1017, 0x00, &[0xE8, 0x03]).unwrap();
+    assert_eq!(cob_id, 0x601);
+    assert_eq!(sdo_req[0], 0x2B); // 2 bytes payload: CS = 0x23 | (2 << 2) = 0x2B
+    assert_eq!(sdo_req[1], 0x17); // 0x1017 low byte
+    assert_eq!(sdo_req[2], 0x10); // 0x1017 high byte
+    assert_eq!(sdo_req[3], 0x00);
+    assert_eq!(sdo_req[4], 0xE8);
+    assert_eq!(sdo_req[5], 0x03);
+
+    let resp_ok = [0x60, 0x17, 0x10, 0x00, 0, 0, 0, 0];
+    assert!(instrument_industrial::canopen_sdo_parse_download_response(&resp_ok));
+
+    // 4. CANopen 心跳生產者訊框
+    let (hb_cob, hb_data) = instrument_industrial::canopen_heartbeat_producer_frame(5, 0x05);
+    assert_eq!(hb_cob, 0x705);
+    assert_eq!(hb_data[0], 0x05);
+
+    // 5. Modbus ASCII LRC 計算
+    let lrc = instrument_industrial::modbus_ascii_compute_lrc(&[0x01, 0x03, 0x00, 0x00, 0x00, 0x0A]);
+    assert_eq!(lrc, 0xF2);
+
+    // 6. Modbus RTU 讀取保持暫存器 (FC 0x03) 訊框構建 (含 CRC16)
+    let rtu_frame = instrument_industrial::modbus_rtu_build_read_holding_registers(0x01, 0x0000, 0x0002);
+    assert_eq!(rtu_frame[0], 0x01);
+    assert_eq!(rtu_frame[1], 0x03);
+    assert_eq!(rtu_frame[2], 0x00);
+    assert_eq!(rtu_frame[3], 0x00);
+    assert_eq!(rtu_frame[4], 0x00);
+    assert_eq!(rtu_frame[5], 0x02);
+    // CRC 低位先傳、高位後傳
+    assert_ne!(rtu_frame[6], 0);
+
+    // 7. Modbus 雙 16-bit 暫存器轉 Float32
+    // 0x3F800000 = 1.0f32
+    let f_val = instrument_industrial::modbus_decode_float32_registers(0x3F80, 0x0000, false);
+    assert_eq!(f_val, 1.0);
+
+    // 8. DSLogic 取樣深度轉時間
+    let ms = instrument_industrial::dslogic_sample_depth_to_time_ms(10_000_000, 100_000_000).unwrap();
+    assert!((ms - 100.0).abs() < 1e-4);
+
+    // 9. LiteVNA 向量網路分析儀掃頻步進頻率
+    let f_step = instrument_industrial::litevna_frequency_sweep_step(50_000, 900_000_000, 101, 50).unwrap();
+    assert_eq!(f_step, 50_000 + (900_000_000 - 50_000) / 2);
+}

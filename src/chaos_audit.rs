@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d,
     radar_biomed_dsp, radar_cfar_doppler, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -419,6 +419,20 @@ fn audit_radar_biomed_dsp() -> bool {
 }
 
 /// @outputs: 1
+fn audit_instrument_industrial() -> bool {
+    let mut ok = true;
+    ok &= instrument_industrial::scpi_parse_scientific_float(b"").is_none();
+    ok &= instrument_industrial::scpi_parse_scientific_float(b"INVALID").is_none();
+    let mut buf = [0u8; 32];
+    ok &= instrument_industrial::scpi_format_dmm_voltage_range_cmd(0.0, 1.0, &mut buf) == 0;
+    ok &= instrument_industrial::canopen_sdo_download_expedited_req(0, 0x1000, 0, &[1]).is_none();
+    ok &= !instrument_industrial::canopen_sdo_parse_download_response(&[0x80, 0, 0, 0, 0, 0, 0, 0]);
+    ok &= instrument_industrial::dslogic_sample_depth_to_time_ms(100, 0).is_none();
+    ok &= instrument_industrial::litevna_frequency_sweep_step(100, 10, 10, 0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -463,6 +477,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_ai_autograd_train(), "【自動求導與神經訓練抽查失敗】存在除零溢出或NaN穿透", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_comm_phy_bus(), "【實體層總線MIPI與RGMII抽查失敗】存在除零溢出或無效速率", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_radar_biomed_dsp(), "【雷達生醫與FMCW測距抽查失敗】存在除零溢出或無效頻寬", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);
