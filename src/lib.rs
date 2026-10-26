@@ -38,6 +38,7 @@ pub mod curve_fit_trend;
 pub mod decision_mcts;
 pub mod decision_minimax_alphabeta;
 pub mod doc_layout_typography;
+pub mod doc_office_drawing_shape;
 pub mod dsp_fft_multirate_2d;
 pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;

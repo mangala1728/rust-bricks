@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_multirate_2d, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -675,7 +675,18 @@ fn verify_dsp_fft_multirate_2d() -> bool {
 }
 
 /// @outputs: 1
-fn verify_all_subsystems() -> bool {
+fn verify_doc_office_drawing_shape() -> bool {
+    let emu = doc_office_drawing_shape::doc_points_to_emu(72.0);
+    let ok_emu = emu == 914400;
+    let pt = doc_office_drawing_shape::doc_emu_to_points(914400);
+    let ok_pt = (pt - 72.0).abs() < 1e-5;
+    let rad = doc_office_drawing_shape::doc_drawing_rotation_to_radians(5400000); // 90 度
+    let ok_rad = (rad - 1.570796).abs() < 1e-4;
+    ok_emu && ok_pt && ok_rad
+}
+
+/// @outputs: 1
+fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
         && verify_security_and_automotive()
@@ -702,7 +713,11 @@ fn verify_all_subsystems() -> bool {
         && verify_radar_biomed_dsp()
         && verify_instrument_industrial()
         && verify_cad_geom_model()
-        && verify_spc_six_sigma_msa()
+}
+
+/// @outputs: 1
+fn verify_all_subsystems_batch_b() -> bool {
+    verify_spc_six_sigma_msa()
         && verify_quant_finance_market()
         && verify_robotics_motion_profile()
         && verify_ai_tensor_gemm()
@@ -734,6 +749,12 @@ fn verify_all_subsystems() -> bool {
         && verify_ai_rl_policy_gradient()
         && verify_rpa_desktop_macro_driver()
         && verify_dsp_fft_multirate_2d()
+        && verify_doc_office_drawing_shape()
+}
+
+/// @outputs: 1
+fn verify_all_subsystems() -> bool {
+    verify_all_subsystems_batch_a() && verify_all_subsystems_batch_b()
 }
 
 /// @outputs: 1

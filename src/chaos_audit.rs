@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_multirate_2d, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -950,6 +950,24 @@ fn audit_dsp_fft_multirate_2d() -> bool {
 }
 
 /// @outputs: 1
+fn audit_doc_office_drawing_shape() -> bool {
+    let mut ok = true;
+    ok &= doc_office_drawing_shape::doc_points_to_emu(f64::NAN) == 0;
+    let m = doc_office_drawing_shape::doc_shape_affine_matrix_step(f64::NAN, 0.0, 0.0, false, false);
+    ok &= m[0] == 1.0;
+    let (min_x, _, _, _) = doc_office_drawing_shape::doc_shape_rotated_aabb(0.0, 0.0, -10.0, 10.0, 0.0);
+    ok &= min_x == 0.0;
+    let corner = doc_office_drawing_shape::doc_orthogonal_connector_corner((f64::NAN, 0.0), (10.0, 10.0), true);
+    ok &= corner.0.is_nan();
+    ok &= doc_office_drawing_shape::doc_gradient_stop_lerp_rgb([0, 0, 0], [255, 255, 255], f64::NAN) == [0, 0, 0];
+    ok &= doc_office_drawing_shape::doc_textbox_autofit_font_scale(0, 100.0, 100.0, 12.0) == 1.0;
+    ok &= doc_office_drawing_shape::doc_distribute_elements_spacing(100.0, &[60.0, 60.0]).is_none(); // 溢出
+    let (dx, dy) = doc_office_drawing_shape::doc_drop_shadow_offset(-5.0, 0.0);
+    ok &= dx == 0.0 && dy == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1024,6 +1042,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_ai_rl_policy_gradient(), "【強化學習與策略梯度抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
     check_audit_domain(audit_rpa_desktop_macro_driver(), "【桌面RPA與虛擬輸入抽查失敗】存在坐標越界或鍵碼崩潰", total, passed, failures);
     check_audit_domain(audit_dsp_fft_multirate_2d(), "【二維FFT與多速率DSP抽查失敗】存在除零溢出或頻譜發散", total, passed, failures);
+    check_audit_domain(audit_doc_office_drawing_shape(), "【文書向量圖形與排版抽查失敗】存在除零溢出或坐標發散", total, passed, failures);
 }
 
 /// @outputs: 2

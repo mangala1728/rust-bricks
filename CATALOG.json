@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 602,
+  "total_functions": 612,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1328,6 +1328,63 @@
         {
           "name": "doc_hyphenation_break_cost",
           "signature": "pub fn doc_hyphenation_break_cost(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "doc_office_drawing_shape",
+      "file": "src/doc_office_drawing_shape.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "doc_emu_to_points",
+          "signature": "pub fn doc_emu_to_points(emu: i64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "doc_points_to_emu",
+          "signature": "pub fn doc_points_to_emu(pt: f64) -> i64",
+          "outputs": 1
+        },
+        {
+          "name": "doc_drawing_rotation_to_radians",
+          "signature": "pub fn doc_drawing_rotation_to_radians(rot_60000th_deg: i32) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "doc_shape_affine_matrix_step",
+          "signature": "pub fn doc_shape_affine_matrix_step(",
+          "outputs": 1
+        },
+        {
+          "name": "doc_shape_rotated_aabb",
+          "signature": "pub fn doc_shape_rotated_aabb(",
+          "outputs": 1
+        },
+        {
+          "name": "doc_orthogonal_connector_corner",
+          "signature": "pub fn doc_orthogonal_connector_corner(",
+          "outputs": 1
+        },
+        {
+          "name": "doc_gradient_stop_lerp_rgb",
+          "signature": "pub fn doc_gradient_stop_lerp_rgb(c1: [u8; 3], c2: [u8; 3], t: f64) -> [u8; 3]",
+          "outputs": 1
+        },
+        {
+          "name": "doc_textbox_autofit_font_scale",
+          "signature": "pub fn doc_textbox_autofit_font_scale(",
+          "outputs": 1
+        },
+        {
+          "name": "doc_distribute_elements_spacing",
+          "signature": "pub fn doc_distribute_elements_spacing(total_span: f64, element_sizes: &[f64]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "doc_drop_shadow_offset",
+          "signature": "pub fn doc_drop_shadow_offset(distance_pt: f64, angle_rad: f64) -> (f64, f64)",
           "outputs": 1
         }
       ]

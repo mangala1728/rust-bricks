@@ -3835,6 +3835,60 @@ fn test_dsp_fft_multirate_2d_bricks() {
     assert!((freq - 1.0).abs() < 1e-4);
 }
 
+#[test]
+fn test_doc_office_drawing_shape_bricks() {
+    use rust_bricks::doc_office_drawing_shape::*;
+
+    // 1. EMU 與 點數 pt 換算 (72 pt = 914400 EMUs)
+    let emu = doc_points_to_emu(72.0);
+    assert_eq!(emu, 914400);
+    let pt = doc_emu_to_points(914400);
+    assert!((pt - 72.0).abs() < 1e-5);
+
+    // 2. 60000分之1度旋轉角轉弧度 (5400000 = 90度 = pi/2 rad)
+    let rad = doc_drawing_rotation_to_radians(5400000);
+    assert!((rad - 1.5707963267948966).abs() < 1e-4);
+
+    // 3. 2D 仿射變換矩陣解算 (無旋轉水平翻轉)
+    let m = doc_shape_affine_matrix_step(10.0, 20.0, 0.0, true, false);
+    assert_eq!(m[0], -1.0);
+    assert_eq!(m[3], 1.0);
+    assert_eq!(m[4], 10.0);
+    assert_eq!(m[5], 20.0);
+
+    // 4. 旋轉 90 度矩形外接 AABB
+    let (min_x, min_y, max_x, max_y) = doc_shape_rotated_aabb(50.0, 50.0, 100.0, 40.0, 1.5707963267948966);
+    assert!((min_x - 30.0).abs() < 1e-3);
+    assert!((max_x - 70.0).abs() < 1e-3);
+    assert!((min_y - 0.0).abs() < 1e-3);
+    assert!((max_y - 100.0).abs() < 1e-3);
+
+    // 5. 正交折線轉折點解算
+    let corner_h = doc_orthogonal_connector_corner((10.0, 20.0), (100.0, 80.0), true);
+    assert_eq!(corner_h, (100.0, 20.0));
+    let corner_v = doc_orthogonal_connector_corner((10.0, 20.0), (100.0, 80.0), false);
+    assert_eq!(corner_v, (10.0, 80.0));
+
+    // 6. 漸層停止點顏色線性插值
+    let mid_color = doc_gradient_stop_lerp_rgb([0, 0, 0], [255, 255, 255], 0.5);
+    assert_eq!(mid_color, [128, 128, 128]);
+
+    // 7. 文字框自適應縮放
+    let scale_fit = doc_textbox_autofit_font_scale(10, 200.0, 100.0, 12.0);
+    assert_eq!(scale_fit, 1.0);
+    let scale_shrink = doc_textbox_autofit_font_scale(500, 100.0, 50.0, 24.0);
+    assert!(scale_shrink < 1.0);
+
+    // 8. 多圖形水平均勻分攤間距
+    let spacing = doc_distribute_elements_spacing(100.0, &[30.0, 30.0]).unwrap();
+    assert_eq!(spacing, 40.0);
+
+    // 9. 投射陰影位移量
+    let (sdx, sdy) = doc_drop_shadow_offset(10.0, 0.0);
+    assert_eq!(sdx, 10.0);
+    assert!((sdy - 0.0).abs() < 1e-5);
+}
+
 
 
 
