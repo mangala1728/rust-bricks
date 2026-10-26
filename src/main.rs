@@ -5,8 +5,8 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, bezier_curve, catalog, crypto_vault, guard, math_time, packet_checksum, ring_buffer, sensor_motion,
-    sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
+    audio_vad, bezier_curve, catalog, crypto_vault, guard, math_time, net_telemetry, packet_checksum, ring_buffer,
+    sensor_hardware, sensor_motion, sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -23,7 +23,9 @@ fn verify_edge_sensors_and_packets() -> bool {
     let ok_touch = touch_control::pressure_touch_level(0.5, 0.2, 0.8, 0) == 1;
     let ok_feat = vision_feature::otsu_threshold(&[10, 20, 200, 210]) > 0;
     let ok_bez = bezier_curve::cubic_bezier_point(0.0, 0.5, 0.5, 1.0, 0.5) > 0.0;
-    ok_sensor && ok_vision && ok_chk && ok_rb && ok_touch && ok_feat && ok_bez
+    let ok_hw = sensor_hardware::flashlight_pwm_duty(1000, 50, 100);
+    let ok_net = net_telemetry::is_private_ipv4([192, 168, 1, 1]);
+    ok_sensor && ok_vision && ok_chk && ok_rb && ok_touch && ok_feat && ok_bez && ok_hw && ok_net
 }
 
 /// @outputs: 1

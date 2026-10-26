@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 60
+total_functions: 68
 modules:
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
@@ -179,6 +179,35 @@ modules:
       - name: "xorshift64_step"
         signature: "pub fn xorshift64_step(state: u64) -> u64"
         outputs: 1
+  - module: "net_telemetry"
+    file: "src/net_telemetry.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/net_telemetry — 手機網路遙測與快速網段比對微積木：RTT 延遲平滑、零配置 IPv4/IPv6 CIDR 子網比對與私有 IP 判定。"
+      - "Inputs: RTT (ms)、平滑因數 alpha、IPv4/IPv6 位元組陣列、前綴長度。"
+      - "Outputs: 平滑後 RTT (ms)、是否屬於 CIDR 子網 (bool)、是否為私有網段 (bool)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、純位元遮罩運算（零正則、零 Heap 配置）、純標準庫 100% 零依賴。"
+    functions:
+      - name: "rtt_jitter_smooth"
+        signature: "pub fn rtt_jitter_smooth(rtt_ms: f32, prev_smoothed: f32, alpha: f32) -> f32"
+        outputs: 1
+        domains:
+          rtt_ms: "[0.0..60000.0]"
+          prev_smoothed: "[0.0..60000.0]"
+          alpha: "[0.0..1.0]"
+      - name: "ipv4_in_cidr"
+        signature: "pub fn ipv4_in_cidr(ip: [u8; 4], net_ip: [u8; 4], prefix_len: u8) -> bool"
+        outputs: 2
+        domains:
+          prefix_len: "[0..32]"
+      - name: "ipv6_in_cidr"
+        signature: "pub fn ipv6_in_cidr(ip: [u8; 16], net_ip: [u8; 16], prefix_len: u8) -> bool"
+        outputs: 2
+        domains:
+          prefix_len: "[0..128]"
+      - name: "is_private_ipv4"
+        signature: "pub fn is_private_ipv4(ip: [u8; 4]) -> bool"
+        outputs: 2
   - module: "packet_checksum"
     file: "src/packet_checksum.rs"
     functions_count: 6
@@ -253,6 +282,36 @@ modules:
       - name: "read_chunk"
         signature: "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize"
         outputs: 1
+  - module: "sensor_hardware"
+    file: "src/sensor_hardware.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/sensor_hardware — 手機底層硬體微控制：霍爾感測磁力翻蓋偵測、3軸磁力計傾斜補償指南針、閃光燈 PWM 與 SOS 時序編碼微積木。"
+      - "Inputs: 磁場強度 (uT)、門檻值、3軸加速度分量 (ax, ay, az)、3軸磁場分量 (mx, my, mz)、時間戳記 (us/ms)。"
+      - "Outputs: 翻蓋開合布林狀態、傾斜補償航向角 (0..360 度)、PWM 高低電位、SOS 閃爍信號狀態。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、控制流巢狀深度 <= 2、純標準庫 100% 零依賴。"
+    functions:
+      - name: "hall_magnetic_cover_state"
+        signature: "pub fn hall_magnetic_cover_state("
+        outputs: 2
+        domains:
+          current_field_ut: "[-10000.0..10000.0]"
+          close_th_ut: "[0.0..10000.0]"
+          open_th_ut: "[0.0..10000.0]"
+      - name: "compass_tilt_compensated_bearing"
+        signature: "pub fn compass_tilt_compensated_bearing("
+        outputs: 2
+      - name: "flashlight_pwm_duty"
+        signature: "pub fn flashlight_pwm_duty(frequency_hz: u32, duty_percent: u8, time_us: u64) -> bool"
+        outputs: 2
+        domains:
+          frequency_hz: "[1..100000]"
+          duty_percent: "[0..100]"
+      - name: "sos_morse_signal"
+        signature: "pub fn sos_morse_signal(time_ms: u32, unit_ms: u32) -> bool"
+        outputs: 2
+        domains:
+          unit_ms: "[10..2000]"
   - module: "sensor_motion"
     file: "src/sensor_motion.rs"
     functions_count: 4

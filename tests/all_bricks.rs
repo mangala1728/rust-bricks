@@ -414,3 +414,41 @@ fn test_bezier_curve_point_and_tangent() {
     let curv = rust_bricks::bezier_curve::cubic_bezier_curvature([0.0, 0.0, 1.0, 1.0], [0.0, 1.0, 1.0, 0.0], 0.5);
     assert!(curv >= 0.0);
 }
+
+#[test]
+fn test_sensor_hardware_bricks() {
+    // 霍爾皮套翻蓋遲滯測試
+    assert!(rust_bricks::sensor_hardware::hall_magnetic_cover_state(150.0, 100.0, 40.0, false));
+    assert!(rust_bricks::sensor_hardware::hall_magnetic_cover_state(70.0, 100.0, 40.0, true)); // 保持關閉
+    assert!(!rust_bricks::sensor_hardware::hall_magnetic_cover_state(30.0, 100.0, 40.0, true)); // 打開
+
+    // 指南針傾斜補償 (水平放置時)
+    let heading_opt = rust_bricks::sensor_hardware::compass_tilt_compensated_bearing(0.0, 0.0, 9.8, 20.0, 0.0, -30.0);
+    assert!(heading_opt.is_some());
+    // @safety-proof: heading_opt 已驗證 is_some()
+    let heading = heading_opt.unwrap();
+    assert!(heading >= 0.0 && heading < 360.0);
+
+    // 閃光燈 PWM 與 SOS 信號
+    assert!(rust_bricks::sensor_hardware::flashlight_pwm_duty(1000, 50, 200)); // 0..500us 內為 HIGH
+    assert!(!rust_bricks::sensor_hardware::flashlight_pwm_duty(1000, 50, 700)); // 500..1000us 內為 LOW
+    assert!(rust_bricks::sensor_hardware::sos_morse_signal(0, 100)); // Dit
+}
+
+#[test]
+fn test_net_telemetry_bricks() {
+    // RTT 平滑
+    let rtt = rust_bricks::net_telemetry::rtt_jitter_smooth(100.0, 50.0, 0.2);
+    assert_eq!(rtt, 60.0);
+
+    // IPv4 CIDR 比對
+    assert!(rust_bricks::net_telemetry::ipv4_in_cidr([192, 168, 1, 100], [192, 168, 1, 0], 24));
+    assert!(!rust_bricks::net_telemetry::ipv4_in_cidr([192, 168, 2, 100], [192, 168, 1, 0], 24));
+    assert!(rust_bricks::net_telemetry::is_private_ipv4([10, 20, 30, 40]));
+    assert!(!rust_bricks::net_telemetry::is_private_ipv4([8, 8, 8, 8]));
+
+    // IPv6 CIDR 比對
+    let ip6 = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+    let net6 = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    assert!(rust_bricks::net_telemetry::ipv6_in_cidr(ip6, net6, 64));
+}

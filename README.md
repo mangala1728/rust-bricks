@@ -34,6 +34,8 @@
 | [`audio_wav`](src/audio_wav.rs) | 零依賴 16-bit PCM WAV 檔頭解析與二進位編碼 | 音訊錄音檔存檔、跨平台 WAV 串流解析 |
 | [`ring_buffer`](src/ring_buffer.rs) | 純記憶體無鎖固定容量 PCM16 環形緩衝區、批次讀寫、溢出守衛 | 手機麥克風串流 (Oboe/AudioRecord)、感測器事件佇列、消滅 GC 停頓 |
 | [`sensor_motion`](src/sensor_motion.rs) | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 | 手機小遊戲體感控制、防手震、GPS 經緯度去噪與定位 |
+| [`sensor_hardware`](src/sensor_hardware.rs) | 霍爾磁力翻蓋開合偵測、3軸磁力計傾斜補償指南針、閃光燈 PWM 頻閃與 SOS 時序 | 手機磁力皮套偵測、手機傾斜指南針定向、相機補光/求救信號 |
+| [`net_telemetry`](src/net_telemetry.rs) | RTT 網路延遲與抖動平滑、零配置 IPv4/IPv6 CIDR 子網比對、私有網段判定 | Wi-Fi/LTE 串流動態緩衝、局域網設備識別、IP 安全檢核 |
 | [`vision_yuv`](src/vision_yuv.rs) | Android Camera2 (NV21 / YUV420sp) 預覽幀灰階快速抽取、2x2 平均降採樣、亮度直方圖 | 手機相機邊緣運算、OCR 前處理、條碼辨識、自動曝光評估 |
 | [`packet_checksum`](src/packet_checksum.rs) | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 | 檔案總管校驗、感測器封包傳輸、PNG/ZIP 區塊校驗 |
 | [`crypto_vault`](src/crypto_vault.rs) | 零依賴 SHA-256 摘要、常數時間比較 (防時序側信道攻擊)、XOR 流式混淆 | 機密分片校驗、快照雜湊校驗、敏感字串安全防護 |
