@@ -96,6 +96,7 @@
 | [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
 | [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |
 | [`decision_mcts`](src/decision_mcts.rs) | 蒙地卡羅樹狀搜尋 (MCTS) UCB1 評分、最佳子節點選擇、反向傳播更新、訪問次數溫度策略映射 | 智慧決策系統、棋盤博弈 AI (AlphaGo 核心)、強化學習樹搜索、自主代理多步推理 |
+| [`decision_minimax_alphabeta`](src/decision_minimax_alphabeta.rs) | Alpha-Beta 剪枝視窗步進與 Beta 截斷判定、Negamax 負值極大分數轉換、靜態搜尋 (Quiescence Search) 停擺檢驗 (消滅地平線效應)、Zobrist 棋局狀態雜湊 O(1) 增量異或更新、置換表 (Transposition Table) 精確/上下界命中判讀、歷史啟發式著法排序加權、空著裁剪 (Null Move Pruning) 准許判定、MDP 折扣未來回報 (Bellman)、Epsilon-Greedy 探索與利用動作選擇、Q-Learning 貝爾曼最優時序差分更新 | 高效對抗博弈 AI (圍棋/西洋棋/五子棋)、強化學習 Q-Learning 策略收斂、決策樹修剪加速 |
 | [`curve_fit_trend`](src/curve_fit_trend.rs) | 物理實驗線性回歸 (斜率/截距/相關係數)、R² 擬合判定係數、Huber 穩健抗噪損失、LOWESS Tricube 局部加權平滑、RBF/Matérn 3/2 核函數、傅立葉特徵映射、SIREN 正弦週期表示、KAN SiLU 活化 | 實驗物理數據擬合、儀表趨勢平滑濾除雜訊、高斯過程回歸核方法、隱式神經表示 (INR)、KAN 神經架構 |
 | [`ai_autograd_train`](src/ai_autograd_train.rs) | Micrograd 標量自動求導反向傳播 (加/乘/冪/ReLU)、BPE 詞元頻率統計與合併、GPT-2 因果自注意力遮罩 (Causal Mask)、餘弦退火排程 (Cosine Annealing with Warmup)、全域梯度 L2 Norm 截斷、數值穩定 Log-Sum-Exp | 極簡神經網路訓練迴圈 (Karpathy nanoGPT / llm.c / Raschka)、純 Rust 詞元編碼、微型自求導引擎 |
 | [`ai_tensor_gemm`](src/ai_tensor_gemm.rs) | 分塊矩陣乘法 (Tiled GEMM)、Conv2D 卷積前向步進、MaxPool2D 2x2 最大池化、Batch Normalization、Inverted Dropout、Embedding 查找、LeakyReLU、Smooth L1 Loss、餘弦相似度、One-Hot 編碼 | 深度學習神經網路推理與訓練底層算子、邊緣視覺卷積特徵提取、嵌入向量比對 |

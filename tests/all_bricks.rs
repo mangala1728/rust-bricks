@@ -3360,6 +3360,72 @@ fn test_analyzer_sigrok_protocol_bricks() {
     assert!((ratio - 0.75).abs() < 1e-4); // (1 + 5 + 6) / 16 = 12 / 16 = 0.75 (75%)
 }
 
+#[test]
+fn test_decision_minimax_alphabeta_bricks() {
+    use rust_bricks::decision_minimax_alphabeta::*;
+
+    // 1. Alpha-Beta 視窗步進與 Beta 剪枝截斷
+    let mut alpha = 10;
+    let beta = 50;
+    assert!(!decision_alphabeta_window_step(&mut alpha, beta, 30));
+    assert_eq!(alpha, 30);
+    assert!(decision_alphabeta_window_step(&mut alpha, beta, 55)); // 55 >= 50, 觸發截斷
+
+    // 2. Negamax 分數取反
+    assert_eq!(decision_negamax_score_step(100), -100);
+    assert_eq!(decision_negamax_score_step(-50), 50);
+
+    // 3. 靜態搜尋停擺檢定
+    let mut q_alpha = 10;
+    let (cutoff, new_alpha) = decision_quiescence_stand_pat_eval(25, &mut q_alpha, 40);
+    assert!(!cutoff);
+    assert_eq!(new_alpha, 25);
+    assert_eq!(q_alpha, 25);
+
+    // 4. Zobrist 雜湊增量更新
+    let zobrist_table = [0x1234_5678_9ABC_DEF0u64; 128];
+    let h0 = 0xAAAA_BBBB_CCCC_DDDDu64;
+    let h1 = decision_zobrist_hash_update(h0, 0, 5, &zobrist_table);
+    assert_ne!(h1, h0);
+    let h2 = decision_zobrist_hash_update(h1, 0, 5, &zobrist_table);
+    assert_eq!(h2, h0); // 兩次異或還原
+
+    // 5. 置換表邊界比對
+    assert_eq!(decision_transposition_table_flag_check(100, 1, 10, 50), Some(100)); // EXACT
+    assert_eq!(decision_transposition_table_flag_check(60, 2, 10, 50), Some(60));   // LOWERBOUND >= beta
+    assert_eq!(decision_transposition_table_flag_check(40, 2, 10, 50), None);       // LOWERBOUND < beta
+    assert_eq!(decision_transposition_table_flag_check(5, 3, 10, 50), Some(5));     // UPPERBOUND <= alpha
+
+    // 6. 歷史啟發式加分 (depth = 4 -> bonus = 16)
+    let mut history = [0u32; 10];
+    decision_history_heuristic_score_step(&mut history, 3, 4);
+    assert_eq!(history[3], 16);
+
+    // 7. 空著裁剪判定
+    assert!(decision_null_move_pruning_allowed(4, false, 3));
+    assert!(!decision_null_move_pruning_allowed(2, false, 3)); // 深度 < 3
+    assert!(!decision_null_move_pruning_allowed(4, true, 3));  // 將軍狀態不可空著
+
+    // 8. MDP 折扣未來回報 G_t = 10 + 0.9 * 20 = 10 + 18 = 28
+    let g = decision_discounted_future_reward(&[10.0, 20.0], 0.9);
+    assert!(g.is_some());
+    assert!((g.unwrap() - 28.0).abs() < 1e-4);
+
+    // 9. Epsilon-Greedy 動作選擇
+    let q_vals = [1.0f32, 5.0, 2.0];
+    let greedy_act = decision_epsilon_greedy_action(&q_vals, 0.1, 0.5, 0); // 利用 (0.5 >= 0.1)
+    assert_eq!(greedy_act, Some(1)); // 最大 Q 值位於 index 1
+
+    // 10. Q-Learning 貝爾曼最優更新
+    // Q = 2.0, R = 1.0, max_next_Q = 4.0, gamma = 0.5, alpha = 0.1
+    // Target = 1.0 + 0.5 * 4.0 = 3.0
+    // TD Error = 3.0 - 2.0 = 1.0
+    // Q_new = 2.0 + 0.1 * 1.0 = 2.1
+    let q_new = decision_bellman_optimality_step(2.0, 1.0, 4.0, 0.1, 0.5);
+    assert!((q_new - 2.1).abs() < 1e-4);
+}
+
+
 
 
 

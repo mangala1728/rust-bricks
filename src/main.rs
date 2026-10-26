@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -564,6 +564,18 @@ fn verify_analyzer_sigrok_protocol() -> bool {
 }
 
 /// @outputs: 1
+fn verify_decision_minimax_alphabeta() -> bool {
+    let mut alpha = -100;
+    let cutoff = decision_minimax_alphabeta::decision_alphabeta_window_step(&mut alpha, 50, 60);
+    let ok_ab = cutoff && alpha == -100;
+    let n_score = decision_minimax_alphabeta::decision_negamax_score_step(42);
+    let ok_neg = n_score == -42;
+    let ret = decision_minimax_alphabeta::decision_discounted_future_reward(&[1.0, 1.0], 0.9);
+    let ok_ret = matches!(ret, Some(v) if (v - 1.9).abs() < 1e-4);
+    ok_ab && ok_neg && ok_ret
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -614,6 +626,7 @@ fn verify_all_subsystems() -> bool {
         && verify_nfc_iso14443_ndef()
         && verify_ai_transformer_attention()
         && verify_analyzer_sigrok_protocol()
+        && verify_decision_minimax_alphabeta()
 }
 
 /// @outputs: 1

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 516
+total_functions: 526
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1019,6 +1019,63 @@ modules:
         outputs: 2
         domains:
           temperature: "[0.0..10.0]"
+  - module: "decision_minimax_alphabeta"
+    file: "src/decision_minimax_alphabeta.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "decision_alphabeta_window_step"
+        signature: "pub fn decision_alphabeta_window_step(alpha: &mut i32, beta: i32, score: i32) -> bool"
+        outputs: 1
+        domains:
+          score: "[-1000000, 1000000]"
+          beta: "[-1000000, 1000000]"
+      - name: "decision_negamax_score_step"
+        signature: "pub fn decision_negamax_score_step(child_score: i32) -> i32"
+        outputs: 1
+        domains:
+          child_score: "[-1000000, 1000000]"
+      - name: "decision_quiescence_stand_pat_eval"
+        signature: "pub fn decision_quiescence_stand_pat_eval("
+        outputs: 2
+        domains:
+          static_eval: "[-1000000, 1000000]"
+          beta: "[-1000000, 1000000]"
+      - name: "decision_zobrist_hash_update"
+        signature: "pub fn decision_zobrist_hash_update("
+        outputs: 1
+      - name: "decision_transposition_table_flag_check"
+        signature: "pub fn decision_transposition_table_flag_check("
+        outputs: 1
+        domains:
+          entry_score: "[-1000000, 1000000]"
+      - name: "decision_history_heuristic_score_step"
+        signature: "pub fn decision_history_heuristic_score_step("
+        outputs: 1
+        domains:
+          search_depth: "[1, 64]"
+      - name: "decision_null_move_pruning_allowed"
+        signature: "pub fn decision_null_move_pruning_allowed("
+        outputs: 1
+        domains:
+          depth: "[0, 64]"
+      - name: "decision_discounted_future_reward"
+        signature: "pub fn decision_discounted_future_reward(rewards: &[f32], gamma: f32) -> Option<f32>"
+        outputs: 1
+        domains:
+          gamma: "[0.0, 1.0]"
+      - name: "decision_epsilon_greedy_action"
+        signature: "pub fn decision_epsilon_greedy_action("
+        outputs: 1
+        domains:
+          epsilon: "[0.0, 1.0]"
+          rand_sample: "[0.0, 1.0]"
+      - name: "decision_bellman_optimality_step"
+        signature: "pub fn decision_bellman_optimality_step("
+        outputs: 1
+        domains:
+          alpha: "[0.0, 1.0]"
+          gamma: "[0.0, 1.0]"
   - module: "doc_layout_typography"
     file: "src/doc_layout_typography.rs"
     functions_count: 10

@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -823,6 +823,18 @@ fn audit_analyzer_sigrok_protocol() -> bool {
 }
 
 /// @outputs: 1
+fn audit_decision_minimax_alphabeta() -> bool {
+    let mut ok = true;
+    let mut alpha = -100;
+    ok &= decision_minimax_alphabeta::decision_alphabeta_window_step(&mut alpha, 50, 60); // 觸發截斷
+    ok &= decision_minimax_alphabeta::decision_negamax_score_step(10) == -10;
+    ok &= decision_minimax_alphabeta::decision_discounted_future_reward(&[], 0.9).is_none();
+    ok &= decision_minimax_alphabeta::decision_epsilon_greedy_action(&[], 0.1, 0.05, 0).is_none();
+    ok &= !decision_minimax_alphabeta::decision_null_move_pruning_allowed(2, false, 5); // 深度不足 3
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -888,6 +900,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_nfc_iso14443_ndef(), "【NFC非接觸協議與NDEF抽查失敗】存在CRC溢出或前綴解析崩潰", total, passed, failures);
     check_audit_domain(audit_ai_transformer_attention(), "【AI注意力與大模型運算抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
     check_audit_domain(audit_analyzer_sigrok_protocol(), "【邏輯分析儀與協議解碼抽查失敗】存在除零溢出或無效通道", total, passed, failures);
+    check_audit_domain(audit_decision_minimax_alphabeta(), "【對抗搜尋與極大極小決策抽查失敗】存在除零溢出或剪枝發散", total, passed, failures);
 }
 
 /// @outputs: 2
