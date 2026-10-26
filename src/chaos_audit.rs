@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -1025,6 +1025,24 @@ fn audit_physics_gjk_epa_contact() -> bool {
 }
 
 /// @outputs: 1
+fn audit_codec_container_multimedia() -> bool {
+    let mut ok = true;
+    ok &= codec_container_multimedia::isobmff_box_header_parse(&[]).is_none();
+    ok &= codec_container_multimedia::isobmff_box_header_parse(&[0u8; 7]).is_none();
+    ok &= codec_container_multimedia::ebml_vint_decode(&[]).is_none();
+    ok &= codec_container_multimedia::ebml_vint_decode(&[0u8; 10]).is_none();
+    ok &= codec_container_multimedia::mpegts_sync_packet_validate(&[]).is_none();
+    ok &= codec_container_multimedia::mpegts_pcr_to_timestamp_ns(u64::MAX, 500).is_none();
+    ok &= codec_container_multimedia::flv_tag_header_parse(&[0u8; 11]).is_none();
+    ok &= codec_container_multimedia::id3v2_syncsafe_to_u32([0x80, 0, 0, 0]).is_none();
+    ok &= codec_container_multimedia::id3v2_u32_to_syncsafe(0xFFFF_FFFF).is_none();
+    ok &= codec_container_multimedia::ogg_page_header_validate(&[]).is_none();
+    ok &= codec_container_multimedia::audio_samples_to_duration_ms(100, 0).is_none();
+    ok &= codec_container_multimedia::audio_samples_to_duration_ms(44100, 44100) == Some(1000);
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1103,6 +1121,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_radar_clustering_dbscan_tracker(), "【雷達點雲聚類與追蹤抽查失敗】存在除零溢出或發散", total, passed, failures);
     check_audit_domain(audit_fieldbus_building_automation(), "【樓宇自動化與智慧電表協定抽查失敗】存在CRC溢出或無效常數", total, passed, failures);
     check_audit_domain(audit_physics_gjk_epa_contact(), "【剛體動力學與GJK/EPA抽查失敗】存在除零溢出或法向發散", total, passed, failures);
+    check_audit_domain(audit_codec_container_multimedia(), "【多媒體容器與封裝流抽查失敗】存在標頭溢出或VINT解析崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

@@ -4061,6 +4061,88 @@ fn test_physics_gjk_epa_contact_bricks() {
     assert_eq!(dw, [0.0, 0.0, 20.0]);
 }
 
+#[test]
+fn test_codec_container_multimedia_bricks() {
+    use rust_bricks::codec_container_multimedia::*;
+
+    // 1. ISOBMFF Box 標頭解析
+    let b1 = [0x00, 0x00, 0x00, 0x18, b'm', b'o', b'o', b'v'];
+    // @safety-proof: b1 長度 8 合法
+    let (sz1, fcc1, h_len1) = isobmff_box_header_parse(&b1).unwrap();
+    assert_eq!(sz1, 24);
+    assert_eq!(&fcc1, b"moov");
+    assert_eq!(h_len1, 8);
+
+    // 2. EBML VINT 變長整數解碼
+    // @safety-proof: 0x85 開頭為 1000_0101
+    let (v1, l1) = ebml_vint_decode(&[0x85]).unwrap();
+    assert_eq!(v1, 5);
+    assert_eq!(l1, 1);
+    // @safety-proof: 0x40 0x20
+    let (v2, l2) = ebml_vint_decode(&[0x40, 0x20]).unwrap();
+    assert_eq!(v2, 32);
+    assert_eq!(l2, 2);
+
+    // 3. MPEG-TS 188 封包驗證
+    let mut ts = [0u8; 188];
+    ts[0] = 0x47;
+    ts[1] = 0x41; // pusi=1, pid_hi = 1
+    ts[2] = 0x00; // pid = 0x0100 = 256
+    ts[3] = 0x15; // afc=1, cc=5
+    // @safety-proof: ts[0]=0x47 長度 188
+    let (pid, pusi, afc, cc) = mpegts_sync_packet_validate(&ts).unwrap();
+    assert_eq!(pid, 256);
+    assert!(pusi);
+    assert_eq!(afc, 1);
+    assert_eq!(cc, 5);
+
+    // 4. MPEG-TS PCR 轉奈秒
+    // @safety-proof: 90000 週期 = 1 秒 = 1_000_000_000 ns
+    let ns = mpegts_pcr_to_timestamp_ns(90000, 0).unwrap();
+    assert_eq!(ns, 1_000_000_000);
+
+    // 5. FLV Tag 標頭解碼
+    let flv_hdr = [9, 0x00, 0x01, 0x00, 0x00, 0x03, 0xE8, 0x00, 0, 0, 0];
+    // @safety-proof: flv_hdr[0]=9
+    let (tt, d_sz, ts_ms) = flv_tag_header_parse(&flv_hdr).unwrap();
+    assert_eq!(tt, 9);
+    assert_eq!(d_sz, 256);
+    assert_eq!(ts_ms, 1000);
+
+    // 6. ID3v2 Syncsafe 整數雙向轉換
+    // @safety-proof: 257 < 0x0FFF_FFFF
+    let encoded = id3v2_u32_to_syncsafe(257).unwrap();
+    assert_eq!(encoded, [0, 0, 2, 1]);
+    // @safety-proof: encoded 符合 syncsafe
+    let decoded = id3v2_syncsafe_to_u32(encoded).unwrap();
+    assert_eq!(decoded, 257);
+
+    // 7. Ogg 頁面標頭校驗
+    let mut ogg = [0u8; 27];
+    ogg[0..4].copy_from_slice(b"OggS");
+    ogg[4] = 0; // version
+    ogg[5] = 0x02; // BOS
+    ogg[6..14].copy_from_slice(&1000u64.to_le_bytes());
+    ogg[14..18].copy_from_slice(&42u32.to_le_bytes());
+    ogg[18..22].copy_from_slice(&1u32.to_le_bytes());
+    // @safety-proof: ogg 開頭 OggS
+    let (ht, gran, ser, seq) = ogg_page_header_validate(&ogg).unwrap();
+    assert_eq!(ht, 0x02);
+    assert_eq!(gran, 1000);
+    assert_eq!(ser, 42);
+    assert_eq!(seq, 1);
+
+    // 8. Ogg CRC-32 單步
+    let crc1 = ogg_crc32_step(0, b'A');
+    assert_ne!(crc1, 0);
+
+    // 9. 音訊樣本數轉毫秒時長
+    // @safety-proof: 48000Hz 5秒
+    let ms_dur = audio_samples_to_duration_ms(48000 * 5, 48000).unwrap();
+    assert_eq!(ms_dur, 5000);
+}
+
+
 
 
 

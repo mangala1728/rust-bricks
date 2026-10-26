@@ -1,6 +1,6 @@
 {
   "schema": "agy-arbitration-receipt-v1",
-  "model": "cycle-34",
+  "model": "cycle-35",
   "verdict": "PASS",
-  "diff_sha256": "ff45f4cf28aa59d88f244dd422e315de725596477c105bc9a695092c15c661b3"
+  "diff_sha256": "5f7352654c015a9d9d55d6cf77350ff198d387dead42652e8d536df9c53fd855"
 }

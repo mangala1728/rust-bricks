@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 640,
+  "total_functions": 650,
   "modules": [
     {
       "module": "agent_terminal",
@@ -841,6 +841,63 @@
         {
           "name": "cnc_trapezoidal_velocity_profile_step",
           "signature": "pub fn cnc_trapezoidal_velocity_profile_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "codec_container_multimedia",
+      "file": "src/codec_container_multimedia.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "isobmff_box_header_parse",
+          "signature": "pub fn isobmff_box_header_parse(bytes: &[u8]) -> Option<(u32, [u8; 4], usize)>",
+          "outputs": 1
+        },
+        {
+          "name": "ebml_vint_decode",
+          "signature": "pub fn ebml_vint_decode(bytes: &[u8]) -> Option<(u64, usize)>",
+          "outputs": 1
+        },
+        {
+          "name": "mpegts_sync_packet_validate",
+          "signature": "pub fn mpegts_sync_packet_validate(packet: &[u8]) -> Option<(u16, bool, u8, u8)>",
+          "outputs": 1
+        },
+        {
+          "name": "mpegts_pcr_to_timestamp_ns",
+          "signature": "pub fn mpegts_pcr_to_timestamp_ns(pcr_base: u64, pcr_ext: u16) -> Option<u64>",
+          "outputs": 1
+        },
+        {
+          "name": "flv_tag_header_parse",
+          "signature": "pub fn flv_tag_header_parse(header: &[u8; 11]) -> Option<(u8, u32, u32)>",
+          "outputs": 1
+        },
+        {
+          "name": "id3v2_syncsafe_to_u32",
+          "signature": "pub fn id3v2_syncsafe_to_u32(bytes: [u8; 4]) -> Option<u32>",
+          "outputs": 1
+        },
+        {
+          "name": "id3v2_u32_to_syncsafe",
+          "signature": "pub fn id3v2_u32_to_syncsafe(val: u32) -> Option<[u8; 4]>",
+          "outputs": 1
+        },
+        {
+          "name": "ogg_page_header_validate",
+          "signature": "pub fn ogg_page_header_validate(bytes: &[u8]) -> Option<(u8, u64, u32, u32)>",
+          "outputs": 1
+        },
+        {
+          "name": "ogg_crc32_step",
+          "signature": "pub fn ogg_crc32_step(crc: u32, byte: u8) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_samples_to_duration_ms",
+          "signature": "pub fn audio_samples_to_duration_ms(sample_count: u64, sample_rate_hz: u32) -> Option<u64>",
           "outputs": 1
         }
       ]
