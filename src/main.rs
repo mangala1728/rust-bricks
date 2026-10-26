@@ -5,9 +5,10 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, bezier_curve, catalog, crypto_vault, fast_math, geo_collision, guard, math_time,
-    motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer, sensor_hardware,
-    sensor_motion, sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
+    audio_vad, bezier_curve, can_bus_frame, catalog, crypto_vault, fast_math, geo_collision, guard,
+    iso7816_smartcard, math_time, motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer,
+    sensor_hardware, sensor_motion, sys_path, text_cleaner, touch_control, vision_feature,
+    vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -43,6 +44,25 @@ fn verify_new_kinematics_and_math() -> bool {
     let poly = [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)];
     let ok_poly = geo_collision::point_in_polygon_raycast(2.0, 2.0, &poly);
     ok_inv && ok_isqrt && ok_lerp && ok_zupt && ok_reckon && ok_haptic && ok_box && ok_seg && ok_poly
+}
+
+/// @outputs: 1
+fn verify_security_and_automotive() -> bool {
+    let ok_luhn = iso7816_smartcard::luhn_checksum_validate(b"49927398716");
+    let ok_sw = iso7816_smartcard::iso7816_sw_status(0x90, 0x00) == 0;
+    let mut pb = [0u8; 8];
+    let ok_pb = iso7816_smartcard::iso9564_pin_block_format0(b"1234", b"1111222233334444", &mut pb);
+    let (is_eff, cid) = can_bus_frame::can_id_unpack(0x123);
+    let ok_can = !is_eff && cid == 0x123;
+    let ok_fd = can_bus_frame::can_fd_dlc_to_len(15) == 64;
+    let ok_modbus = can_bus_frame::crc16_modbus(&[0x01, 0x03, 0x00, 0x00, 0x00, 0x0A]) == 0xCDC5;
+    let timer = can_bus_frame::timer_calc_prescaler_and_period(72_000_000, 1_000).is_some();
+    ok_luhn && ok_sw && ok_pb && ok_can && ok_fd && ok_modbus && timer
+}
+
+/// @outputs: 1
+fn verify_all_subsystems() -> bool {
+    verify_edge_sensors_and_packets() && verify_new_kinematics_and_math() && verify_security_and_automotive()
 }
 
 /// @outputs: 1
@@ -82,17 +102,11 @@ fn run_selftest() {
     }
     println!("  ✅ text_cleaner: PASS");
 
-    if !verify_edge_sensors_and_packets() {
-        println!("  ❌ edge_sensors_and_packets: FAIL");
+    if !verify_all_subsystems() {
+        println!("  ❌ edge_and_embedded_subsystems: FAIL");
         process::exit(1);
     }
-    println!("  ✅ edge_sensors_and_packets: PASS");
-
-    if !verify_new_kinematics_and_math() {
-        println!("  ❌ kinematics_and_math: FAIL");
-        process::exit(1);
-    }
-    println!("  ✅ kinematics_and_math: PASS");
+    println!("  ✅ edge_and_embedded_subsystems: PASS");
 
     println!("✨ [rust-bricks] All core brick modules verified successfully! 100% PASS.");
 }

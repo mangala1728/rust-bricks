@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 78
+total_functions: 88
 modules:
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
@@ -122,6 +122,41 @@ modules:
         outputs: 1
         domains:
           t: "[0.0..1.0]"
+  - module: "can_bus_frame"
+    file: "src/can_bus_frame.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/can_bus_frame — 車載總線 (CAN/CAN-FD)、ISO-TP 車載診斷與工控 MCU SDK 微積木。"
+      - "Inputs: CAN ID 原始碼、DLC 長度碼、Modbus 資料訊框、ISO-TP 負載、系統時鐘頻率。"
+      - "Outputs: 擴展幀判定與清淨 ID、CAN-FD 位元組長度 (0..64)、Modbus CRC16 校驗碼、ISO-TP 單幀、定時器預分頻與重載值。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、100% 零 unsafe、防除以零溢出、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "can_id_unpack"
+        signature: "pub fn can_id_unpack(raw_id: u32) -> (bool, u32)"
+        outputs: 2
+        domains:
+          raw_id: "[0..4294967295]"
+      - name: "can_fd_dlc_to_len"
+        signature: "pub fn can_fd_dlc_to_len(dlc: u8) -> u8"
+        outputs: 1
+        domains:
+          dlc: "[0..15]"
+      - name: "crc16_modbus"
+        signature: "pub fn crc16_modbus(data: &[u8]) -> u16"
+        outputs: 1
+        domains:
+          data_len: "[0..4096]"
+      - name: "iso_tp_single_frame_encode"
+        signature: "pub fn iso_tp_single_frame_encode(payload: &[u8], out_frame: &mut [u8; 8]) -> bool"
+        outputs: 2
+        domains:
+          payload_len: "[1..7]"
+      - name: "timer_calc_prescaler_and_period"
+        signature: "pub fn timer_calc_prescaler_and_period(sys_clock_hz: u32, target_freq_hz: u32) -> Option<(u16, u16)>"
+        outputs: 2
+        domains:
+          sys_clock_hz: "[1..1000000000]"
+          target_freq_hz: "[1..100000000]"
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4
@@ -201,6 +236,42 @@ modules:
         domains:
           px: "[-10000.0..10000.0]"
           py: "[-10000.0..10000.0]"
+  - module: "iso7816_smartcard"
+    file: "src/iso7816_smartcard.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/iso7816_smartcard — 金融終端、ATM、刷卡機與智慧晶片卡安全微積木。"
+      - "Inputs: 卡號字元序列、ISO 7816 狀態碼 SW1/SW2、明文 PIN、卡片主帳號 (PAN)、TLV 位元組流、敏感記憶體緩衝區。"
+      - "Outputs: Luhn 卡號校驗布林值、狀態碼分類等級 (0..3)、Format 0 PIN Block 構造布林值、TLV 解析元組、記憶體清零。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、100% 零 unsafe、防記憶體殘留、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "luhn_checksum_validate"
+        signature: "pub fn luhn_checksum_validate(digits: &[u8]) -> bool"
+        outputs: 2
+        domains:
+          digits_len: "[1..32]"
+      - name: "iso7816_sw_status"
+        signature: "pub fn iso7816_sw_status(sw1: u8, sw2: u8) -> u8"
+        outputs: 4
+        domains:
+          sw1: "[0..255]"
+          sw2: "[0..255]"
+      - name: "iso9564_pin_block_format0"
+        signature: "pub fn iso9564_pin_block_format0(pin: &[u8], pan: &[u8], out_block: &mut [u8; 8]) -> bool"
+        outputs: 2
+        domains:
+          pin_len: "[4..12]"
+          pan_len: "[12..19]"
+      - name: "zeroize_slice"
+        signature: "pub fn zeroize_slice(buf: &mut [u8])"
+        outputs: 1
+        domains:
+          buf_len: "[0..65536]"
+      - name: "ber_tlv_parse_tag_len"
+        signature: "pub fn ber_tlv_parse_tag_len(data: &[u8]) -> Option<(u32, usize, usize)>"
+        outputs: 2
+        domains:
+          data_len: "[2..1024]"
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5

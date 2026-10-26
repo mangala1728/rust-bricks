@@ -553,3 +553,79 @@ fn test_geo_collision_bricks() {
     assert!(!rust_bricks::geo_collision::point_in_polygon_raycast(-1.0, 5.0, &poly));
     assert!(!rust_bricks::geo_collision::point_in_polygon_raycast(5.0, 5.0, &[])); // 頂點不足
 }
+
+#[test]
+fn test_iso7816_smartcard_bricks() {
+    // 1. Luhn 卡號校驗 (49927398716 為標準真值)
+    assert!(rust_bricks::iso7816_smartcard::luhn_checksum_validate(b"49927398716"));
+    assert!(!rust_bricks::iso7816_smartcard::luhn_checksum_validate(b"49927398717"));
+    assert!(rust_bricks::iso7816_smartcard::luhn_checksum_validate(&[4, 9, 9, 2, 7, 3, 9, 8, 7, 1, 6]));
+    assert!(!rust_bricks::iso7816_smartcard::luhn_checksum_validate(b"")); // 空防禦
+
+    // 2. ISO 7816-4 SW1/SW2 狀態分類
+    assert_eq!(rust_bricks::iso7816_smartcard::iso7816_sw_status(0x90, 0x00), 0); // 成功
+    assert_eq!(rust_bricks::iso7816_smartcard::iso7816_sw_status(0x61, 0x20), 0); // 帶剩餘長度成功
+    assert_eq!(rust_bricks::iso7816_smartcard::iso7816_sw_status(0x63, 0xC2), 1); // 警告
+    assert_eq!(rust_bricks::iso7816_smartcard::iso7816_sw_status(0x65, 0x81), 2); // 執行錯誤
+    assert_eq!(rust_bricks::iso7816_smartcard::iso7816_sw_status(0x6A, 0x82), 3); // 檢查錯誤 (File Not Found)
+
+    // 3. ISO 9564-1 Format 0 PIN Block 構造
+    let mut pin_block = [0u8; 8];
+    let ok_pin = rust_bricks::iso7816_smartcard::iso9564_pin_block_format0(b"1234", b"1111222233334444", &mut pin_block);
+    assert!(ok_pin);
+    assert_eq!(pin_block, [0x04, 0x12, 0x26, 0xDD, 0xDC, 0xCC, 0xCB, 0xBB]);
+
+    // 4. 敏感記憶體安全擦除
+    let mut secret = [0x5A; 16];
+    rust_bricks::iso7816_smartcard::zeroize_slice(&mut secret);
+    assert_eq!(secret, [0u8; 16]);
+
+    // 5. EMV BER-TLV Tag/Length 解析 (Tag 0x9F02, Len 6)
+    let tlv_stream = [0x9F, 0x02, 0x06, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00];
+    let tlv_res = rust_bricks::iso7816_smartcard::ber_tlv_parse_tag_len(&tlv_stream);
+    assert!(tlv_res.is_some());
+    // @safety-proof: tlv_res 已驗證 is_some()
+    let (tag, len, offset) = tlv_res.unwrap();
+    assert_eq!(tag, 0x9F02);
+    assert_eq!(len, 6);
+    assert_eq!(offset, 3);
+}
+
+#[test]
+fn test_can_bus_frame_bricks() {
+    // 1. CAN ID 拆解 (標準 11-bit vs 擴展 29-bit)
+    let (ext_std, id_std) = rust_bricks::can_bus_frame::can_id_unpack(0x123);
+    assert!(!ext_std);
+    assert_eq!(id_std, 0x123);
+
+    let (ext_eff, id_eff) = rust_bricks::can_bus_frame::can_id_unpack(0x8000_0000 | 0x18DAF110);
+    assert!(ext_eff);
+    assert_eq!(id_eff, 0x18DAF110);
+
+    // 2. CAN FD DLC 映射
+    assert_eq!(rust_bricks::can_bus_frame::can_fd_dlc_to_len(0), 0);
+    assert_eq!(rust_bricks::can_bus_frame::can_fd_dlc_to_len(8), 8);
+    assert_eq!(rust_bricks::can_bus_frame::can_fd_dlc_to_len(9), 12);
+    assert_eq!(rust_bricks::can_bus_frame::can_fd_dlc_to_len(15), 64);
+    assert_eq!(rust_bricks::can_bus_frame::can_fd_dlc_to_len(16), 0); // 守衛超限
+
+    // 3. Modbus RTU CRC16 (多項式 0xA001)
+    let modbus_req = [0x01, 0x03, 0x00, 0x00, 0x00, 0x0A];
+    let crc = rust_bricks::can_bus_frame::crc16_modbus(&modbus_req);
+    assert_eq!(crc, 0xCDC5);
+
+    // 4. ISO-TP 單幀 (SF) 構造
+    let mut sf_frame = [0u8; 8];
+    let ok_sf = rust_bricks::can_bus_frame::iso_tp_single_frame_encode(&[0x22, 0xF1, 0x90], &mut sf_frame);
+    assert!(ok_sf);
+    assert_eq!(sf_frame[0], 0x03);
+    assert_eq!(&sf_frame[1..4], &[0x22, 0xF1, 0x90]);
+    assert_eq!(&sf_frame[4..8], &[0xCC, 0xCC, 0xCC, 0xCC]);
+
+    // 5. MCU 定時器預分頻與重載週期 (72MHz 產生 1kHz 中斷)
+    let timer_res = rust_bricks::can_bus_frame::timer_calc_prescaler_and_period(72_000_000, 1_000);
+    assert!(timer_res.is_some());
+    // @safety-proof: timer_res 已驗證 is_some()
+    let (psc, arr) = timer_res.unwrap();
+    assert_eq!((psc as u32 + 1) * (arr as u32 + 1), 72_000);
+}

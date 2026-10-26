@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：19 大核心模組、78 個純函式、37 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：21 大核心模組、88 個純函式、39 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -95,6 +95,8 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `motion_dead_reckon` | `src/motion_dead_reckon.rs` | 零速更新 (ZUPT)、1D 航位推算積分、觸覺震動馬達多模式時序生成 |
 | `fast_math` | `src/fast_math.rs` | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep |
 | `geo_collision` | `src/geo_collision.rs` | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 |
+| `iso7816_smartcard` | `src/iso7816_smartcard.rs` | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 |
+| `can_bus_frame` | `src/can_bus_frame.rs` | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 |
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |
 | `guard` | `src/guard.rs` | 純 Rust 內建合約守衛、檔案防膨脹、依賴審查、缺陷硬鎖 |
 | `catalog` | `src/catalog.rs` | 純 Rust 自動產生 CATALOG.yaml / CATALOG.json 機器索引 |

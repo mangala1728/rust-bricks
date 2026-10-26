@@ -54,6 +54,30 @@ Python OpenCV 代碼龐大動輒數十 MB，但其底層演算法核心極小：
 - **積分圖（Integral Image）**：
   - $O(1)$ 時間求任意矩形區域畫素和，為人臉/條碼特徵比對基石。
 
+### 5. 金融終端與智慧卡安全防禦（Financial POS, ATM & Smartcard Security）
+金融刷卡機、ATM 提款機、PC/SC 讀卡機韌體極度重視防竄改、防時序攻擊與安全合規：
+- **ISO 7816-4 APDU 指令協定封裝與狀態碼判讀**：
+  - Command APDU（CLA/INS/P1/P2/Lc/Data/Le）二進位打包與解析、Response APDU 狀態碼（SW1/SW2，如 `0x9000` 成功、`0x6A82` 檔案不存在、`0x63Cx` 密碼剩餘次數）判定。
+- **ISO 9564-1 Format 0 PIN Block 密碼塊構造**：
+  - 金融鍵盤 (PINPad) 加密前處理：將明文 PIN 與主帳號 (PAN) 進行標準補位與 XOR 混淆，防止明文密碼殘留。
+- **EMV 晶片卡 BER-TLV (Tag-Length-Value) 零配置解析**：
+  - 信用卡晶片、身分證晶片金融交易資料解碼（單/多位元組 Tag 與長度解析）。
+- **Luhn 演算法（Mod-10 卡號防打錯校驗）**：
+  - 信用卡、提款卡、IMEI 碼標準同位校驗。
+- **記憶體敏感資料安全清零（Zeroize Memory Sanitization）**：
+  - 處理完私鑰或 PIN 後，透過防編譯器最佳化抹除的內存清零技術，杜絕 Heartbleed 式的內存轉儲外洩。
+
+### 6. 車載總線與知名 MCU/SoC SDK（Automotive CAN/CAN-FD & MCU Firmware）
+Microchip, STMicroelectronics (STM32), NXP, TI, Nordic (nRF51/nRF52), Peak CAN 官方 C 庫常有記憶體溢出與未定義行為隱患：
+- **CAN 2.0A/B 與 CAN FD 訊號封包結構解析**：
+  - 11-bit 標準 ID 與 29-bit 擴展 ID 位元拆解、RTR 遠端幀標記判定、CAN FD 數據長度碼 (DLC 0..15) 映射至 0..64 位元組長度表。
+- **車載診斷協議 ISO-TP (ISO 15765-2) 單幀 (SF) / 首幀 (FF) 封裝**：
+  - 車載 ECU 診斷 UDS (ISO 14229) 傳輸層分包演算法，純陣列處理，零動態記憶體分配。
+- **工業與嵌入式通訊校驗 CRC16（Modbus RTU / CCITT）**：
+  - 廣泛應用於 8051, STM32, Arduino, 樹莓派 RS485 模組的 Modbus RTU (0xA001 反轉多項式) 與 XMODEM/CCITT 校驗。
+- **定時器中斷計數重裝載（Timer Prescaler & Period Calculation）**：
+  - 輸入系統時鐘頻率、目標定時微秒/毫秒，輸出最佳預分頻器 (PSC) 與自動重裝載值 (ARR)，消除 C 語言整數溢出計算錯誤。
+
 ---
 
 ## 三、避坑指引：低價值與禁獵區

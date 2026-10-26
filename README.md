@@ -46,6 +46,8 @@
 | [`motion_dead_reckon`](src/motion_dead_reckon.rs) | 手機慣性導航零速更新 (ZUPT)、一維航位推算積分、觸覺震動馬達多模式時序生成 | 手機遊戲體感位移、步態/停頓消除漂移、馬達短震/警示反饋 |
 | [`fast_math`](src/fast_math.rs) | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep | 邊緣手遊物理引擎、粒子光照著色、UI 動畫平滑過渡 |
 | [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
+| [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
+| [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 
 ---

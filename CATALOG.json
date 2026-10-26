@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 78,
+  "total_functions": 88,
   "modules": [
     {
       "module": "audio_dsp",
@@ -114,6 +114,38 @@
       ]
     },
     {
+      "module": "can_bus_frame",
+      "file": "src/can_bus_frame.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "can_id_unpack",
+          "signature": "pub fn can_id_unpack(raw_id: u32) -> (bool, u32)",
+          "outputs": 2
+        },
+        {
+          "name": "can_fd_dlc_to_len",
+          "signature": "pub fn can_fd_dlc_to_len(dlc: u8) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "crc16_modbus",
+          "signature": "pub fn crc16_modbus(data: &[u8]) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "iso_tp_single_frame_encode",
+          "signature": "pub fn iso_tp_single_frame_encode(payload: &[u8], out_frame: &mut [u8; 8]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "timer_calc_prescaler_and_period",
+          "signature": "pub fn timer_calc_prescaler_and_period(sys_clock_hz: u32, target_freq_hz: u32) -> Option<(u16, u16)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "crypto_vault",
       "file": "src/crypto_vault.rs",
       "functions_count": 4,
@@ -185,6 +217,38 @@
         {
           "name": "point_in_polygon_raycast",
           "signature": "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "iso7816_smartcard",
+      "file": "src/iso7816_smartcard.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "luhn_checksum_validate",
+          "signature": "pub fn luhn_checksum_validate(digits: &[u8]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "iso7816_sw_status",
+          "signature": "pub fn iso7816_sw_status(sw1: u8, sw2: u8) -> u8",
+          "outputs": 4
+        },
+        {
+          "name": "iso9564_pin_block_format0",
+          "signature": "pub fn iso9564_pin_block_format0(pin: &[u8], pan: &[u8], out_block: &mut [u8; 8]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "zeroize_slice",
+          "signature": "pub fn zeroize_slice(buf: &mut [u8])",
+          "outputs": 1
+        },
+        {
+          "name": "ber_tlv_parse_tag_len",
+          "signature": "pub fn ber_tlv_parse_tag_len(data: &[u8]) -> Option<(u32, usize, usize)>",
           "outputs": 2
         }
       ]
