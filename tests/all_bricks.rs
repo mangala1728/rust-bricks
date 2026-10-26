@@ -3236,6 +3236,71 @@ fn test_nfc_iso14443_ndef_bricks() {
     assert!(!nfc_felica_frame_validate(&[0x01]));
 }
 
+#[test]
+fn test_ai_transformer_attention_bricks() {
+    use rust_bricks::ai_transformer_attention::*;
+
+    // 1. 縮放點積注意力分數 (Q·K = 16, d_k = 64 -> 16 / 8 = 2.0)
+    let score = ai_attention_scaled_dot_product_score(16.0, 64);
+    assert!((score - 2.0).abs() < 1e-5);
+
+    // 2. 因果自回歸下三角遮罩
+    assert_eq!(ai_attention_causal_mask(5, 3), 0.0);
+    assert_eq!(ai_attention_causal_mask(5, 5), 0.0);
+    assert_eq!(ai_attention_causal_mask(5, 6), -10000.0);
+
+    // 3. SwiGLU 門控前饋神經網路激活
+    let act = ai_swiglu_activation_step(1.0, 2.0);
+    // sigmoid(1.0) = 1/(1+e^-1) = 0.73105858
+    // swish = 1.0 * 0.73105858 = 0.73105858
+    // out = 0.73105858 * 2.0 = 1.462117
+    assert!((act - 1.462117).abs() < 1e-4);
+
+    // 4. RMSNorm 倒數標準差因子
+    let x = [2.0f32, 2.0, 2.0, 2.0];
+    let inv_rms = ai_rmsnorm_inv_rms_factor(&x, 1e-5);
+    assert!(inv_rms.is_some());
+    assert!((inv_rms.unwrap() - 0.5).abs() < 1e-4); // 1 / sqrt(4) = 0.5
+
+    // 5. RMSNorm 向量歸一化套用
+    let mut out_rms = [0.0f32; 4];
+    let weight = [1.0f32, 2.0, 1.0, 2.0];
+    let ok_apply = ai_rmsnorm_apply(&x, &weight, 0.5, &mut out_rms);
+    assert!(ok_apply);
+    assert_eq!(out_rms, [1.0, 2.0, 1.0, 2.0]);
+
+    // 6. KV-Cache 單權杖切片寫入
+    let mut cache = [0.0f32; 16]; // max_seq_len = 4, d_model = 4
+    let ok_insert = ai_kv_cache_insert_token_slice(&mut cache, 2, 4, 4, &[9.0, 8.0, 7.0, 6.0]);
+    assert!(ok_insert);
+    assert_eq!(&cache[8..12], &[9.0, 8.0, 7.0, 6.0]);
+
+    // 7. Top-P (Nucleus) 核採樣累積截斷
+    let probs = [0.5f32, 0.3, 0.15, 0.05];
+    let cutoff = ai_top_p_nucleus_cutoff_count(&probs, 0.8);
+    assert_eq!(cutoff, 2); // 0.5 + 0.3 = 0.8 -> 保留前 2 個
+
+    // 8. Top-K 遮罩
+    let mut logits = [10.0f32, 5.0, 2.0, 0.0];
+    ai_top_k_mask_logits(&mut logits, 5.0);
+    assert_eq!(logits[0], 10.0);
+    assert_eq!(logits[1], 5.0);
+    assert_eq!(logits[2], -10000.0);
+
+    // 9. 帶溫度係數之 Softmax
+    let mut p_out = [0.0f32; 2];
+    let ok_sm = ai_temperature_softmax(&[10.0, 10.0], 2.0, &mut p_out);
+    assert!(ok_sm);
+    assert!((p_out[0] - 0.5).abs() < 1e-5);
+    assert!((p_out[1] - 0.5).abs() < 1e-5);
+
+    // 10. 標籤平滑交叉熵損失步進
+    let loss = ai_label_smoothed_cross_entropy_step(0.8, -5.0, 10, 0.1);
+    assert!(loss.is_some());
+    assert!(loss.unwrap() > 0.0);
+}
+
+
 
 
 

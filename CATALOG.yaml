@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 496
+total_functions: 506
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -181,6 +181,55 @@ modules:
       - name: "gelu_forward"
         signature: "pub fn gelu_forward(x: f32) -> f32"
         outputs: 1
+  - module: "ai_transformer_attention"
+    file: "src/ai_transformer_attention.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "ai_attention_scaled_dot_product_score"
+        signature: "pub fn ai_attention_scaled_dot_product_score(q_dot_k: f32, d_k: usize) -> f32"
+        outputs: 1
+        domains:
+          q_dot_k: "[-1e8, 1e8]"
+      - name: "ai_attention_causal_mask"
+        signature: "pub fn ai_attention_causal_mask(query_pos: usize, key_pos: usize) -> f32"
+        outputs: 1
+      - name: "ai_swiglu_activation_step"
+        signature: "pub fn ai_swiglu_activation_step(gate: f32, up: f32) -> f32"
+        outputs: 1
+        domains:
+          gate: "[-100.0, 100.0]"
+          up: "[-100.0, 100.0]"
+      - name: "ai_rmsnorm_inv_rms_factor"
+        signature: "pub fn ai_rmsnorm_inv_rms_factor(x: &[f32], eps: f32) -> Option<f32>"
+        outputs: 1
+        domains:
+          eps: "[1e-12, 1e-2]"
+      - name: "ai_rmsnorm_apply"
+        signature: "pub fn ai_rmsnorm_apply("
+        outputs: 1
+      - name: "ai_kv_cache_insert_token_slice"
+        signature: "pub fn ai_kv_cache_insert_token_slice("
+        outputs: 1
+      - name: "ai_top_p_nucleus_cutoff_count"
+        signature: "pub fn ai_top_p_nucleus_cutoff_count(sorted_probs: &[f32], top_p: f32) -> usize"
+        outputs: 1
+        domains:
+          top_p: "[0.01, 1.0]"
+      - name: "ai_top_k_mask_logits"
+        signature: "pub fn ai_top_k_mask_logits(logits: &mut [f32], k_cutoff_val: f32)"
+        outputs: 1
+      - name: "ai_temperature_softmax"
+        signature: "pub fn ai_temperature_softmax(logits: &[f32], temperature: f32, out_probs: &mut [f32]) -> bool"
+        outputs: 1
+        domains:
+          temperature: "[0.001, 100.0]"
+      - name: "ai_label_smoothed_cross_entropy_step"
+        signature: "pub fn ai_label_smoothed_cross_entropy_step("
+        outputs: 1
+        domains:
+          prob_true: "[1e-12, 1.0]"
+          smoothing_alpha: "[0.0, 0.5]"
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
     functions_count: 13

@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -797,6 +797,18 @@ fn audit_nfc_iso14443_ndef() -> bool {
 }
 
 /// @outputs: 1
+fn audit_ai_transformer_attention() -> bool {
+    let mut ok = true;
+    ok &= ai_transformer_attention::ai_attention_scaled_dot_product_score(10.0, 0) == 0.0;
+    ok &= ai_transformer_attention::ai_attention_causal_mask(1, 2) == -10000.0;
+    ok &= ai_transformer_attention::ai_rmsnorm_inv_rms_factor(&[], 1e-5).is_none();
+    ok &= !ai_transformer_attention::ai_kv_cache_insert_token_slice(&mut [0.0; 10], 5, 2, 4, &[1.0; 4]); // 索引超出最大序列
+    let mut probs = [0.0; 2];
+    ok &= !ai_transformer_attention::ai_temperature_softmax(&[1.0, 2.0], -1.0, &mut probs); // 負溫度
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -860,6 +872,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_cnc_gcode_toolpath(), "【CNC工具路徑與G-Code抽查失敗】存在除零溢出或幾何畸形", total, passed, failures);
     check_audit_domain(audit_robotics_dynamics_jacobian(), "【機器人動力學與雅可比抽查失敗】存在除零溢出或發散", total, passed, failures);
     check_audit_domain(audit_nfc_iso14443_ndef(), "【NFC非接觸協議與NDEF抽查失敗】存在CRC溢出或前綴解析崩潰", total, passed, failures);
+    check_audit_domain(audit_ai_transformer_attention(), "【AI注意力與大模型運算抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
 }
 
 /// @outputs: 2
