@@ -28,6 +28,7 @@ pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;
 pub mod cnc_gcode_toolpath;
+pub mod codec_binary_wire_schema;
 pub mod codec_container_multimedia;
 pub mod codec_lossless_compression;
 pub mod comm_controller;

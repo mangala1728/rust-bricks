@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_beamforming_doa, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_binary_wire_schema, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -1139,6 +1139,28 @@ fn audit_vision_camera_calibration_pnp() -> bool {
 }
 
 /// @outputs: 1
+fn audit_codec_binary_wire_schema() -> bool {
+    let mut ok = true;
+    let (maj, add) = codec_binary_wire_schema::cbor_header_unpack(0x00);
+    ok &= maj == 0 && add == 0;
+    ok &= codec_binary_wire_schema::msgpack_classify_family(0xC1) == 255;
+    ok &= codec_binary_wire_schema::asn1_der_length_decode(&[]).is_none();
+    ok &= codec_binary_wire_schema::asn1_der_length_decode(&[0x85]).is_none();
+    let mut buf = [0u8; 1];
+    ok &= codec_binary_wire_schema::asn1_der_length_encode(200, &mut buf).is_none();
+    ok &= codec_binary_wire_schema::flatbuffers_vtable_field_offset(&[], 0).is_none();
+    ok &= !codec_binary_wire_schema::bson_element_type_valid(0x00);
+    ok &= codec_binary_wire_schema::avro_zigzag_long_decode(0) == 0;
+    ok &= codec_binary_wire_schema::avro_zigzag_long_decode(1) == -1;
+    let packed = [0x12, 0x34, 0x56];
+    let s1 = codec_binary_wire_schema::bitfield_extract_12bit(&packed, false);
+    ok &= s1 == 0x124;
+    ok &= codec_binary_wire_schema::struct_alignment_padding_needed(13, 4) == 3;
+    ok &= codec_binary_wire_schema::struct_alignment_padding_needed(16, 4) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1223,6 +1245,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_audio_beamforming_doa(), "【聲學陣列與波束成形抽查失敗】存在除零溢出或相位發散", total, passed, failures);
     check_audit_domain(audit_storage_block_geometry(), "【儲存幾何與磁碟分區抽查失敗】存在溢出或非法邊界", total, passed, failures);
     check_audit_domain(audit_vision_camera_calibration_pnp(), "【相機標定與對極位姿抽查失敗】存在除零溢出或退化矩陣崩潰", total, passed, failures);
+    check_audit_domain(audit_codec_binary_wire_schema(), "【二進位序列化與線路結構抽查失敗】存在DER解碼越界或長度溢出", total, passed, failures);
 }
 
 /// @outputs: 2

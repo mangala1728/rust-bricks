@@ -4447,6 +4447,87 @@ fn test_vision_camera_calibration_pnp_bricks() {
     assert_eq!(dab, 5.0);
 }
 
+#[test]
+fn test_codec_binary_wire_schema_bricks() {
+    use rust_bricks::codec_binary_wire_schema::*;
+
+    // 1. CBOR 標頭解包
+    let (major, add_info) = cbor_header_unpack(0x20); // Major 1 (Negative int), Add 0
+    assert_eq!(major, 1);
+    assert_eq!(add_info, 0);
+    let (major_map, add_map) = cbor_header_unpack(0xA5); // Major 5 (Map), Add 5
+    assert_eq!(major_map, 5);
+    assert_eq!(add_map, 5);
+
+    // 2. MessagePack 族系分類
+    assert_eq!(msgpack_classify_family(0x15), 0); // Positive FixInt
+    assert_eq!(msgpack_classify_family(0x84), 1); // FixMap
+    assert_eq!(msgpack_classify_family(0x93), 2); // FixArray
+    assert_eq!(msgpack_classify_family(0xA8), 3); // FixStr
+    assert_eq!(msgpack_classify_family(0xC0), 4); // Nil
+    assert_eq!(msgpack_classify_family(0xC2), 5); // Bool
+    assert_eq!(msgpack_classify_family(0xCA), 6); // Float
+    assert_eq!(msgpack_classify_family(0xCD), 7); // Int
+    assert_eq!(msgpack_classify_family(0xC5), 8); // Bin
+    assert_eq!(msgpack_classify_family(0xD4), 9); // Ext
+    assert_eq!(msgpack_classify_family(0xF0), 10); // Negative FixInt
+
+    // 3. ASN.1 DER 長度解碼 (短格式與長格式)
+    assert_eq!(asn1_der_length_decode(&[0x40]), Some((64, 1)));
+    assert_eq!(asn1_der_length_decode(&[0x82, 0x01, 0x02]), Some((258, 3)));
+    assert_eq!(asn1_der_length_decode(&[]), None);
+
+    // 4. ASN.1 DER 長度編碼
+    let mut buf = [0u8; 8];
+    // @safety-proof: buf 長度大於 5 且 50 <= 127
+    let n1 = asn1_der_length_encode(50, &mut buf).unwrap();
+    assert_eq!(n1, 1);
+    assert_eq!(buf[0], 50);
+
+    // @safety-proof: buf 長度大於 5 且 300 <= 0xFFFF
+    let n2 = asn1_der_length_encode(300, &mut buf).unwrap();
+    assert_eq!(n2, 3);
+    assert_eq!(buf[0], 0x82);
+    assert_eq!(buf[1], 1);
+    assert_eq!(buf[2], 44);
+
+    // 5. FlatBuffers VTable 欄位偏移尋址
+    // VTable: [vtable_size (4+4=8 bytes): 0x08, 0x00], [table_size: 0x10, 0x00], [field 0 offset: 0x04, 0x00], [field 1 offset: 0x08, 0x00]
+    let vtable = [0x08, 0x00, 0x10, 0x00, 0x04, 0x00, 0x08, 0x00];
+    assert_eq!(flatbuffers_vtable_field_offset(&vtable, 0), Some(4));
+    assert_eq!(flatbuffers_vtable_field_offset(&vtable, 1), Some(8));
+    assert_eq!(flatbuffers_vtable_field_offset(&vtable, 2), Some(0)); // 超出 vtable_size 回傳 0
+
+    // 6. BSON 型別合法性
+    assert!(bson_element_type_valid(0x01)); // Double
+    assert!(bson_element_type_valid(0x02)); // String
+    assert!(bson_element_type_valid(0x10)); // Int32
+    assert!(!bson_element_type_valid(0xFF)); // 非法型別
+
+    // 7. Apache Avro ZigZag 解碼
+    assert_eq!(avro_zigzag_long_decode(0), 0);
+    assert_eq!(avro_zigzag_long_decode(1), -1);
+    assert_eq!(avro_zigzag_long_decode(2), 1);
+    assert_eq!(avro_zigzag_long_decode(3), -2);
+    assert_eq!(avro_zigzag_long_decode(4), 2);
+
+    // 8. 12 位元 ADC 緊湊解包 (3 bytes 存 2 個 12-bit)
+    // [0x12, 0x34, 0x56] -> S1 = 0x120 | 0x04 = 0x124, S2 = (0x30 << 4) | 0x56 = 0x356
+    let adc_bytes = [0x12, 0x34, 0x56];
+    assert_eq!(bitfield_extract_12bit(&adc_bytes, false), 0x124);
+    assert_eq!(bitfield_extract_12bit(&adc_bytes, true), 0x356);
+
+    // 9. 結構體對齊邊界填充
+    assert_eq!(struct_alignment_padding_needed(0, 4), 0);
+    assert_eq!(struct_alignment_padding_needed(5, 4), 3);
+    assert_eq!(struct_alignment_padding_needed(14, 8), 2);
+    assert_eq!(struct_alignment_padding_needed(16, 8), 0);
+
+    // 10. 32 位元整數網路位元組序切換
+    assert_eq!(endian_swap_u32_in_place(0x12345678), 0x78563412);
+}
+
+
 
 
 

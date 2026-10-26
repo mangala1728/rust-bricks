@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 700
+total_functions: 710
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -878,6 +878,41 @@ modules:
           total_dist: "[0.001, 100000.0]"
           v_max: "[0.001, 10000.0]"
           a_max: "[0.001, 100000.0]"
+  - module: "codec_binary_wire_schema"
+    file: "src/codec_binary_wire_schema.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "cbor_header_unpack"
+        signature: "pub fn cbor_header_unpack(byte: u8) -> (u8, u8)"
+        outputs: 1
+      - name: "msgpack_classify_family"
+        signature: "pub fn msgpack_classify_family(byte: u8) -> u8"
+        outputs: 1
+      - name: "asn1_der_length_decode"
+        signature: "pub fn asn1_der_length_decode(bytes: &[u8]) -> Option<(usize, usize)>"
+        outputs: 1
+      - name: "asn1_der_length_encode"
+        signature: "pub fn asn1_der_length_encode(length: usize, out_buf: &mut [u8]) -> Option<usize>"
+        outputs: 1
+      - name: "flatbuffers_vtable_field_offset"
+        signature: "pub fn flatbuffers_vtable_field_offset(vtable_bytes: &[u8], field_index: usize) -> Option<u16>"
+        outputs: 1
+      - name: "bson_element_type_valid"
+        signature: "pub fn bson_element_type_valid(type_byte: u8) -> bool"
+        outputs: 1
+      - name: "avro_zigzag_long_decode"
+        signature: "pub fn avro_zigzag_long_decode(zigzag_val: u64) -> i64"
+        outputs: 1
+      - name: "bitfield_extract_12bit"
+        signature: "pub fn bitfield_extract_12bit(packed: &[u8; 3], is_second: bool) -> u16"
+        outputs: 1
+      - name: "struct_alignment_padding_needed"
+        signature: "pub fn struct_alignment_padding_needed(current_offset: usize, alignment: usize) -> usize"
+        outputs: 1
+      - name: "endian_swap_u32_in_place"
+        signature: "pub fn endian_swap_u32_in_place(val: u32) -> u32"
+        outputs: 1
   - module: "codec_container_multimedia"
     file: "src/codec_container_multimedia.rs"
     functions_count: 10
