@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -600,6 +600,19 @@ fn verify_audio_spectral_codec() -> bool {
 }
 
 /// @outputs: 1
+fn verify_codec_lossless_compression() -> bool {
+    let mut buf = [0u8; 10];
+    let n = codec_lossless_compression::codec_leb128_u64_encode(300, &mut buf);
+    let (val, read_n) = codec_lossless_compression::codec_leb128_u64_decode(&buf[..n]);
+    let ok_leb = val == 300 && read_n == n;
+    let zz = codec_lossless_compression::codec_zigzag_i64_encode(-100);
+    let ok_zz = codec_lossless_compression::codec_zigzag_i64_decode(zz) == -100;
+    let crc = codec_lossless_compression::codec_crc32c_castagnoli_step(0, 0x12);
+    let ok_crc = crc != 0;
+    ok_leb && ok_zz && ok_crc
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -653,6 +666,7 @@ fn verify_all_subsystems() -> bool {
         && verify_decision_minimax_alphabeta()
         && verify_rpa_mobile_touch_macro()
         && verify_audio_spectral_codec()
+        && verify_codec_lossless_compression()
 }
 
 /// @outputs: 1

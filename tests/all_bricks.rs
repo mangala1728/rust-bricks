@@ -3523,6 +3523,59 @@ fn test_audio_spectral_codec_bricks() {
     assert!((mid_win - 100.0).abs() < 1e-4); // w(5) for N=11 is 0.5*(1 - cos(pi)) = 1.0
 }
 
+#[test]
+fn test_codec_lossless_compression_bricks() {
+    use rust_bricks::codec_lossless_compression::*;
+
+    // 1. LEB128 Varint 編解碼回環 (624485 是標準 protobuf 測試例)
+    let mut buf = [0u8; 10];
+    let written = codec_leb128_u64_encode(624485, &mut buf);
+    assert_eq!(written, 3);
+    let (val, read_bytes) = codec_leb128_u64_decode(&buf[..written]);
+    assert_eq!(val, 624485);
+    assert_eq!(read_bytes, 3);
+
+    // 2. ZigZag 64-bit 映射與還原
+    assert_eq!(codec_zigzag_i64_encode(0), 0);
+    assert_eq!(codec_zigzag_i64_encode(-1), 1);
+    assert_eq!(codec_zigzag_i64_encode(1), 2);
+    assert_eq!(codec_zigzag_i64_encode(-2), 3);
+    assert_eq!(codec_zigzag_i64_decode(codec_zigzag_i64_encode(-9876543210)), -9876543210);
+
+    // 3. 一階差分時序編解碼單步
+    let d = codec_delta_encode_step(105, 100);
+    assert_eq!(d, 5);
+    let restored = codec_delta_decode_step(d, 100);
+    assert_eq!(restored, 105);
+
+    // 4. RLE 行程計數
+    let data_rle = b"AAAAABBB";
+    let (ch, cnt) = codec_rle_count_run(data_rle, 100);
+    assert_eq!(ch, b'A');
+    assert_eq!(cnt, 5);
+
+    // 5. LZ77 滑動視窗匹配
+    let window = b"abcdefgh";
+    let lookahead = b"defXYZ";
+    let (dist, len) = codec_lz77_find_longest_match(window, lookahead, 10);
+    assert_eq!(len, 3);
+    assert_eq!(dist, 5); // 'def' starts at index 3 of 8, dist = 8 - 3 = 5
+
+    // 6. 非對齊位元抽取 (Bit-Packing)
+    // 0b1010_1100, 0b1111_0000 -> 抽取 4 bits from offset 4 (應該得到 1100 = 12)
+    let raw = [0xAC, 0xF0];
+    let bits = codec_bit_pack_extract_u16(&raw, 4, 4);
+    assert_eq!(bits, 0x0C);
+
+    // 7. CRC-32C Castagnoli 步進
+    let mut crc = 0xFFFFFFFFu32;
+    for &b in b"123456789" {
+        crc = codec_crc32c_castagnoli_step(crc, b);
+    }
+    crc ^= 0xFFFFFFFF;
+    assert_eq!(crc, 0xE3069283); // 標準 CRC-32C 測試向量 "123456789" -> 0xE3069283
+}
+
 
 
 

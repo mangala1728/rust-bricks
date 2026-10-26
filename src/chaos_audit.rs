@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -859,6 +859,20 @@ fn audit_audio_spectral_codec() -> bool {
 }
 
 /// @outputs: 1
+fn audit_codec_lossless_compression() -> bool {
+    let mut ok = true;
+    ok &= codec_lossless_compression::codec_leb128_u64_encode(0, &mut []) == 0; // 空輸出防護
+    ok &= codec_lossless_compression::codec_leb128_u64_decode(&[]).1 == 0; // 空輸入防護
+    ok &= codec_lossless_compression::codec_zigzag_i64_decode(codec_lossless_compression::codec_zigzag_i64_encode(-12345)) == -12345;
+    ok &= codec_lossless_compression::codec_rle_count_run(&[], 10) == (0, 0); // 空切片防護
+    ok &= codec_lossless_compression::codec_lz77_find_longest_match(&[], &[], 10) == (0, 0); // 空滑動視窗防護
+    ok &= codec_lossless_compression::codec_bit_pack_extract_u16(&[], 0, 8) == 0; // 空數據防護
+    let crc = codec_lossless_compression::codec_crc32c_castagnoli_step(0, 0x55);
+    ok &= crc != 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -927,6 +941,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_decision_minimax_alphabeta(), "【對抗搜尋與極大極小決策抽查失敗】存在除零溢出或剪枝發散", total, passed, failures);
     check_audit_domain(audit_rpa_mobile_touch_macro(), "【手機自動化連點與觸控巨集抽查失敗】存在除零溢出或坐標越界", total, passed, failures);
     check_audit_domain(audit_audio_spectral_codec(), "【音訊頻譜降噪與語音編解碼抽查失敗】存在除零溢出或壓擴失真", total, passed, failures);
+    check_audit_domain(audit_codec_lossless_compression(), "【無損數據壓縮與線路編碼抽查失敗】存在溢出或越界解碼崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

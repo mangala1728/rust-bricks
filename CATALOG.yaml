@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 546
+total_functions: 556
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -789,6 +789,55 @@ modules:
           total_dist: "[0.001, 100000.0]"
           v_max: "[0.001, 10000.0]"
           a_max: "[0.001, 100000.0]"
+  - module: "codec_lossless_compression"
+    file: "src/codec_lossless_compression.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "codec_leb128_u64_encode"
+        signature: "pub fn codec_leb128_u64_encode(mut val: u64, out: &mut [u8]) -> usize"
+        outputs: 1
+        domains:
+          val: "[0, u64::MAX]"
+      - name: "codec_leb128_u64_decode"
+        signature: "pub fn codec_leb128_u64_decode(buf: &[u8]) -> (u64, usize)"
+        outputs: 1
+      - name: "codec_zigzag_i64_encode"
+        signature: "pub fn codec_zigzag_i64_encode(n: i64) -> u64"
+        outputs: 1
+        domains:
+          n: "[i64::MIN, i64::MAX]"
+      - name: "codec_zigzag_i64_decode"
+        signature: "pub fn codec_zigzag_i64_decode(n: u64) -> i64"
+        outputs: 1
+        domains:
+          n: "[0, u64::MAX]"
+      - name: "codec_delta_encode_step"
+        signature: "pub fn codec_delta_encode_step(current: i32, previous: i32) -> i32"
+        outputs: 1
+        domains:
+          current: "[i32::MIN, i32::MAX], previous [i32::MIN, i32::MAX]"
+      - name: "codec_delta_decode_step"
+        signature: "pub fn codec_delta_decode_step(delta: i32, previous: i32) -> i32"
+        outputs: 1
+        domains:
+          delta: "[i32::MIN, i32::MAX], previous [i32::MIN, i32::MAX]"
+      - name: "codec_rle_count_run"
+        signature: "pub fn codec_rle_count_run(bytes: &[u8], max_run: usize) -> (u8, usize)"
+        outputs: 1
+      - name: "codec_lz77_find_longest_match"
+        signature: "pub fn codec_lz77_find_longest_match("
+        outputs: 1
+      - name: "codec_bit_pack_extract_u16"
+        signature: "pub fn codec_bit_pack_extract_u16(data: &[u8], bit_offset: usize, bit_width: u8) -> u16"
+        outputs: 1
+        domains:
+          bit_offset: "[0, 1000000], bit_width [1, 16]"
+      - name: "codec_crc32c_castagnoli_step"
+        signature: "pub fn codec_crc32c_castagnoli_step(crc: u32, byte: u8) -> u32"
+        outputs: 1
+        domains:
+          crc: "[0, u32::MAX], byte [0, 255]"
   - module: "comm_controller"
     file: "src/comm_controller.rs"
     functions_count: 6
