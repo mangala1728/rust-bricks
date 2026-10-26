@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 160,
+  "total_functions": 165,
   "modules": [
     {
       "module": "agent_terminal",
@@ -672,6 +672,38 @@
           "name": "is_private_ipv4",
           "signature": "pub fn is_private_ipv4(ip: [u8; 4]) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "net_tsn_macsec",
+      "file": "src/net_tsn_macsec.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "ptp_is_event_message",
+          "signature": "pub fn ptp_is_event_message(msg_type: u8) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "ptp_parse_header",
+          "signature": "pub fn ptp_parse_header(ptp_payload: &[u8]) -> Option<PtpHeaderSummary>",
+          "outputs": 2
+        },
+        {
+          "name": "ptp_pdelay_mean_path_delay_ns",
+          "signature": "pub fn ptp_pdelay_mean_path_delay_ns(",
+          "outputs": 2
+        },
+        {
+          "name": "macsec_parse_sectag",
+          "signature": "pub fn macsec_parse_sectag(sectag_slice: &[u8]) -> Option<MacsecTagInfo>",
+          "outputs": 2
+        },
+        {
+          "name": "macsec_replay_window_validate",
+          "signature": "pub fn macsec_replay_window_validate(last_valid_pn: u32, incoming_pn: u32, window_size: u32) -> bool",
+          "outputs": 1
         }
       ]
     },

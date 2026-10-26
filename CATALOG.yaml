@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 160
+total_functions: 165
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -736,6 +736,38 @@ modules:
       - name: "is_private_ipv4"
         signature: "pub fn is_private_ipv4(ip: [u8; 4]) -> bool"
         outputs: 2
+  - module: "net_tsn_macsec"
+    file: "src/net_tsn_macsec.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/net_tsn_macsec — IEEE 802.1AS gPTP 時鐘事件觸發、鏈路延遲解算與 IEEE 802.1AE MACsec 硬體加密 SecTAG 解析微積木。"
+      - "Inputs: 以太網 PTP 封包切片、PTP 四元時間戳 (t1..t4)、MACsec 訊框切片、防重放封包序號。"
+      - "Outputs: PTP 事件訊息判別、Pdelay 鏈路納秒延遲、MACsec SecTAG 資訊結構、防重放滑動視窗驗證結果。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、長度邊界防禦。"
+    functions:
+      - name: "ptp_is_event_message"
+        signature: "pub fn ptp_is_event_message(msg_type: u8) -> bool"
+        outputs: 1
+        domains:
+          msg_type: "[0..15]"
+      - name: "ptp_parse_header"
+        signature: "pub fn ptp_parse_header(ptp_payload: &[u8]) -> Option<PtpHeaderSummary>"
+        outputs: 2
+        domains:
+          ptp_len: "[34..1500]"
+      - name: "ptp_pdelay_mean_path_delay_ns"
+        signature: "pub fn ptp_pdelay_mean_path_delay_ns("
+        outputs: 2
+      - name: "macsec_parse_sectag"
+        signature: "pub fn macsec_parse_sectag(sectag_slice: &[u8]) -> Option<MacsecTagInfo>"
+        outputs: 2
+        domains:
+          frame_len: "[8..1518]"
+      - name: "macsec_replay_window_validate"
+        signature: "pub fn macsec_replay_window_validate(last_valid_pn: u32, incoming_pn: u32, window_size: u32) -> bool"
+        outputs: 1
+        domains:
+          window_size: "[0..65536]"
   - module: "packet_checksum"
     file: "src/packet_checksum.rs"
     functions_count: 6

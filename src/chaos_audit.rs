@@ -8,8 +8,9 @@ use crate::{
     agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
     fast_math, fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, physics_raycast_3d, sensor_baro_als, sensor_hardware,
-    sensor_motion, sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
+    motor_stepper, net_ethernet, net_tsn_macsec, physics_raycast_3d, sensor_baro_als,
+    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
+    thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -168,9 +169,7 @@ fn audit_power_and_baro() -> bool {
 /// @outputs: 1
 fn audit_lin_and_raycast_3d() -> bool {
     let mut ok = true;
-    // 1. LIN 空數據
     ok &= can_lin_bus::lin_checksum(None, &[]) == 0;
-    // 2. 射線-三角形平行射線
     let hit_parallel = physics_raycast_3d::ray_triangle_intersect_moller_trumbore(
         (0.0, 0.0, 0.0), (0.0, 1.0, 0.0),
         (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (0.0, 0.0, 2.0),
@@ -181,6 +180,20 @@ fn audit_lin_and_raycast_3d() -> bool {
         (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
     );
     ok &= hit_nan.is_none();
+    ok
+}
+
+/// @outputs: 1
+fn audit_tsn_and_macsec() -> bool {
+    let mut ok = true;
+    // 1. PTP 畸形截斷與時間倒流
+    let short_ptp = [0u8; 30];
+    ok &= net_tsn_macsec::ptp_parse_header(&short_ptp).is_none();
+    ok &= net_tsn_macsec::ptp_pdelay_mean_path_delay_ns(1000, 500, 200, 100, 0.0).is_none();
+    // 2. MACsec 截斷 SecTAG 與零 PN 攻擊
+    let short_tag = [0u8; 6];
+    ok &= net_tsn_macsec::macsec_parse_sectag(&short_tag).is_none();
+    ok &= !net_tsn_macsec::macsec_replay_window_validate(100, 0, 32);
     ok
 }
 
@@ -242,6 +255,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_lin_and_raycast_3d() { passed += 1; } else { failures.push("【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰".to_string()); }
+
+    total += 1;
+    if audit_tsn_and_macsec() { passed += 1; } else { failures.push("【TSN與MACsec黑箱抽查失敗】存在時間倒流或重放漏洞".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }

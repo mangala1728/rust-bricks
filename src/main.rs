@@ -8,7 +8,7 @@ use rust_bricks::{
     agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
     env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time,
-    motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, packet_checksum,
+    motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec, packet_checksum,
     physics_raycast_3d, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
@@ -140,6 +140,13 @@ fn verify_lin_and_raycast_3d() -> bool {
 }
 
 /// @outputs: 1
+fn verify_tsn_and_macsec() -> bool {
+    let ok_ptp = net_tsn_macsec::ptp_is_event_message(0);
+    let ok_replay = net_tsn_macsec::macsec_replay_window_validate(10, 11, 4);
+    ok_ptp && ok_replay
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -151,6 +158,7 @@ fn verify_all_subsystems() -> bool {
         && verify_ethernet_and_apdu()
         && verify_power_and_baro()
         && verify_lin_and_raycast_3d()
+        && verify_tsn_and_macsec()
 }
 
 /// @outputs: 1

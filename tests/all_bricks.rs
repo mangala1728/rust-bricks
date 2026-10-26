@@ -1188,3 +1188,62 @@ fn test_can_lin_bus_bricks() {
 
 
 
+
+
+#[test]
+fn test_net_tsn_macsec_bricks() {
+    // 1. IEEE 802.1AS gPTP 事件訊息判別 (Sync=0x0, Follow_Up=0x8)
+    assert!(rust_bricks::net_tsn_macsec::ptp_is_event_message(0x0));
+    assert!(rust_bricks::net_tsn_macsec::ptp_is_event_message(0x3));
+    assert!(!rust_bricks::net_tsn_macsec::ptp_is_event_message(0x8));
+    assert!(!rust_bricks::net_tsn_macsec::ptp_is_event_message(0xB));
+
+    // 2. gPTP 標頭解析
+    let mut ptp_pkt = [0u8; 44];
+    ptp_pkt[0] = 0x10 | 0x02; // Transport=1, MessageType=Pdelay_Req(2)
+    ptp_pkt[1] = 0x02;
+    ptp_pkt[4] = 0x00;
+    ptp_pkt[30] = 0x00;
+    ptp_pkt[31] = 0x05; // Sequence ID = 5
+    // CorrectionField 設為 2^16 (即 65536) -> 大端序 ptp_pkt[13] = 1, [14] = 0, [15] = 0 -> 代表 1.0 納秒
+    ptp_pkt[13] = 0x01;
+    let summary_opt = rust_bricks::net_tsn_macsec::ptp_parse_header(&ptp_pkt);
+    assert!(summary_opt.is_some());
+    // @safety-proof: summary_opt 已驗證 is_some()
+    let s = summary_opt.unwrap();
+    assert_eq!(s.message_type, 0x02);
+    assert_eq!(s.sequence_id, 5);
+    assert!((s.correction_ns - 1.0).abs() < 1e-4);
+
+    // 3. Pdelay 鏈路延遲解算
+    // t1=1000ns, t2=2000ns, t3=2500ns, t4=3500ns, correction=0.0ns
+    // Delay = ((3500 - 1000) - (2500 - 2000) - 0) / 2 = (2500 - 500) / 2 = 1000.0 ns
+    let delay_opt = rust_bricks::net_tsn_macsec::ptp_pdelay_mean_path_delay_ns(1000, 2000, 2500, 3500, 0.0);
+    assert!(delay_opt.is_some());
+    // @safety-proof: delay_opt 已驗證 is_some()
+    assert!((delay_opt.unwrap() - 1000.0).abs() < 1e-4);
+
+    // 4. IEEE 802.1AE MACsec SecTAG 解析
+    let mut sectag = [0u8; 16];
+    sectag[0] = 0x2B; // SC=1, E=1, AN=3
+    sectag[1] = 0x00;
+    sectag[2] = 0x00;
+    sectag[3] = 0x00;
+    sectag[4] = 0x00;
+    sectag[5] = 0x01; // PN = 1
+    let tag_info = rust_bricks::net_tsn_macsec::macsec_parse_sectag(&sectag);
+    assert!(tag_info.is_some());
+    // @safety-proof: tag_info 已驗證 is_some()
+    let info = tag_info.unwrap();
+    assert!(info.encryption_enabled);
+    assert!(info.has_sci);
+    assert_eq!(info.association_number, 3);
+    assert_eq!(info.packet_number, 1);
+    assert_eq!(info.sectag_len, 16);
+
+    // 5. MACsec 防重放滑動視窗驗證
+    assert!(rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 101, 32));
+    assert!(rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 80, 32));
+    assert!(!rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 50, 32));
+    assert!(!rust_bricks::net_tsn_macsec::macsec_replay_window_validate(100, 0, 32));
+}
