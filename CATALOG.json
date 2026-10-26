@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 536,
+  "total_functions": 546,
   "modules": [
     {
       "module": "agent_terminal",
@@ -427,6 +427,63 @@
         {
           "name": "audio_spectral_flatness_measure",
           "signature": "pub fn audio_spectral_flatness_measure(power_spectrum: &[f32]) -> Option<f32>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "audio_spectral_codec",
+      "file": "src/audio_spectral_codec.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "audio_g711_alaw_encode_sample",
+          "signature": "pub fn audio_g711_alaw_encode_sample(pcm_sample: i16) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "audio_g711_alaw_decode_sample",
+          "signature": "pub fn audio_g711_alaw_decode_sample(alaw_byte: u8) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "audio_g711_ulaw_encode_sample",
+          "signature": "pub fn audio_g711_ulaw_encode_sample(pcm_sample: i16) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "audio_g711_ulaw_decode_sample",
+          "signature": "pub fn audio_g711_ulaw_decode_sample(ulaw_byte: u8) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "audio_ima_adpcm_encode_step",
+          "signature": "pub fn audio_ima_adpcm_encode_step(",
+          "outputs": 3
+        },
+        {
+          "name": "audio_spectral_subtraction_gain",
+          "signature": "pub fn audio_spectral_subtraction_gain(",
+          "outputs": 1
+        },
+        {
+          "name": "audio_wiener_filter_gain",
+          "signature": "pub fn audio_wiener_filter_gain(a_priori_snr_xi: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_lpc_synthesis_filter_step",
+          "signature": "pub fn audio_lpc_synthesis_filter_step(",
+          "outputs": 1
+        },
+        {
+          "name": "audio_hz_to_bark",
+          "signature": "pub fn audio_hz_to_bark(freq_hz: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_hanning_window_overlap_add_step",
+          "signature": "pub fn audio_hanning_window_overlap_add_step(",
           "outputs": 1
         }
       ]

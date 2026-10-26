@@ -3477,6 +3477,53 @@ fn test_rpa_mobile_touch_macro_bricks() {
     assert!(!rpa_pixel_color_tolerance_match([100, 150, 200], [120, 150, 200], 5));
 }
 
+#[test]
+fn test_audio_spectral_codec_bricks() {
+    use rust_bricks::audio_spectral_codec::*;
+
+    // 1. G.711 A-law 編解碼回環 (動態範圍壓擴)
+    let original_alaw: i16 = 4000;
+    let enc_a = audio_g711_alaw_encode_sample(original_alaw);
+    let dec_a = audio_g711_alaw_decode_sample(enc_a);
+    assert!((dec_a - original_alaw).abs() < 150);
+
+    // 2. G.711 u-law 編解碼回環
+    let original_ulaw: i16 = -8000;
+    let enc_u = audio_g711_ulaw_encode_sample(original_ulaw);
+    let dec_u = audio_g711_ulaw_decode_sample(enc_u);
+    assert!((dec_u - original_ulaw).abs() < 250);
+
+    // 3. IMA-ADPCM 4-bit 差分量化步進
+    let (code, pred, next_idx) = audio_ima_adpcm_encode_step(1000, 0, 100, 10);
+    assert!(code <= 15);
+    assert!(pred > 0);
+    assert!(next_idx <= 88);
+
+    // 4. 頻譜相減法降噪增益 (強噪聲下限制在底噪 beta)
+    let gain_noisy = audio_spectral_subtraction_gain(100.0, 100.0, 2.0, 0.05);
+    assert_eq!(gain_noisy, 0.05);
+    let gain_clean = audio_spectral_subtraction_gain(10000.0, 10.0, 1.0, 0.05);
+    assert!(gain_clean > 0.95);
+
+    // 5. 維納濾波器增益 (先驗 SNR = 1.0 -> 增益 = 1/(1+1) = 0.5)
+    let w_gain = audio_wiener_filter_gain(1.0);
+    assert!((w_gain - 0.5).abs() < 1e-4);
+
+    // 6. LPC 語音合成濾波器單步
+    let s_n = audio_lpc_synthesis_filter_step(10.0, &[0.8, -0.2], &[100.0, 50.0]);
+    // s_n = 10.0 + (0.8*100.0 + (-0.2)*50.0) = 10.0 + (80.0 - 10.0) = 80.0
+    assert!((s_n - 80.0).abs() < 1e-4);
+
+    // 7. Bark 臨界頻帶率換算 (1000 Hz 約為 8.5 Bark)
+    let bark_1k = audio_hz_to_bark(1000.0);
+    assert!(bark_1k > 8.0 && bark_1k < 9.5);
+
+    // 8. 漢寧窗 OLA 步進 (中間點權重為 1.0)
+    let mid_win = audio_hanning_window_overlap_add_step(100.0, 5, 11);
+    assert!((mid_win - 100.0).abs() < 1e-4); // w(5) for N=11 is 0.5*(1 - cos(pi)) = 1.0
+}
+
+
 
 
 

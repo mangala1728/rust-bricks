@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -846,6 +846,19 @@ fn audit_rpa_mobile_touch_macro() -> bool {
 }
 
 /// @outputs: 1
+fn audit_audio_spectral_codec() -> bool {
+    let mut ok = true;
+    let alaw = audio_spectral_codec::audio_g711_alaw_encode_sample(0);
+    ok &= alaw != 0;
+    let pcm = audio_spectral_codec::audio_g711_alaw_decode_sample(alaw);
+    ok &= pcm.abs() < 100;
+    ok &= (audio_spectral_codec::audio_spectral_subtraction_gain(0.0, 10.0, 2.0, 0.05) - 0.05).abs() < 1e-4; // 零信號功率底噪
+    ok &= (audio_spectral_codec::audio_wiener_filter_gain(0.0) - 0.0).abs() < 1e-4;
+    ok &= (audio_spectral_codec::audio_hz_to_bark(-10.0) - 0.0).abs() < 1e-4; // 負頻率
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -913,6 +926,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_analyzer_sigrok_protocol(), "【邏輯分析儀與協議解碼抽查失敗】存在除零溢出或無效通道", total, passed, failures);
     check_audit_domain(audit_decision_minimax_alphabeta(), "【對抗搜尋與極大極小決策抽查失敗】存在除零溢出或剪枝發散", total, passed, failures);
     check_audit_domain(audit_rpa_mobile_touch_macro(), "【手機自動化連點與觸控巨集抽查失敗】存在除零溢出或坐標越界", total, passed, failures);
+    check_audit_domain(audit_audio_spectral_codec(), "【音訊頻譜降噪與語音編解碼抽查失敗】存在除零溢出或壓擴失真", total, passed, failures);
 }
 
 /// @outputs: 2

@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -587,6 +587,19 @@ fn verify_rpa_mobile_touch_macro() -> bool {
 }
 
 /// @outputs: 1
+fn verify_audio_spectral_codec() -> bool {
+    let alaw = audio_spectral_codec::audio_g711_alaw_encode_sample(1000);
+    let pcm_a = audio_spectral_codec::audio_g711_alaw_decode_sample(alaw);
+    let ok_alaw = (pcm_a - 1000).abs() < 50;
+    let ulaw = audio_spectral_codec::audio_g711_ulaw_encode_sample(1000);
+    let pcm_u = audio_spectral_codec::audio_g711_ulaw_decode_sample(ulaw);
+    let ok_ulaw = (pcm_u - 1000).abs() < 50;
+    let w_gain = audio_spectral_codec::audio_wiener_filter_gain(1.0);
+    let ok_w = (w_gain - 0.5).abs() < 1e-4;
+    ok_alaw && ok_ulaw && ok_w
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -639,6 +652,7 @@ fn verify_all_subsystems() -> bool {
         && verify_analyzer_sigrok_protocol()
         && verify_decision_minimax_alphabeta()
         && verify_rpa_mobile_touch_macro()
+        && verify_audio_spectral_codec()
 }
 
 /// @outputs: 1
