@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -597,6 +597,22 @@ fn audit_audio_mfcc_pitch() -> bool {
 }
 
 /// @outputs: 1
+fn audit_instrument_lxi_hislip() -> bool {
+    let mut ok = true;
+    let mut buf = [0u8; 2];
+    ok &= instrument_lxi_hislip::xdr_encode_u32(100, &mut buf) == 0; // 空間不足
+    ok &= instrument_lxi_hislip::xdr_decode_u32(&buf).is_none();
+    ok &= instrument_lxi_hislip::xdr_encode_opaque_padded(b"123", &mut buf) == 0;
+    ok &= instrument_lxi_hislip::vxi11_rpc_header_pack(1, 2, 3, 4, &mut buf) == 0;
+    ok &= instrument_lxi_hislip::vxi11_create_link_params_pack(1, false, 0, "inst0", &mut buf) == 0;
+    ok &= instrument_lxi_hislip::vxi11_device_read_params_pack(1, 0, 0, 0, 0, &mut buf) == 0;
+    ok &= instrument_lxi_hislip::hislip_packet_header_pack(0, 0, 0, 0, &mut buf) == 0;
+    ok &= instrument_lxi_hislip::hislip_packet_header_unpack(&[0; 16]).is_none(); // 幻數不匹配
+    ok &= instrument_lxi_hislip::lxi_mdns_service_name_format("", "123", &mut buf) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -651,6 +667,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

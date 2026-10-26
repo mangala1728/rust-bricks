@@ -7,7 +7,7 @@
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -395,6 +395,17 @@ fn verify_audio_mfcc_pitch() -> bool {
 }
 
 /// @outputs: 1
+fn verify_instrument_lxi_hislip() -> bool {
+    let mut xdr_buf = [0u8; 8];
+    let ok_xdr = instrument_lxi_hislip::xdr_encode_u32(0x12345678, &mut xdr_buf) == 4
+        && instrument_lxi_hislip::xdr_decode_u32(&xdr_buf) == Some((0x12345678, 4));
+    let mut hislip_buf = [0u8; 16];
+    let ok_hislip = instrument_lxi_hislip::hislip_packet_header_pack(1, 0, 100, 2048, &mut hislip_buf) == 16
+        && instrument_lxi_hislip::hislip_packet_header_unpack(&hislip_buf) == Some((1, 0, 100, 2048));
+    ok_xdr && ok_hislip
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -430,6 +441,7 @@ fn verify_all_subsystems() -> bool {
         && verify_radar_aoa_mti()
         && verify_vision_morphology_fast()
         && verify_audio_mfcc_pitch()
+        && verify_instrument_lxi_hislip()
 }
 
 /// @outputs: 1

@@ -37,6 +37,7 @@ pub mod fin_apdu_track;
 pub mod geo_collision;
 pub mod guard;
 pub mod instrument_industrial;
+pub mod instrument_lxi_hislip;
 pub mod instrument_scpi_vna;
 pub mod iot_wire_protocol;
 pub mod iso7816_smartcard;

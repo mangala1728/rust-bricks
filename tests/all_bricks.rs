@@ -2442,3 +2442,59 @@ fn test_audio_mfcc_pitch_bricks() {
     let sfm_white = audio_mfcc_pitch::audio_spectral_flatness_measure(&flat_spec).unwrap();
     assert!((sfm_white - 1.0).abs() < 0.1); // 白噪聲 SFM ~ 1.0
 }
+
+#[test]
+fn test_instrument_lxi_hislip_bricks() {
+    use rust_bricks::instrument_lxi_hislip;
+
+    // 1. XDR 整數編解碼
+    let mut xdr_u32 = [0u8; 4];
+    assert_eq!(instrument_lxi_hislip::xdr_encode_u32(0xAABBCCDD, &mut xdr_u32), 4);
+    assert_eq!(xdr_u32, [0xAA, 0xBB, 0xCC, 0xDD]);
+    assert_eq!(instrument_lxi_hislip::xdr_decode_u32(&xdr_u32), Some((0xAABBCCDD, 4)));
+
+    // 2. XDR 帶 4 位元組對齊的變長資料 (長度 5 字節 -> 填充至 8 字節 + 4 字節頭 = 12)
+    let data = b"hello";
+    let mut opaque_buf = [0u8; 16];
+    let enc_len = instrument_lxi_hislip::xdr_encode_opaque_padded(data, &mut opaque_buf);
+    assert_eq!(enc_len, 12);
+
+    let mut dec_data = [0u8; 10];
+    let (dec_len, consumed) = instrument_lxi_hislip::xdr_decode_opaque_padded(&opaque_buf[..enc_len], &mut dec_data).unwrap();
+    assert_eq!(dec_len, 5);
+    assert_eq!(consumed, 12);
+    assert_eq!(&dec_data[..5], data);
+
+    // 3. ONC RPC 標頭打包
+    let mut rpc_buf = [0u8; 64];
+    let rpc_len = instrument_lxi_hislip::vxi11_rpc_header_pack(1001, 0x0607AF, 1, 10, &mut rpc_buf);
+    assert_eq!(rpc_len, 40);
+
+    // 4. VXI-11 Create_Link 參數封裝
+    let mut link_buf = [0u8; 64];
+    let link_len = instrument_lxi_hislip::vxi11_create_link_params_pack(1, false, 5000, "inst0", &mut link_buf);
+    assert!(link_len >= 24);
+
+    // 5. VXI-11 Device_Read 參數封裝
+    let mut read_buf = [0u8; 32];
+    let read_len = instrument_lxi_hislip::vxi11_device_read_params_pack(1, 2000, 0, 0, 1024, &mut read_buf);
+    assert_eq!(read_len, 20);
+
+    // 6. HiSLIP 封包頭封裝與解碼 (Magic "HS", MsgType=1 Initialize, param=256, payload=1024)
+    let mut hs_buf = [0u8; 16];
+    let hs_len = instrument_lxi_hislip::hislip_packet_header_pack(1, 0, 256, 1024, &mut hs_buf);
+    assert_eq!(hs_len, 16);
+    assert_eq!(&hs_buf[..2], b"HS");
+
+    let (mtype, ccode, param, plen) = instrument_lxi_hislip::hislip_packet_header_unpack(&hs_buf).unwrap();
+    assert_eq!(mtype, 1);
+    assert_eq!(ccode, 0);
+    assert_eq!(param, 256);
+    assert_eq!(plen, 1024);
+
+    // 7. LXI mDNS 服務名稱格式化
+    let mut mdns_buf = [0u8; 64];
+    let mdns_len = instrument_lxi_hislip::lxi_mdns_service_name_format("Keysight_34461A", "MY53001234", &mut mdns_buf);
+    assert!(mdns_len > 0);
+    assert_eq!(std::str::from_utf8(&mdns_buf[..mdns_len]).unwrap(), "Keysight_34461A-MY53001234._lxi._tcp.local");
+}

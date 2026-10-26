@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 367,
+  "total_functions": 377,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1034,6 +1034,63 @@
         {
           "name": "litevna_frequency_sweep_step",
           "signature": "pub fn litevna_frequency_sweep_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "instrument_lxi_hislip",
+      "file": "src/instrument_lxi_hislip.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "xdr_encode_u32",
+          "signature": "pub fn xdr_encode_u32(val: u32, out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "xdr_decode_u32",
+          "signature": "pub fn xdr_decode_u32(buf: &[u8]) -> Option<(u32, usize)>",
+          "outputs": 1
+        },
+        {
+          "name": "xdr_encode_opaque_padded",
+          "signature": "pub fn xdr_encode_opaque_padded(data: &[u8], out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "xdr_decode_opaque_padded",
+          "signature": "pub fn xdr_decode_opaque_padded(buf: &[u8], out_buf: &mut [u8]) -> Option<(usize, usize)>",
+          "outputs": 1
+        },
+        {
+          "name": "vxi11_rpc_header_pack",
+          "signature": "pub fn vxi11_rpc_header_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "vxi11_create_link_params_pack",
+          "signature": "pub fn vxi11_create_link_params_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "vxi11_device_read_params_pack",
+          "signature": "pub fn vxi11_device_read_params_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "hislip_packet_header_pack",
+          "signature": "pub fn hislip_packet_header_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "hislip_packet_header_unpack",
+          "signature": "pub fn hislip_packet_header_unpack(buf: &[u8]) -> Option<(u8, u8, u32, u64)>",
+          "outputs": 1
+        },
+        {
+          "name": "lxi_mdns_service_name_format",
+          "signature": "pub fn lxi_mdns_service_name_format(",
           "outputs": 1
         }
       ]
