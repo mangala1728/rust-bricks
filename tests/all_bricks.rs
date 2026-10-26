@@ -28,6 +28,18 @@ fn test_julian_day() {
     assert!(jd.is_some());
     // @safety-proof: jd 已驗證 is_some()
     assert!((jd.unwrap() - 2451544.5).abs() < 1.0);
+    // 天文慣例：1582-10-15 前用儒略曆、floor 除法（INC-20261026-09，Meeus 例 7.a/7.b）
+    assert_eq!(math_time::julian_day_from_ymd(2000, 1, 1), Some(2451544.5));
+    assert_eq!(math_time::julian_day_from_ymd(1582, 10, 15), Some(2299160.5));
+    assert_eq!(math_time::julian_day_from_ymd(1582, 10, 4), Some(2299159.5));
+    assert_eq!(math_time::julian_day_from_ymd(1582, 10, 10), None); // 改革跳過的日期
+    assert_eq!(math_time::julian_day_from_ymd(333, 1, 27), Some(1842712.5));
+    assert_eq!(math_time::julian_day_from_ymd(-4712, 1, 1), Some(-0.5));
+    assert_eq!(math_time::julian_day_from_ymd(-100, 3, 1), Some(1684592.5));
+    assert_eq!(math_time::julian_day_from_ymd(2023, 2, 29), None);
+    assert_eq!(math_time::julian_day_from_ymd(2024, 2, 29), Some(2460369.5));
+    assert_eq!(math_time::julian_day_from_ymd(1900, 2, 29), None); // 格里曆非閏年
+    assert_eq!(math_time::julian_day_from_ymd(1500, 2, 29), Some(2268991.5)); // 儒略曆閏年
 }
 
 #[test]
@@ -941,6 +953,11 @@ fn test_env_sensor_bricks() {
     assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(12.0), 50);
     // 35.4 ug/m3 -> AQI 100
     assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(35.4), 100);
+    // 最高兩段需分開（INC-20261026-08，EPA 舊表）
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(350.4), 400);
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(350.5), 401);
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(500.4), 500);
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(12.05), 50); // 先截斷至 0.1
 }
 
 #[test]
@@ -963,6 +980,11 @@ fn test_comm_controller_bricks() {
     assert_eq!(q_len, 7); // 1 opcode + 3 addr + 3 dummy
     assert_eq!(q_cmd[0], 0xEB);
     assert_eq!(&q_cmd[1..4], &[0x12, 0x34, 0x56]);
+    // 合法範圍上限不得越界；超出範圍回傳 0 而非 panic（INC-20261026-10）
+    assert_eq!(rust_bricks::comm_controller::qspi_flash_fast_read_cmd(0x00123456, 8, &mut q_cmd), 8);
+    for dummy in 9u8..=16 {
+        assert_eq!(rust_bricks::comm_controller::qspi_flash_fast_read_cmd(0x00123456, dummy, &mut q_cmd), 0);
+    }
 
     // 5. UART 波特率除數 (16MHz, 115200, 16x 超取樣 -> USARTDIV = 8.6875 -> Mantissa=8, Fraction=11)
     let uart_div = rust_bricks::comm_controller::uart_baud_rate_divisor(16_000_000, 115_200, 16);
