@@ -3638,6 +3638,57 @@ fn test_numerical_optimization_gradient_bricks() {
     assert_eq!(lr_end, 0.001);
 }
 
+#[test]
+fn test_fieldbus_motion_cia402_bricks() {
+    use rust_bricks::fieldbus_motion_cia402::*;
+
+    // 1. CiA 402 狀態機循序躍遷
+    let s1 = cia402_state_machine_transition(CIA402_STATE_SWITCH_ON_DISABLED, 0x0006);
+    assert_eq!(s1, CIA402_STATE_READY_TO_SWITCH_ON);
+    let s2 = cia402_state_machine_transition(s1, 0x0007);
+    assert_eq!(s2, CIA402_STATE_SWITCHED_ON);
+    let s3 = cia402_state_machine_transition(s2, 0x000F);
+    assert_eq!(s3, CIA402_STATE_OPERATION_ENABLED);
+
+    // 2. Statusword 解碼
+    assert_eq!(cia402_statusword_decode_state(0x0227), CIA402_STATE_OPERATION_ENABLED);
+    assert_eq!(cia402_statusword_decode_state(0x0250), CIA402_STATE_SWITCH_ON_DISABLED);
+
+    // 3. Statusword 封裝
+    let sw = cia402_statusword_encode(CIA402_STATE_OPERATION_ENABLED, true, true);
+    assert_eq!(sw & 0x0027, 0x0027);
+    assert_eq!(sw & 0x0410, 0x0410);
+
+    // 4. Controlword 常用命令碼
+    assert_eq!(cia402_controlword_from_command(0), 0x0006); // Shutdown
+    assert_eq!(cia402_controlword_from_command(2), 0x000F); // Enable Operation
+    assert_eq!(cia402_controlword_from_command(5), 0x0080); // Fault Reset
+
+    // 5. PP 目標位置防護
+    assert!(cia402_pp_target_position_valid(5000, 0, 10000));
+    assert!(!cia402_pp_target_position_valid(15000, 0, 10000));
+
+    // 6. PV 模式 RPM 轉編碼器頻率 (3000 RPM, 10000 CPR -> 500,000 cps)
+    let cps = cia402_pv_speed_rpm_to_cps(3000.0, 10000);
+    assert_eq!(cps, 500000);
+
+    // 7. 原點回歸偏移量換算
+    let actual_zero = cia402_homing_offset_step(10500, 500);
+    assert_eq!(actual_zero, 10000);
+
+    // 8. 快速停機減速時間 (3000 RPM, 6000 RPM/s -> 0.5s)
+    let t_stop = cia402_quick_stop_deceleration_time(3000.0, 6000.0);
+    assert!((t_stop - 0.5).abs() < 1e-4);
+
+    // 9. 轉矩千分比轉牛頓米 (500 permille of 4.0 Nm = 2.0 Nm)
+    let torque_nm = cia402_torque_permille_to_nm(500, 4.0);
+    assert!((torque_nm - 2.0).abs() < 1e-4);
+
+    // 10. 跟隨誤差超限判定
+    assert!(!cia402_following_error_detect(1005, 1000, 10)); // 差值 5 <= 10 (正常)
+    assert!(cia402_following_error_detect(1025, 1000, 10));  // 差值 25 > 10 (超限報警)
+}
+
 
 
 

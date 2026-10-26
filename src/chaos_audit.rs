@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -890,6 +890,20 @@ fn audit_numerical_optimization_gradient() -> bool {
 }
 
 /// @outputs: 1
+fn audit_fieldbus_motion_cia402() -> bool {
+    let mut ok = true;
+    let s = fieldbus_motion_cia402::cia402_state_machine_transition(99, 0);
+    ok &= s == fieldbus_motion_cia402::CIA402_STATE_SWITCH_ON_DISABLED;
+    ok &= fieldbus_motion_cia402::cia402_statusword_decode_state(0xFFFF) == fieldbus_motion_cia402::CIA402_STATE_SWITCH_ON_DISABLED;
+    ok &= fieldbus_motion_cia402::cia402_controlword_from_command(99) == 0x0000;
+    ok &= !fieldbus_motion_cia402::cia402_pp_target_position_valid(100, 200, 100); // 倒置邊界
+    ok &= fieldbus_motion_cia402::cia402_pv_speed_rpm_to_cps(f64::NAN, 1000) == 0;
+    ok &= (fieldbus_motion_cia402::cia402_quick_stop_deceleration_time(1000.0, -10.0) - 0.0).abs() < 1e-4; // 負減速度
+    ok &= (fieldbus_motion_cia402::cia402_torque_permille_to_nm(1000, -5.0) - 0.0).abs() < 1e-4; // 負額定轉矩
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -960,6 +974,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_audio_spectral_codec(), "【音訊頻譜降噪與語音編解碼抽查失敗】存在除零溢出或壓擴失真", total, passed, failures);
     check_audit_domain(audit_codec_lossless_compression(), "【無損數據壓縮與線路編碼抽查失敗】存在溢出或越界解碼崩潰", total, passed, failures);
     check_audit_domain(audit_numerical_optimization_gradient(), "【數值最佳化與梯度求解抽查失敗】存在奇異發散或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_fieldbus_motion_cia402(), "【工業驅動器CiA402運動協議抽查失敗】存在狀態機或換算崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

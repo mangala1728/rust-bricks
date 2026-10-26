@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 566
+total_functions: 576
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1405,6 +1405,61 @@ modules:
       - name: "modbus_tcp_mbap_header_unpack"
         signature: "pub fn modbus_tcp_mbap_header_unpack(buf: &[u8]) -> Option<(u16, u8, u16)>"
         outputs: 1
+  - module: "fieldbus_motion_cia402"
+    file: "src/fieldbus_motion_cia402.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "cia402_state_machine_transition"
+        signature: "pub fn cia402_state_machine_transition(current_state: u8, controlword: u16) -> u8"
+        outputs: 1
+        domains:
+          current_state: "[0, 7], controlword [0, 65535]"
+      - name: "cia402_statusword_decode_state"
+        signature: "pub fn cia402_statusword_decode_state(statusword: u16) -> u8"
+        outputs: 1
+        domains:
+          statusword: "[0, 65535]"
+      - name: "cia402_statusword_encode"
+        signature: "pub fn cia402_statusword_encode(state: u8, voltage_enabled: bool, target_reached: bool) -> u16"
+        outputs: 1
+        domains:
+          state: "[0, 7]"
+      - name: "cia402_controlword_from_command"
+        signature: "pub fn cia402_controlword_from_command(command_code: u8) -> u16"
+        outputs: 1
+        domains:
+          command_code: "[0, 5]"
+      - name: "cia402_pp_target_position_valid"
+        signature: "pub fn cia402_pp_target_position_valid(target: i32, min_pos: i32, max_pos: i32) -> bool"
+        outputs: 1
+        domains:
+          target: "[i32::MIN, i32::MAX], min_pos [i32::MIN, i32::MAX], max_pos [i32::MIN, i32::MAX]"
+      - name: "cia402_pv_speed_rpm_to_cps"
+        signature: "pub fn cia402_pv_speed_rpm_to_cps(rpm: f64, cpr: u32) -> i32"
+        outputs: 1
+        domains:
+          rpm: "[-100000.0, 100000.0], cpr [1, 100000000]"
+      - name: "cia402_homing_offset_step"
+        signature: "pub fn cia402_homing_offset_step(current_pos: i32, home_offset: i32) -> i32"
+        outputs: 1
+        domains:
+          current_pos: "[i32::MIN, i32::MAX], home_offset [i32::MIN, i32::MAX]"
+      - name: "cia402_quick_stop_deceleration_time"
+        signature: "pub fn cia402_quick_stop_deceleration_time(current_speed_rpm: f64, decel_rpm_per_s: f64) -> f64"
+        outputs: 1
+        domains:
+          current_speed_rpm: "[-100000.0, 100000.0], decel_rpm_per_s [0.001, 1e9]"
+      - name: "cia402_torque_permille_to_nm"
+        signature: "pub fn cia402_torque_permille_to_nm(raw_torque: i16, rated_torque_nm: f64) -> f64"
+        outputs: 1
+        domains:
+          raw_torque: "[-3000, 3000], rated_torque_nm [0.0, 10000.0]"
+      - name: "cia402_following_error_detect"
+        signature: "pub fn cia402_following_error_detect(actual_pos: i32, demand_pos: i32, window: u32) -> bool"
+        outputs: 1
+        domains:
+          actual_pos: "[i32::MIN, i32::MAX], demand_pos [i32::MIN, i32::MAX], window [0, u32::MAX]"
   - module: "fin_apdu_track"
     file: "src/fin_apdu_track.rs"
     functions_count: 4
