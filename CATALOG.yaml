@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 213
+total_functions: 226
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -474,6 +474,62 @@ modules:
         outputs: 1
       - name: "xor_stream"
         signature: "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>"
+        outputs: 1
+  - module: "decision_mcts"
+    file: "src/decision_mcts.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: ai/decision_mcts — 零依賴蒙地卡羅樹狀搜尋 (MCTS) 決策核心：UCB1 評分、樹路徑選擇、反向傳播與溫度策略映射微積木。"
+      - "Inputs: 節點勝率/獎勵、拜訪次數、父節點拜訪次數、探索常數 (C)、搜索路徑、採樣溫度。"
+      - "Outputs: UCB1 分數、最佳子節點索引、反向更新狀態、行動機率分布 (Policy)。"
+      - "Invariants: 零外部依賴、純 Rust 實現、未拜訪節點最高優先級保證、除零剛性防護、單一函式 <= 60 行。"
+    functions:
+      - name: "mcts_ucb1_score"
+        signature: "pub fn mcts_ucb1_score(wins: f32, visits: u32, parent_visits: u32, exploration_c: f32) -> f32"
+        outputs: 1
+        domains:
+          exploration_c: "[0.0..10.0]"
+      - name: "mcts_select_best_child"
+        signature: "pub fn mcts_select_best_child("
+        outputs: 2
+        domains:
+          wins.len(): "[1..1000]"
+      - name: "mcts_backpropagate_step"
+        signature: "pub fn mcts_backpropagate_step("
+        outputs: 2
+        domains:
+          path_indices.len(): "[1..256]"
+      - name: "mcts_visit_count_temperature_policy"
+        signature: "pub fn mcts_visit_count_temperature_policy(visits: &[u32], temperature: f32, out_policy: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          temperature: "[0.0..10.0]"
+  - module: "dsp_fft_radix2"
+    file: "src/dsp_fft_radix2.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: dsp/dsp_fft_radix2 — 零依賴 Cooley-Tukey Radix-2 快速傅立葉轉換 (FFT/IFFT)、Q15 定點數蝶形運算與位元反轉微積木。"
+      - "Inputs: 實部與虛部陣列 (2 的冪次方)、位元反轉長度、Q15 複數取樣點與旋轉因子 (Twiddle Factors)。"
+      - "Outputs: 頻域複數頻譜、時域逆轉換信號、定點數蝶形運算結果對。"
+      - "Invariants: 零外部依賴、純 Rust 實現、2 的冪次方邊界校驗、蝶形縮放防溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "fft_bit_reverse_u32"
+        signature: "pub fn fft_bit_reverse_u32(val: u32, bits: u32) -> u32"
+        outputs: 1
+        domains:
+          bits: "[1..16]"
+      - name: "fft_radix2_f32_inplace"
+        signature: "pub fn fft_radix2_f32_inplace(real: &mut [f32], imag: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          real.len(): "[2..4096]"
+      - name: "ifft_radix2_f32_inplace"
+        signature: "pub fn ifft_radix2_f32_inplace(real: &mut [f32], imag: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          real.len(): "[2..4096]"
+      - name: "fft_radix2_q15_step"
+        signature: "pub fn fft_radix2_q15_step("
         outputs: 1
   - module: "dsp_fixed_point"
     file: "src/dsp_fixed_point.rs"
@@ -1054,6 +1110,40 @@ modules:
         outputs: 1
       - name: "point_plane_distance_signed"
         signature: "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32"
+        outputs: 1
+  - module: "radar_cfar_doppler"
+    file: "src/radar_cfar_doppler.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: radar/radar_cfar_doppler — 零依賴毫米波與都卜勒雷達訊號處理 (CA-CFAR 恒虛警率、都卜勒測速、微都卜勒呼吸胸腔位移、點雲分群與 MIMO 虛擬孔徑)。"
+      - "Inputs: 訊號功率切片、保護/參考窗長度、閾值因子、都卜勒頻率、載波頻率、相位差、TX/RX 天線位置。"
+      - "Outputs: 標記之目標峰值、速度 (m/s)、胸腔微動位移 (mm)、點雲聚類標籤、MIMO 虛擬天線陣列座標。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、有界陣列切片、單一函式 <= 60 行。"
+    functions:
+      - name: "radar_ca_cfar_detect_1d"
+        signature: "pub fn radar_ca_cfar_detect_1d("
+        outputs: 1
+        domains:
+          guard_len: "[1..32]"
+          train_len: "[1..64]"
+          alpha: "[1.0..100.0]"
+      - name: "radar_doppler_velocity_mps"
+        signature: "pub fn radar_doppler_velocity_mps(doppler_freq_hz: f32, carrier_freq_hz: f32) -> Option<f32>"
+        outputs: 2
+        domains:
+          carrier_freq_hz: "[1e6..300e9]"
+      - name: "radar_micro_doppler_chest_displacement_mm"
+        signature: "pub fn radar_micro_doppler_chest_displacement_mm(phase_diff_rad: f32, carrier_freq_ghz: f32) -> Option<f32>"
+        outputs: 2
+        domains:
+          carrier_freq_ghz: "[1.0..300.0]"
+      - name: "radar_cluster_points_1d"
+        signature: "pub fn radar_cluster_points_1d(points: &[f32], max_cluster_dist: f32, cluster_ids: &mut [usize]) -> usize"
+        outputs: 1
+        domains:
+          max_cluster_dist: "[0.001..1000.0]"
+      - name: "radar_mimo_virtual_array_positions"
+        signature: "pub fn radar_mimo_virtual_array_positions(tx_pos: &[f32], rx_pos: &[f32], out_virtual_pos: &mut [f32]) -> usize"
         outputs: 1
   - module: "receipt"
     file: "src/receipt.rs"

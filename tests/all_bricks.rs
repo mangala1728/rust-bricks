@@ -1572,3 +1572,106 @@ fn test_wishes_audio_and_text_bricks() {
     assert!(text_cleaner::fuzzy_prefix_match("interp", "interpreter"));
     assert!(!text_cleaner::fuzzy_prefix_match("xyz", "apple"));
 }
+
+
+#[test]
+fn test_radar_cfar_doppler_bricks() {
+    use rust_bricks::radar_cfar_doppler;
+
+    // 1. CA-CFAR 恒虛警率檢測 (背景底噪 1.0，在 index 10 放置 20.0 強目標)
+    let mut signal = vec![1.0f32; 25];
+    signal[10] = 20.0;
+    let mut detections = vec![false; 25];
+    let hits = radar_cfar_doppler::radar_ca_cfar_detect_1d(&signal, 1, 2, 3.0, &mut detections);
+    assert_eq!(hits, 1);
+    assert!(detections[10]);
+
+    // 2. 都卜勒測速 (77GHz 車載雷達，都卜勒頻移 1000Hz -> ~1.95 m/s)
+    let vel_opt = radar_cfar_doppler::radar_doppler_velocity_mps(1000.0, 77e9);
+    assert!(vel_opt.is_some());
+    // @safety-proof: vel_opt 已驗證 is_some()
+    assert!((vel_opt.unwrap() - 1.9467).abs() < 0.01);
+
+    // 3. 微都卜勒人體呼吸/心跳胸腔微動位移 (60GHz 雷達，0.1 rad 相位差 -> 0.0398 mm)
+    let disp_opt = radar_cfar_doppler::radar_micro_doppler_chest_displacement_mm(0.1, 60.0);
+    assert!(disp_opt.is_some());
+    // @safety-proof: disp_opt 已驗證 is_some()
+    assert!((disp_opt.unwrap() - 0.03976).abs() < 1e-4);
+
+    // 4. 雷達點雲 1D 距離分群 (目標 A 在 ~1m，目標 B 在 ~5m)
+    let points = [1.0, 1.2, 5.0, 5.1];
+    let mut cluster_ids = [0usize; 4];
+    let clusters = radar_cfar_doppler::radar_cluster_points_1d(&points, 0.5, &mut cluster_ids);
+    assert_eq!(clusters, 2);
+    assert_eq!(cluster_ids, [0, 0, 1, 1]);
+
+    // 5. MIMO 虛擬天線陣列合成 (2 TX * 4 RX -> 8 個虛擬天線通道)
+    let tx = [0.0, 4.0];
+    let rx = [0.0, 1.0, 2.0, 3.0];
+    let mut virt_pos = [0.0f32; 8];
+    let count = radar_cfar_doppler::radar_mimo_virtual_array_positions(&tx, &rx, &mut virt_pos);
+    assert_eq!(count, 8);
+    assert_eq!(virt_pos, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]);
+}
+
+#[test]
+fn test_dsp_fft_radix2_bricks() {
+    use rust_bricks::dsp_fft_radix2;
+
+    // 1. 位元反轉置換 (3 bits: 001 -> 100 即 1 -> 4)
+    assert_eq!(dsp_fft_radix2::fft_bit_reverse_u32(1, 3), 4);
+    assert_eq!(dsp_fft_radix2::fft_bit_reverse_u32(3, 3), 6);
+
+    // 2. FFT 與 IFFT 完整可逆性驗證 (4 點信號 [1.0, 2.0, 3.0, 4.0])
+    let orig_real = [1.0f32, 2.0, 3.0, 4.0];
+    let mut real = orig_real;
+    let mut imag = [0.0f32; 4];
+
+    assert!(dsp_fft_radix2::fft_radix2_f32_inplace(&mut real, &mut imag));
+    // DC 分量應為 1 + 2 + 3 + 4 = 10.0
+    assert!((real[0] - 10.0).abs() < 1e-4);
+
+    assert!(dsp_fft_radix2::ifft_radix2_f32_inplace(&mut real, &mut imag));
+    for i in 0..4 {
+        assert!((real[i] - orig_real[i]).abs() < 1e-4);
+        assert!(imag[i].abs() < 1e-4);
+    }
+
+    // 3. Q15 定點數蝶形運算
+    let (a, b) = dsp_fft_radix2::fft_radix2_q15_step(1000, 0, 1000, 0, 32767, 0);
+    assert!(a.0 > 0 && b.0 >= 0);
+}
+
+#[test]
+fn test_decision_mcts_bricks() {
+    use rust_bricks::decision_mcts;
+
+    // 1. UCB1 評分公式 (未拜訪節點應為無窮大)
+    let score_unvisited = decision_mcts::mcts_ucb1_score(0.0, 0, 100, 1.414);
+    assert!(score_unvisited.is_infinite());
+    let score_visited = decision_mcts::mcts_ucb1_score(60.0, 100, 500, 1.414);
+    assert!(score_visited > 0.6 && score_visited.is_finite());
+
+    // 2. 最佳子節點選取 (子節點 0 未拜訪，應優先選取 0)
+    let wins = [0.0, 50.0];
+    let visits = [0, 80];
+    let best = decision_mcts::mcts_select_best_child(&wins, &visits, 100, 1.414);
+    assert_eq!(best, Some(0));
+
+    // 3. 反向傳播更新 (獎勵 1.0 沿路徑 [0, 1] 累加)
+    let mut tree_wins = [0.0f32; 4];
+    let mut tree_visits = [0u32; 4];
+    assert!(decision_mcts::mcts_backpropagate_step(&mut tree_wins, &mut tree_visits, &[0, 2], 1.0));
+    assert_eq!(tree_wins[0], 1.0);
+    assert_eq!(tree_visits[0], 1);
+    assert_eq!(tree_wins[2], 1.0);
+    assert_eq!(tree_visits[2], 1);
+
+    // 4. 訪問次數溫度策略映射 (溫度 1.0 正規化比例)
+    let node_visits = [10u32, 30, 60];
+    let mut policy = [0.0f32; 3];
+    assert!(decision_mcts::mcts_visit_count_temperature_policy(&node_visits, 1.0, &mut policy));
+    assert!((policy[0] - 0.1).abs() < 1e-4);
+    assert!((policy[1] - 0.3).abs() < 1e-4);
+    assert!((policy[2] - 0.6).abs() < 1e-4);
+}

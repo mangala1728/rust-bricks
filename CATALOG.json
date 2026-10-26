@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 213,
+  "total_functions": 226,
   "modules": [
     {
       "module": "agent_terminal",
@@ -451,6 +451,60 @@
         {
           "name": "xor_stream",
           "signature": "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "decision_mcts",
+      "file": "src/decision_mcts.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "mcts_ucb1_score",
+          "signature": "pub fn mcts_ucb1_score(wins: f32, visits: u32, parent_visits: u32, exploration_c: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "mcts_select_best_child",
+          "signature": "pub fn mcts_select_best_child(",
+          "outputs": 2
+        },
+        {
+          "name": "mcts_backpropagate_step",
+          "signature": "pub fn mcts_backpropagate_step(",
+          "outputs": 2
+        },
+        {
+          "name": "mcts_visit_count_temperature_policy",
+          "signature": "pub fn mcts_visit_count_temperature_policy(visits: &[u32], temperature: f32, out_policy: &mut [f32]) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "dsp_fft_radix2",
+      "file": "src/dsp_fft_radix2.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "fft_bit_reverse_u32",
+          "signature": "pub fn fft_bit_reverse_u32(val: u32, bits: u32) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "fft_radix2_f32_inplace",
+          "signature": "pub fn fft_radix2_f32_inplace(real: &mut [f32], imag: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "ifft_radix2_f32_inplace",
+          "signature": "pub fn ifft_radix2_f32_inplace(real: &mut [f32], imag: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "fft_radix2_q15_step",
+          "signature": "pub fn fft_radix2_q15_step(",
           "outputs": 1
         }
       ]
@@ -992,6 +1046,38 @@
         {
           "name": "point_plane_distance_signed",
           "signature": "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "radar_cfar_doppler",
+      "file": "src/radar_cfar_doppler.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "radar_ca_cfar_detect_1d",
+          "signature": "pub fn radar_ca_cfar_detect_1d(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_doppler_velocity_mps",
+          "signature": "pub fn radar_doppler_velocity_mps(doppler_freq_hz: f32, carrier_freq_hz: f32) -> Option<f32>",
+          "outputs": 2
+        },
+        {
+          "name": "radar_micro_doppler_chest_displacement_mm",
+          "signature": "pub fn radar_micro_doppler_chest_displacement_mm(phase_diff_rad: f32, carrier_freq_ghz: f32) -> Option<f32>",
+          "outputs": 2
+        },
+        {
+          "name": "radar_cluster_points_1d",
+          "signature": "pub fn radar_cluster_points_1d(points: &[f32], max_cluster_dist: f32, cluster_ids: &mut [usize]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "radar_mimo_virtual_array_positions",
+          "signature": "pub fn radar_mimo_virtual_array_positions(tx_pos: &[f32], rx_pos: &[f32], out_virtual_pos: &mut [f32]) -> usize",
           "outputs": 1
         }
       ]

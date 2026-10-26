@@ -6,12 +6,12 @@
 
 use crate::{
     agent_terminal, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
-    fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna, iso7816_smartcard, math_time,
-    motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_tsn_macsec,
-    office_calc_layout, pcb_cad_fem, physics_raycast_3d, rpa_screen_control, sensor_baro_als,
-    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
-    thermal_palette, thermal_pid,
+    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, decision_mcts, dsp_fft_radix2,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna,
+    iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
+    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d,
+    radar_cfar_doppler, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -313,6 +313,46 @@ fn audit_rpa_screen_control() -> bool {
 }
 
 /// @outputs: 1
+fn audit_radar_cfar_doppler() -> bool {
+    let mut ok = true;
+    let mut det = [false; 4];
+    ok &= radar_cfar_doppler::radar_ca_cfar_detect_1d(&[], 1, 2, 3.0, &mut det) == 0;
+    ok &= radar_cfar_doppler::radar_doppler_velocity_mps(100.0, 0.0).is_none();
+    ok &= radar_cfar_doppler::radar_micro_doppler_chest_displacement_mm(0.1, -60.0).is_none();
+    let mut clusters = [0usize; 2];
+    ok &= radar_cfar_doppler::radar_cluster_points_1d(&[], 1.0, &mut clusters) == 0;
+    ok &= radar_cfar_doppler::radar_mimo_virtual_array_positions(&[], &[], &mut []) == 0;
+    ok
+}
+
+/// @outputs: 1
+fn audit_dsp_fft_radix2() -> bool {
+    let mut ok = true;
+    ok &= dsp_fft_radix2::fft_bit_reverse_u32(1, 0) == 0;
+    let mut r = [1.0f32; 3];
+    let mut im = [0.0f32; 3];
+    ok &= !dsp_fft_radix2::fft_radix2_f32_inplace(&mut r, &mut im);
+    ok &= !dsp_fft_radix2::ifft_radix2_f32_inplace(&mut r, &mut im);
+    let (a, b) = dsp_fft_radix2::fft_radix2_q15_step(0, 0, 0, 0, 0, 0);
+    ok &= a == (0, 0) && b == (0, 0);
+    ok
+}
+
+/// @outputs: 1
+fn audit_decision_mcts() -> bool {
+    let mut ok = true;
+    let ucb_unvisited = decision_mcts::mcts_ucb1_score(0.0, 0, 10, 1.414);
+    ok &= ucb_unvisited.is_infinite();
+    ok &= decision_mcts::mcts_select_best_child(&[], &[], 10, 1.414).is_none();
+    let mut wins = [0.0f32; 2];
+    let mut visits = [0u32; 2];
+    ok &= !decision_mcts::mcts_backpropagate_step(&mut wins, &mut visits, &[99], 1.0);
+    let mut pol = [0.0f32; 2];
+    ok &= !decision_mcts::mcts_visit_count_temperature_policy(&[], 1.0, &mut pol);
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -350,6 +390,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_motion_render_timeline(), "【影音動態Remotion時序抽查失敗】存在FPS除零或牛頓法發散", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_office_calc_layout(), "【辦公試算表與排版抽查失敗】存在PMT除零或溢出折行崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_rpa_screen_control(), "【RPA按鍵螢幕控制抽查失敗】存在螢幕色彩或GPIB握手崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_radar_cfar_doppler(), "【雷達CFAR與都卜勒抽查失敗】存在頻率除零或點雲邊界崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_dsp_fft_radix2(), "【快速傅立葉FFT抽查失敗】存在非2的冪次方或溢出崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_decision_mcts(), "【MCTS蒙地卡羅決策抽查失敗】存在無效路徑或零拜訪崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

@@ -6,12 +6,13 @@
 
 use rust_bricks::{
     agent_terminal, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
-    env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna, iso7816_smartcard, math_time,
-    motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec,
-    office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, ring_buffer, rpa_screen_control,
-    sensor_baro_als, sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
-    text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
+    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, decision_mcts, dsp_fft_radix2,
+    dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
+    iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
+    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
+    radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -209,6 +210,33 @@ fn verify_rpa_screen_control() -> bool {
 }
 
 /// @outputs: 1
+fn verify_radar_cfar_doppler() -> bool {
+    let vel = radar_cfar_doppler::radar_doppler_velocity_mps(1000.0, 77e9);
+    let ok_vel = matches!(vel, Some(v) if v > 1.8 && v < 2.2);
+    let disp = radar_cfar_doppler::radar_micro_doppler_chest_displacement_mm(0.1, 60.0);
+    let ok_disp = matches!(disp, Some(d) if d > 0.03 && d < 0.05);
+    ok_vel && ok_disp
+}
+
+/// @outputs: 1
+fn verify_dsp_fft_radix2() -> bool {
+    let mut real = [1.0f32, 0.0, 1.0, 0.0];
+    let mut imag = [0.0f32; 4];
+    let ok_fft = dsp_fft_radix2::fft_radix2_f32_inplace(&mut real, &mut imag);
+    let ok_dc = (real[0] - 2.0).abs() < 1e-4;
+    ok_fft && ok_dc
+}
+
+/// @outputs: 1
+fn verify_decision_mcts() -> bool {
+    let ucb = decision_mcts::mcts_ucb1_score(5.0, 10, 100, 1.414);
+    let ok_ucb = ucb > 0.5 && ucb.is_finite();
+    let best = decision_mcts::mcts_select_best_child(&[1.0, 5.0], &[10, 10], 100, 1.414);
+    let ok_best = best == Some(1);
+    ok_ucb && ok_best
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -227,6 +255,9 @@ fn verify_all_subsystems() -> bool {
         && verify_motion_render_timeline()
         && verify_office_calc_layout()
         && verify_rpa_screen_control()
+        && verify_radar_cfar_doppler()
+        && verify_dsp_fft_radix2()
+        && verify_decision_mcts()
 }
 
 /// @outputs: 1

@@ -62,6 +62,7 @@
 | [`comm_controller`](src/comm_controller.rs) | I2C 7-bit 讀寫訊框、SPI Mode 0..3 映射、5 線 SPI D/C 螢幕命令訊框、QSPI 0xEB 快速讀取、UART 波特率定點除數、DMA 跨架構記憶體對齊 | OLED/TFT 螢幕驅動、QSPI Flash 晶片、串口通信、8/16/32/64-bit CPU DMA 對齊 |
 | [`clock_pll_rtc`](src/clock_pll_rtc.rs) | 晶振 PLL 鎖相迴路 (M, N, P) 最優倍頻分頻求解、RTC 32.768kHz 晶振拋物線溫漂補償、NTP 雙向網路時鐘對齊與延遲計算 | MCU 系統時鐘樹初始化、高精度 RTC 溫漂校準、物聯網網際網路系統時鐘同步 |
 | [`physics_raycast_3d`](src/physics_raycast_3d.rs) | Möller–Trumbore 3D 射線-三角形高速相交、向量鏡面反射、點面有號距離 | 3D VR/AR 頭顯空間選取、雷射筆射線拾取、遊戲光照彈射物理模擬 |
+| [`radar_cfar_doppler`](src/radar_cfar_doppler.rs) | 1D CA-CFAR 恒虛警率目標檢測、都卜勒速度解算、微都卜勒呼吸胸腔微動位移、點雲距離分群、MIMO 虛擬孔徑合成 | 毫米波雷達 (77GHz/60GHz)、智慧醫療呼吸心跳非接觸監測、ADAS 自駕車避障、點雲聚類 |
 | [`fin_apdu_track`](src/fin_apdu_track.rs) | ISO 7816-4 APDU 晶片卡命令封裝與回應解析、磁條 Track 2 卡號效期提取、LRC 校驗 | 金融刷卡機 POS、ATM 讀卡機、晶片卡/磁條卡雙介面支付 |
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |
@@ -72,6 +73,8 @@
 | [`ble_adv_parser`](src/ble_adv_parser.rs) | BLE 4.2/5.0 廣播封包 AD Structure 零拷貝檢索、發射功率、設備名稱、製造商自定義數據解析 | 醫療手環、工廠 Beacon 室內定位、物聯網低功耗廣播解析（消滅 GC 震盪） |
 | [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
 | [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |
+| [`decision_mcts`](src/decision_mcts.rs) | 蒙地卡羅樹狀搜尋 (MCTS) UCB1 評分、最佳子節點選擇、反向傳播更新、訪問次數溫度策略映射 | 智慧決策系統、棋盤博弈 AI (AlphaGo 核心)、強化學習樹搜索、自主代理多步推理 |
+| [`dsp_fft_radix2`](src/dsp_fft_radix2.rs) | Cooley-Tukey 基-2 (Radix-2) 快速傅立葉轉換 (FFT/IFFT)、Q15 定點數蝶形運算、位元反轉置換 | 雷達頻譜分析、圖像去噪、音訊壓縮與濾波、無 FPU 單晶片信號處理 |
 | [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
 | [`crypto_dukpt`](src/crypto_dukpt.rs) | ANSI X9.24 DUKPT 交易金鑰衍生、21-bit 交易計數器管理、PIN/Data 變體金鑰生成 | 金融刷卡機 POS、ATM 提款機每筆交易動態密鑰（防前向破解） |
 | [`motor_stepper`](src/motor_stepper.rs) | 步進馬達梯形加減速微秒延遲計算、正交 AB 編碼器 4x 倍頻狀態機、行程換算 | 3D 列印機、CNC 雕刻機、送錫機、工控滑台高精度運動控制 |
