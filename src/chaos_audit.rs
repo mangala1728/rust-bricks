@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, robotics_ukf_attitude_estimator, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, storage_block_geometry, sys_path, thermal_palette, thermal_pid,
     vision_camera_calibration_pnp, vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -1161,6 +1161,25 @@ fn audit_codec_binary_wire_schema() -> bool {
 }
 
 /// @outputs: 1
+fn audit_robotics_ukf_attitude_estimator() -> bool {
+    let mut ok = true;
+    ok &= robotics_ukf_attitude_estimator::ukf_van_der_merwe_weights(0, 0.1, 2.0, 0.0).is_none();
+    ok &= robotics_ukf_attitude_estimator::ukf_sigma_point_1d_spread(-1.0, 1.0).is_none();
+    ok &= robotics_ukf_attitude_estimator::quaternion_error_state_step([1.0, 0.0, 0.0, 0.0], [2.0, 2.0, 2.0]).is_none();
+    let rot = robotics_ukf_attitude_estimator::quaternion_rotate_vector_body_to_inertial([1.0, 0.0, 0.0, 0.0], [1.0, 2.0, 3.0]);
+    ok &= (rot[0] - 1.0).abs() < 1e-4 && (rot[1] - 2.0).abs() < 1e-4 && (rot[2] - 3.0).abs() < 1e-4;
+    ok &= robotics_ukf_attitude_estimator::flight_dynamic_pressure(-1.0, 100.0).is_none();
+    ok &= robotics_ukf_attitude_estimator::flight_mach_number(100.0, 50.0).is_none();
+    let f = robotics_ukf_attitude_estimator::quadrotor_thrust_torque_allocation_x4(-10.0, 0.0, 0.0, 0.0);
+    ok &= f == [0.0, 0.0, 0.0, 0.0];
+    ok &= robotics_ukf_attitude_estimator::magnetometer_tilt_compensated_yaw(f64::NAN, 0.0, [1.0, 0.0, 0.0]).is_none();
+    ok &= robotics_ukf_attitude_estimator::madgwick_gravity_gradient_step([1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0]).is_none();
+    ok &= robotics_ukf_attitude_estimator::motor_thrust_ratio_to_pwm_us(-0.5) == 1000;
+    ok &= robotics_ukf_attitude_estimator::motor_thrust_ratio_to_pwm_us(1.5) == 2000;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1246,6 +1265,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_storage_block_geometry(), "【儲存幾何與磁碟分區抽查失敗】存在溢出或非法邊界", total, passed, failures);
     check_audit_domain(audit_vision_camera_calibration_pnp(), "【相機標定與對極位姿抽查失敗】存在除零溢出或退化矩陣崩潰", total, passed, failures);
     check_audit_domain(audit_codec_binary_wire_schema(), "【二進位序列化與線路結構抽查失敗】存在DER解碼越界或長度溢出", total, passed, failures);
+    check_audit_domain(audit_robotics_ukf_attitude_estimator(), "【無跡卡爾曼姿態與飛行力學抽查失敗】存在除零溢出或負推力崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

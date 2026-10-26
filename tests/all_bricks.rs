@@ -4527,6 +4527,72 @@ fn test_codec_binary_wire_schema_bricks() {
     assert_eq!(endian_swap_u32_in_place(0x12345678), 0x78563412);
 }
 
+#[test]
+fn test_robotics_ukf_attitude_estimator_bricks() {
+    use rust_bricks::robotics_ukf_attitude_estimator::*;
+
+    // 1. UKF 權重解算 (Van der Merwe)
+    // @safety-proof: n=3, alpha=1.0, beta=2, kappa=0 均在有界範圍
+    let (wm0, wc0, wi) = ukf_van_der_merwe_weights(3, 1.0, 2.0, 0.0).unwrap();
+    assert!((wm0 - 0.0).abs() < 1e-5);
+    assert!((wc0 - 2.0).abs() < 1e-5);
+    assert!((wi - (1.0 / 6.0)).abs() < 1e-5);
+
+    // 2. UKF 1D 協方差展開
+    // @safety-proof: 方差 4.0 >= 0 且 scale 2.0 > 0
+    let spread = ukf_sigma_point_1d_spread(4.0, 2.0).unwrap();
+    assert_eq!(spread, 4.0); // 2.0 * sqrt(4.0) = 4.0
+
+    // 3. MEKF 四元數小角度誤差步進
+    let q_nom = [1.0, 0.0, 0.0, 0.0];
+    let d_th = [0.0, 0.02, 0.0];
+    // @safety-proof: 旋轉角範數 0.02 <= 1.0 rad
+    let q_up = quaternion_error_state_step(q_nom, d_th).unwrap();
+    assert!((q_up[0] - 1.0).abs() < 1e-3);
+    assert!((q_up[2] - 0.01).abs() < 1e-4);
+
+    // 4. 四元數機體轉慣性座標向量旋轉 (繞 Z 軸旋轉 90 度: q = [cos(45), 0, 0, sin(45)])
+    let sq2 = 0.5f64.sqrt();
+    let q_z90 = [sq2, 0.0, 0.0, sq2];
+    let v_body = [1.0, 0.0, 0.0];
+    let v_inertial = quaternion_rotate_vector_body_to_inertial(q_z90, v_body);
+    assert!(v_inertial[0].abs() < 1e-5);
+    assert!((v_inertial[1] - 1.0).abs() < 1e-5);
+    assert!(v_inertial[2].abs() < 1e-5);
+
+    // 5. 空氣動力學動壓
+    // @safety-proof: rho=1.225, v=20.0 均在有界範圍
+    let q_dyn = flight_dynamic_pressure(1.225, 20.0).unwrap();
+    assert!((q_dyn - 245.0).abs() < 1e-4); // 245.0 Pa
+
+    // 6. 馬赫數
+    // @safety-proof: 空速 340.0, 溫度 288.15K 在有界範圍
+    let mach = flight_mach_number(340.0, 288.15).unwrap();
+    assert!((mach - 1.0).abs() < 0.01);
+
+    // 7. X型四軸推力力矩混控分配
+    let f_motors = quadrotor_thrust_torque_allocation_x4(40.0, 0.0, 0.0, 0.0);
+    assert_eq!(f_motors, [10.0, 10.0, 10.0, 10.0]);
+
+    // 8. 傾斜補償電子羅盤偏航角 (水平均勻磁場: 0 roll, 0 pitch, mag=[1, 0, 0])
+    // @safety-proof: 讀數全為有限浮點數
+    let yaw = magnetometer_tilt_compensated_yaw(0.0, 0.0, [1.0, 0.0, 0.0]).unwrap();
+    assert_eq!(yaw, 0.0);
+
+    // 9. Madgwick 重力誤差梯度步進 (水平靜止: q=[1,0,0,0], a=[0,0,1])
+    // @safety-proof: 重力與四元數均非零
+    let grad = madgwick_gravity_gradient_step([1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0]).unwrap();
+    assert!(grad[0].abs() < 1e-5);
+    assert!(grad[1].abs() < 1e-5);
+    assert!(grad[2].abs() < 1e-5);
+
+    // 10. 無刷馬達推力比轉 PWM 脈寬
+    assert_eq!(motor_thrust_ratio_to_pwm_us(0.0), 1000);
+    assert_eq!(motor_thrust_ratio_to_pwm_us(0.25), 1500); // sqrt(0.25) = 0.5 -> 1000 + 500 = 1500
+    assert_eq!(motor_thrust_ratio_to_pwm_us(1.0), 2000);
+}
+
+
 
 
 

@@ -127,6 +127,7 @@
 | [`robotics_motion_profile`](src/robotics_motion_profile.rs) | 2-Link 平面機械臂逆向/正向運動學 (IK/FK)、雅可比奇異點檢測、梯形與 S-curve 躍度運動曲線、Q15 步進微步電流比、關節軟極限、滾珠螺桿導程 | 工業機械手臂 (SCARA/Delta)、六軸協作機器人逆解、高階 CNC 運動控制器 |
 | [`robotics_6dof_slerp`](src/robotics_6dof_slerp.rs) | 6 軸機械手臂腕部球心解耦、單位四元數 SLERP 球面線性插值、Rodrigues 旋轉軸角與 SO(3) 矩陣互轉、五次多項式零衝擊軌跡規劃、單連桿重力負載靜力矩補償、笛卡爾直線插補 (Blend) | 六軸工業手臂 (UR5/Puma 560) 運動學逆解、末端姿態平滑過渡、無衝擊點對點軌跡規劃 |
 | [`robotics_dynamics_jacobian`](src/robotics_dynamics_jacobian.rs) | 2 連桿平面雅可比末端線速度、Yoshikawa 可操縱度橢球指標、雅可比轉置力矩換算 (tau = J^T * F)、柯氏力與離心力矩、關節空間對稱慣性矩陣 (M 矩陣)、人工勢場關節極限斥力、前向歐拉動力學狀態積分、計算力矩控制 (Computed Torque)、庫侖與黏性關節摩擦力、笛卡爾順應性阻抗彈簧力 | 工業機器人動力學前饋補償、協作機器人順應性力控/碰撞偵測、柔性裝配阻抗控制、高精度軌跡跟隨 |
+| [`robotics_ukf_attitude_estimator`](src/robotics_ukf_attitude_estimator.rs) | Unscented Transform (UKF) Van der Merwe 權重係數解算、1D 協方差 Cholesky 根 Sigma 點擴展、MEKF 四元數小角度誤差乘法步進、四元數機體轉慣性座標向量旋轉、空氣動力學動壓 (q=0.5*rho*v^2)、空速音速馬赫數、X 型四軸推力力矩分配混控、傾斜補償磁羅盤偏航角、Madgwick 重力誤差梯度步進、無刷馬達推力比轉 ESC PWM 微秒 | 無人機飛控 (PX4 / ArduPilot / Betaflight)、姿態航向參考系統 (AHRS)、四軸飛行力學動力分配、慣性導航與非線性卡爾曼濾波 |
 | [`env_sensor`](src/env_sensor.rs) | SHT3x 溫濕度 CRC8 校驗、Magnus-Tetens 露點溫度計算、美國/台灣 EPA PM2.5 AQI 換算 | 恆溫恆濕環境試驗箱、防凝露結霜控制、智慧家庭環境儀 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |

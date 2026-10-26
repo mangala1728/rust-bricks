@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 710
+total_functions: 720
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3234,6 +3234,41 @@ modules:
         outputs: 1
         domains:
           lead_mm: "[0.001..1000.0]"
+  - module: "robotics_ukf_attitude_estimator"
+    file: "src/robotics_ukf_attitude_estimator.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "ukf_van_der_merwe_weights"
+        signature: "pub fn ukf_van_der_merwe_weights("
+        outputs: 1
+      - name: "ukf_sigma_point_1d_spread"
+        signature: "pub fn ukf_sigma_point_1d_spread(variance: f64, c_scale: f64) -> Option<f64>"
+        outputs: 1
+      - name: "quaternion_error_state_step"
+        signature: "pub fn quaternion_error_state_step("
+        outputs: 1
+      - name: "quaternion_rotate_vector_body_to_inertial"
+        signature: "pub fn quaternion_rotate_vector_body_to_inertial(q: [f64; 4], v: [f64; 3]) -> [f64; 3]"
+        outputs: 1
+      - name: "flight_dynamic_pressure"
+        signature: "pub fn flight_dynamic_pressure(rho: f64, airspeed: f64) -> Option<f64>"
+        outputs: 1
+      - name: "flight_mach_number"
+        signature: "pub fn flight_mach_number(airspeed: f64, temp_kelvin: f64) -> Option<f64>"
+        outputs: 1
+      - name: "quadrotor_thrust_torque_allocation_x4"
+        signature: "pub fn quadrotor_thrust_torque_allocation_x4("
+        outputs: 1
+      - name: "magnetometer_tilt_compensated_yaw"
+        signature: "pub fn magnetometer_tilt_compensated_yaw("
+        outputs: 1
+      - name: "madgwick_gravity_gradient_step"
+        signature: "pub fn madgwick_gravity_gradient_step(q: [f64; 4], a: [f64; 3]) -> Option<[f64; 4]>"
+        outputs: 1
+      - name: "motor_thrust_ratio_to_pwm_us"
+        signature: "pub fn motor_thrust_ratio_to_pwm_us(thrust_ratio: f64) -> u16"
+        outputs: 1
   - module: "rpa_desktop_macro_driver"
     file: "src/rpa_desktop_macro_driver.rs"
     functions_count: 9

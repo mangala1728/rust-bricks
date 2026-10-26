@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, robotics_ukf_attitude_estimator, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, storage_block_geometry, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_camera_calibration_pnp, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
@@ -812,6 +812,19 @@ fn verify_codec_binary_wire_schema() -> bool {
 }
 
 /// @outputs: 1
+fn verify_robotics_ukf_attitude_estimator() -> bool {
+    let w = robotics_ukf_attitude_estimator::ukf_van_der_merwe_weights(4, 0.1, 2.0, 0.0);
+    let ok_w = matches!(w, Some((wm, _, _)) if wm < 0.0);
+    let q_rot = robotics_ukf_attitude_estimator::quaternion_rotate_vector_body_to_inertial([1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+    let ok_rot = (q_rot[1] - 1.0).abs() < 1e-4;
+    let q_dyn = robotics_ukf_attitude_estimator::flight_dynamic_pressure(1.225, 10.0);
+    let ok_q = matches!(q_dyn, Some(val) if (val - 61.25).abs() < 1e-3);
+    let pwm = robotics_ukf_attitude_estimator::motor_thrust_ratio_to_pwm_us(0.25);
+    let ok_pwm = pwm == 1500;
+    ok_w && ok_rot && ok_q && ok_pwm
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -886,6 +899,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_storage_block_geometry()
         && verify_vision_camera_calibration_pnp()
         && verify_codec_binary_wire_schema()
+        && verify_robotics_ukf_attitude_estimator()
 }
 
 /// @outputs: 1
