@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 160
+total_functions: 161
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -35,11 +35,11 @@ modules:
           input_len: "[0..65536]"
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
-    functions_count: 8
+    functions_count: 9
     architecture_map:
-      - "Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數與目標 SNR 雜訊縮放因數。"
-      - "Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率。"
-      - "Outputs: 0.0..=1.0 功率、-100.0..=0.0 dBFS 能量、0.0..=100.0 SNR dB、0.0..=1.0 零交越率、Biquad 係數陣列 [b0, b1, b2, a1, a2]、雜訊縮放乘數。"
+      - "Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數、Biquad 濾波執行與目標 SNR 雜訊縮放因數。"
+      - "Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率、Biquad 係數 [b0, b1, b2, a1, a2]。"
+      - "Outputs: 0.0..=1.0 功率、-100.0..=0.0 dBFS 能量、0.0..=100.0 SNR dB、0.0..=1.0 零交越率、Biquad 係數陣列 [b0, b1, b2, a1, a2]、濾波後 PCM16 切片、雜訊縮放乘數。"
       - "Invariants: 零全域可變狀態、無遞迴、除數防零守衛、有界取樣切片（最大 192,000 取樣點）、純標準庫 100% 零依賴。"
     functions:
       - name: "pcm16_frame_power"
@@ -65,6 +65,9 @@ modules:
         domains:
           cutoff_hz: "[1..23999]"
           sample_rate: "[8000..48000]"
+      - name: "biquad_filter_apply"
+        signature: "pub fn biquad_filter_apply(samples: &[i16], coeffs: [f64; 5]) -> Vec<i16>"
+        outputs: 2
       - name: "mix_noise_scale_factor"
         signature: "pub fn mix_noise_scale_factor(speech_power: f64, noise_power: f64, target_snr_db: f64) -> f64"
         outputs: 2

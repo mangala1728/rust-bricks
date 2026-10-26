@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 160,
+  "total_functions": 161,
   "modules": [
     {
       "module": "agent_terminal",
@@ -30,7 +30,7 @@
     {
       "module": "audio_dsp",
       "file": "src/audio_dsp.rs",
-      "functions_count": 8,
+      "functions_count": 9,
       "functions": [
         {
           "name": "pcm16_frame_power",
@@ -55,6 +55,11 @@
         {
           "name": "biquad_butterworth_highpass_coeffs",
           "signature": "pub fn biquad_butterworth_highpass_coeffs(cutoff_hz: u32, sample_rate: u32) -> Option<[f64; 5]>",
+          "outputs": 2
+        },
+        {
+          "name": "biquad_filter_apply",
+          "signature": "pub fn biquad_filter_apply(samples: &[i16], coeffs: [f64; 5]) -> Vec<i16>",
           "outputs": 2
         },
         {

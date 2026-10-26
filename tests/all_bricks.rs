@@ -171,6 +171,13 @@ fn test_audio_dsp_biquad_highpass() {
     assert!((c[0] - c[2]).abs() < 1e-9); // b0 should equal b2
     // Cutoff >= Nyquist should return None
     assert!(audio_dsp::biquad_butterworth_highpass_coeffs(8000, 16000).is_none());
+
+    // Test biquad filter application
+    let passthrough = [1.0, 0.0, 0.0, 0.0, 0.0];
+    let samples = vec![100i16, 200, -300, 400];
+    let filtered = audio_dsp::biquad_filter_apply(&samples, passthrough);
+    assert_eq!(filtered, samples);
+    assert_eq!(audio_dsp::biquad_filter_apply(&[], passthrough), Vec::<i16>::new());
 }
 
 #[test]
