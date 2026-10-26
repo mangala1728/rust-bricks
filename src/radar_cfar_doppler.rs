@@ -17,9 +17,12 @@ pub fn radar_ca_cfar_detect_1d(
     alpha: f32,
     detections: &mut [bool],
 ) -> usize {
+    if guard_len < 1 || guard_len > 32 || train_len < 1 || train_len > 64 || alpha < 1.0 || alpha > 100.0 || !alpha.is_finite() {
+        return 0;
+    }
     let n = signal.len();
     let margin = guard_len + train_len;
-    if n < 2 * margin + 1 || detections.len() != n || alpha <= 0.0 || !alpha.is_finite() {
+    if n < 2 * margin + 1 || detections.len() != n {
         return 0;
     }
     for d in detections.iter_mut() {

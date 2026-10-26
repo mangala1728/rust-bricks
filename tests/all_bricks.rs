@@ -946,12 +946,12 @@ fn test_env_sensor_bricks() {
     assert!(dew_opt.is_some());
     // @safety-proof: dew_opt 已驗證 is_some()
     let dew = dew_opt.unwrap();
-    assert!((dew - 13.9).abs() < 0.5);
+    assert!((dew - 13.8423).abs() < 1e-4);
 
     // 100% 濕度時露點等於環境溫度
     let dew_sat = rust_bricks::env_sensor::dew_point_magnus(25.0, 100.0).unwrap();
     // @safety-proof: dew_sat 已在有效域內
-    assert!((dew_sat - 25.0).abs() < 0.1);
+    assert!((dew_sat - 25.0).abs() < 1e-4);
 
     // 3. AQI PM2.5 換算
     // 12.0 ug/m3 -> AQI 50
@@ -1133,13 +1133,13 @@ fn test_sensor_power_meter_bricks() {
     // 2. 庫侖計積分 (1.0A 運行 3600 秒 -> 1000.0 mAh)
     let mut accum_mah = 0.0f32;
     rust_bricks::sensor_power_meter::coulomb_counter_integrate_mah(1.0, 3600.0, &mut accum_mah);
-    assert!((accum_mah - 1000.0).abs() < 1.0);
+    assert!((accum_mah - 1000.0).abs() < 1e-4);
 
     // 3. 鋰電池開路電壓轉 SOC 剩餘電量
     assert_eq!(rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(3.20), 0.0);
     assert_eq!(rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(4.25), 100.0);
     let soc_mid = rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(3.84);
-    assert!((soc_mid - 50.0).abs() < 0.1);
+    assert_eq!(soc_mid, 50.0);
 }
 
 #[test]
@@ -1148,12 +1148,12 @@ fn test_sensor_baro_als_bricks() {
     let alt_zero = rust_bricks::sensor_baro_als::baro_pressure_to_altitude_m(1013.25, 1013.25);
     assert!(alt_zero.is_some());
     // @safety-proof: alt_zero 已驗證 is_some()
-    assert!(alt_zero.unwrap().abs() < 0.1);
+    assert_eq!(alt_zero.unwrap(), 0.0);
 
-    // 氣壓 900 hPa -> 海拔約 988 公尺
+    // 氣壓 900 hPa -> 海拔約 988.6463 公尺
     let alt_900 = rust_bricks::sensor_baro_als::baro_pressure_to_altitude_m(900.0, 1013.25).unwrap();
     // @safety-proof: 氣壓有效
-    assert!((alt_900 - 988.0).abs() < 5.0);
+    assert!((alt_900 - 988.6463).abs() < 1e-3);
 
     // 2. OPT3001 光照度換算 (E=4, R=100 -> LSB = 0.01 * 16 = 0.16 -> Lux = 16.0)
     let raw_opt = (4u16 << 12) | 100u16;
@@ -1162,7 +1162,7 @@ fn test_sensor_baro_als_bricks() {
 
     // 3. BH1750 光照度換算 (Raw=120, MTreg=69 -> 100 Lux)
     let lux_bh = rust_bricks::sensor_baro_als::bh1750_raw_to_lux(120, 69);
-    assert!((lux_bh - 100.0).abs() < 0.1);
+    assert!((lux_bh - 100.0).abs() < 1e-4);
 }
 
 #[test]
