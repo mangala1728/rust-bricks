@@ -9,7 +9,7 @@ use crate::{
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
-    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
@@ -784,6 +784,19 @@ fn audit_robotics_dynamics_jacobian() -> bool {
 }
 
 /// @outputs: 1
+fn audit_nfc_iso14443_ndef() -> bool {
+    let mut ok = true;
+    let mut crc_a = 0x6363u16;
+    nfc_iso14443_ndef::nfc_iso14443a_crc_step(0x00, &mut crc_a);
+    ok &= crc_a != 0x6363;
+    ok &= nfc_iso14443_ndef::nfc_iso14443b_crc_calculate(&[]) == 0xFFFF;
+    ok &= nfc_iso14443_ndef::nfc_ndef_uri_prefix_expand(0xFF).is_none(); // 非法前綴
+    ok &= nfc_iso14443_ndef::nfc_mifare_classic_sector_trailer_block_index(50).is_none(); // 扇區溢出 (>39)
+    ok &= !nfc_iso14443_ndef::nfc_felica_frame_validate(&[0x01]); // 長度不足
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -846,6 +859,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_radar_mimo_tracking(), "【雷達MIMO虛擬陣列與追蹤抽查失敗】存在除零溢出或航跡發散", total, passed, failures);
     check_audit_domain(audit_cnc_gcode_toolpath(), "【CNC工具路徑與G-Code抽查失敗】存在除零溢出或幾何畸形", total, passed, failures);
     check_audit_domain(audit_robotics_dynamics_jacobian(), "【機器人動力學與雅可比抽查失敗】存在除零溢出或發散", total, passed, failures);
+    check_audit_domain(audit_nfc_iso14443_ndef(), "【NFC非接觸協議與NDEF抽查失敗】存在CRC溢出或前綴解析崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

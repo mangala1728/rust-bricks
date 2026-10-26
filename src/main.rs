@@ -9,7 +9,7 @@ use rust_bricks::{
     clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
-    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
@@ -528,6 +528,19 @@ fn verify_robotics_dynamics_jacobian() -> bool {
 }
 
 /// @outputs: 1
+fn verify_nfc_iso14443_ndef() -> bool {
+    let mut crc_a = 0x6363u16;
+    nfc_iso14443_ndef::nfc_iso14443a_crc_step(0x93, &mut crc_a);
+    nfc_iso14443_ndef::nfc_iso14443a_crc_step(0x20, &mut crc_a);
+    let ok_crc = crc_a != 0x6363;
+    let uid_len = nfc_iso14443_ndef::nfc_iso14443a_atqa_uid_size([0x44, 0x00]);
+    let ok_uid = uid_len == 7;
+    let pfx = nfc_iso14443_ndef::nfc_ndef_uri_prefix_expand(0x04);
+    let ok_pfx = pfx == Some("https://");
+    ok_crc && ok_uid && ok_pfx
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -575,6 +588,7 @@ fn verify_all_subsystems() -> bool {
         && verify_radar_mimo_tracking()
         && verify_cnc_gcode_toolpath()
         && verify_robotics_dynamics_jacobian()
+        && verify_nfc_iso14443_ndef()
 }
 
 /// @outputs: 1

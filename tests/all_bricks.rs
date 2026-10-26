@@ -3181,6 +3181,62 @@ fn test_robotics_dynamics_jacobian_bricks() {
     assert_eq!(f_spring, [10.0, 20.0, 30.0]);
 }
 
+#[test]
+fn test_nfc_iso14443_ndef_bricks() {
+    use rust_bricks::nfc_iso14443_ndef::*;
+
+    // 1. ISO 14443-3 Type A CRC-A 計算
+    let mut crc_a = 0x6363u16;
+    nfc_iso14443a_crc_step(0x93, &mut crc_a);
+    nfc_iso14443a_crc_step(0x20, &mut crc_a);
+    assert_ne!(crc_a, 0x6363);
+
+    // 2. ISO 14443-3 Type B CRC-B 計算
+    let crc_b = nfc_iso14443b_crc_calculate(b"\x05\x00\x00");
+    assert_ne!(crc_b, 0xFFFF);
+
+    // 3. ATQA UID 尺寸 (Double: 7-byte UID, e.g. NTAG215)
+    let uid_len = nfc_iso14443a_atqa_uid_size([0x44, 0x00]);
+    assert_eq!(uid_len, 7);
+
+    // 4. SAK 解析 (0x20: ISO 14443-4 相容, UID 已完成)
+    let (is_complete, is_iso4, card_type) = nfc_iso14443a_sak_parse(0x20);
+    assert!(is_complete);
+    assert!(is_iso4);
+    assert_eq!(card_type, 0x00);
+
+    // 5. NDEF 記錄頭解包 (MB=1, ME=1, SR=1, TNF=1 Well-Known) -> 0xD1
+    let (mb, me, cf, sr, il, tnf) = nfc_ndef_record_header_unpack(0xD1);
+    assert!(mb && me && !cf && sr && !il && tnf == 1);
+
+    // 6. NDEF Text 狀態解包 (UTF-8, 語言代碼長度 2, 如 "en")
+    let (is_utf16, lang_len) = nfc_ndef_text_status_unpack(0x02);
+    assert!(!is_utf16);
+    assert_eq!(lang_len, 2);
+
+    // 7. NDEF URI 前綴擴展
+    assert_eq!(nfc_ndef_uri_prefix_expand(0x01), Some("http://www."));
+    assert_eq!(nfc_ndef_uri_prefix_expand(0x02), Some("https://www."));
+    assert_eq!(nfc_ndef_uri_prefix_expand(0x04), Some("https://"));
+
+    // 8. Mifare Classic 扇區尾塊索引 (扇區 0 尾塊 3, 扇區 1 尾塊 7, 扇區 32 尾塊 143)
+    assert_eq!(nfc_mifare_classic_sector_trailer_block_index(0), Some(3));
+    assert_eq!(nfc_mifare_classic_sector_trailer_block_index(1), Some(7));
+    assert_eq!(nfc_mifare_classic_sector_trailer_block_index(32), Some(143));
+
+    // 9. Mifare Classic 訪問控制位 (0, 0, 0: 讀寫增減全開)
+    let (r, w, inc) = nfc_mifare_classic_data_block_access(0, 0, 0);
+    assert!(r && w && inc);
+    // (0, 1, 0: 唯讀)
+    let (r_ro, w_ro, inc_ro) = nfc_mifare_classic_data_block_access(0, 1, 0);
+    assert!(r_ro && !w_ro && !inc_ro);
+
+    // 10. FeliCa 訊框驗證
+    assert!(nfc_felica_frame_validate(&[0x06, 0x01, 0x00, 0x00, 0x00, 0x00]));
+    assert!(!nfc_felica_frame_validate(&[0x01]));
+}
+
+
 
 
 

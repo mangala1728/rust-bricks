@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 486,
+  "total_functions": 496,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1706,6 +1706,63 @@
         {
           "name": "macsec_replay_window_validate",
           "signature": "pub fn macsec_replay_window_validate(last_valid_pn: u32, incoming_pn: u32, window_size: u32) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "nfc_iso14443_ndef",
+      "file": "src/nfc_iso14443_ndef.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "nfc_iso14443a_crc_step",
+          "signature": "pub fn nfc_iso14443a_crc_step(byte: u8, crc: &mut u16)",
+          "outputs": 1
+        },
+        {
+          "name": "nfc_iso14443b_crc_calculate",
+          "signature": "pub fn nfc_iso14443b_crc_calculate(data: &[u8]) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "nfc_iso14443a_atqa_uid_size",
+          "signature": "pub fn nfc_iso14443a_atqa_uid_size(atqa: [u8; 2]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "nfc_iso14443a_sak_parse",
+          "signature": "pub fn nfc_iso14443a_sak_parse(sak: u8) -> (bool, bool, u8)",
+          "outputs": 3
+        },
+        {
+          "name": "nfc_ndef_record_header_unpack",
+          "signature": "pub fn nfc_ndef_record_header_unpack(header_byte: u8) -> (bool, bool, bool, bool, bool, u8)",
+          "outputs": 6
+        },
+        {
+          "name": "nfc_ndef_text_status_unpack",
+          "signature": "pub fn nfc_ndef_text_status_unpack(status_byte: u8) -> (bool, usize)",
+          "outputs": 2
+        },
+        {
+          "name": "nfc_ndef_uri_prefix_expand",
+          "signature": "pub fn nfc_ndef_uri_prefix_expand(prefix_code: u8) -> Option<&'static str>",
+          "outputs": 1
+        },
+        {
+          "name": "nfc_mifare_classic_sector_trailer_block_index",
+          "signature": "pub fn nfc_mifare_classic_sector_trailer_block_index(sector_idx: u8) -> Option<u8>",
+          "outputs": 1
+        },
+        {
+          "name": "nfc_mifare_classic_data_block_access",
+          "signature": "pub fn nfc_mifare_classic_data_block_access(c1: u8, c2: u8, c3: u8) -> (bool, bool, bool)",
+          "outputs": 3
+        },
+        {
+          "name": "nfc_felica_frame_validate",
+          "signature": "pub fn nfc_felica_frame_validate(frame: &[u8]) -> bool",
           "outputs": 1
         }
       ]
