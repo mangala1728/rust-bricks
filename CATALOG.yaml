@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 104
+total_functions: 120
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -147,6 +147,35 @@ modules:
         outputs: 1
         domains:
           t: "[0.0..1.0]"
+  - module: "ble_adv_parser"
+    file: "src/ble_adv_parser.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/ble_adv_parser — 低功耗藍芽 (BLE 4.2 / 5.0) 廣播封包 AD Structure 零拷貝解析微積木。"
+      - "Inputs: 原始廣播資料切片 &[u8]、目標 AD Type 代碼。"
+      - "Outputs: 零拷貝借用欄位切片 Option<&[u8]>、發射功率 Option<i8>、設備名稱 Option<&str>、廠商自定義數據 Option<(u16, &[u8])>。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、畸形長度防越界安全守衛。"
+    functions:
+      - name: "ble_adv_find_ad_type<'a>"
+        signature: "pub fn ble_adv_find_ad_type<'a>(raw_packet: &'a [u8], target_ad_type: u8) -> Option<&'a [u8]>"
+        outputs: 2
+        domains:
+          adv_len: "[1..255]"
+      - name: "ble_adv_parse_tx_power"
+        signature: "pub fn ble_adv_parse_tx_power(raw_packet: &[u8]) -> Option<i8>"
+        outputs: 2
+        domains:
+          adv_len: "[1..255]"
+      - name: "ble_adv_parse_device_name<'a>"
+        signature: "pub fn ble_adv_parse_device_name<'a>(raw_packet: &'a [u8]) -> Option<&'a str>"
+        outputs: 2
+        domains:
+          adv_len: "[1..255]"
+      - name: "ble_adv_parse_manufacturer_data<'a>"
+        signature: "pub fn ble_adv_parse_manufacturer_data<'a>(raw_packet: &'a [u8]) -> Option<(u16, &'a [u8])>"
+        outputs: 2
+        domains:
+          adv_len: "[1..255]"
   - module: "can_bus_frame"
     file: "src/can_bus_frame.rs"
     functions_count: 6
@@ -195,13 +224,42 @@ modules:
       - "Role: core/chaos_audit — 零信任品質總監黑箱動態巡檢引擎 (Zero-Trust Chaos Auditor)。"
       - "Inputs: 倉庫全模組公開函式、惡意與極限邊界測試案例集。"
       - "Outputs: 巡檢抽查報告 Result<AuditSummary, Vec<String>>。"
-      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。"
     functions:
       - name: "run_chaos_audit"
         signature: "pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>>"
         outputs: 2
         domains:
           dummy_level: "[0..10]"
+  - module: "crypto_kdf"
+    file: "src/crypto_kdf.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/crypto_kdf — 金融終端與韌體安全之 PKCS#7 填充、金鑰加鹽拉伸與衍生微積木。"
+      - "Inputs: 原始資料切片 &[u8]、區塊大小 block_size (2..255)、主密鑰切片、鹽值切片、上下文標籤。"
+      - "Outputs: 填充結果長度 Option<usize>、去填充資料切片 Option<&[u8]>、密鑰派生與拉伸布林結果 bool。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、常數時間掃描防 Padding Oracle 側信道攻擊。"
+    functions:
+      - name: "pkcs7_pad"
+        signature: "pub fn pkcs7_pad(data: &[u8], block_size: usize, out: &mut [u8]) -> Option<usize>"
+        outputs: 2
+        domains:
+          block_size: "[2..255]"
+      - name: "pkcs7_unpad<'a>"
+        signature: "pub fn pkcs7_unpad<'a>(padded_data: &'a [u8], block_size: usize) -> Option<&'a [u8]>"
+        outputs: 2
+        domains:
+          block_size: "[2..255]"
+      - name: "pbkdf_xor_stretch"
+        signature: "pub fn pbkdf_xor_stretch(key: &[u8], salt: &[u8], rounds: u32, out_key: &mut [u8]) -> bool"
+        outputs: 1
+        domains:
+          rounds: "[1..100000]"
+      - name: "simple_kdf_expand"
+        signature: "pub fn simple_kdf_expand(master_key: &[u8], context: &[u8], out_key: &mut [u8]) -> bool"
+        outputs: 1
+        domains:
+          master_key_len: "[1..64]"
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4
@@ -223,6 +281,41 @@ modules:
       - name: "xor_stream"
         signature: "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>"
         outputs: 1
+  - module: "dsp_fixed_point"
+    file: "src/dsp_fixed_point.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/dsp_fixed_point — 嵌入式與無 FPU MCU 之 Q15 定點數 DSP 濾波與數值微積木。"
+      - "Inputs: 浮點數、Q15 整數 (i16)、濾波係數陣列、時域歷史取樣陣列。"
+      - "Outputs: Q15 乘積、FIR 單步卷積輸出、轉換浮點數。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、乘法飽和防溢位。"
+    functions:
+      - name: "q15_from_f32"
+        signature: "pub fn q15_from_f32(val: f32) -> i16"
+        outputs: 1
+        domains:
+          val: "[-1000.0..1000.0]"
+      - name: "q15_to_f32"
+        signature: "pub fn q15_to_f32(val: i16) -> f32"
+        outputs: 1
+        domains:
+          val: "[-32768..32767]"
+      - name: "q15_multiply"
+        signature: "pub fn q15_multiply(a: i16, b: i16) -> i16"
+        outputs: 1
+        domains:
+          a: "[-32768..32767]"
+          b: "[-32768..32767]"
+      - name: "q15_fir_filter_step"
+        signature: "pub fn q15_fir_filter_step(coeffs: &[i16], history: &[i16]) -> i16"
+        outputs: 1
+        domains:
+          coeffs_len: "[1..128]"
+      - name: "q15_apply_gain"
+        signature: "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)"
+        outputs: 1
+        domains:
+          buffer_len: "[2..2048]"
   - module: "fast_math"
     file: "src/fast_math.rs"
     functions_count: 4
@@ -625,6 +718,32 @@ modules:
       - name: "count_cjk_characters"
         signature: "pub fn count_cjk_characters(text: &str) -> usize"
         outputs: 1
+  - module: "thermal_palette"
+    file: "src/thermal_palette.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/thermal_palette — 熱成像 (FLIR / MLX90640) 攝氏度陣列轉 Ironbow/Rainbow 偽彩色與統計分析微積木。"
+      - "Inputs: 攝氏溫度值、顯示溫標上下限 (min..max)、溫度浮點數矩陣。"
+      - "Outputs: 偽彩色 RGB24 像素 (r, g, b)、溫度矩陣統計元組 Option<(min, max, avg)>。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN 守衛、零 Heap 分配、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "thermal_ironbow_rgb"
+        signature: "pub fn thermal_ironbow_rgb(temp: f32, min_temp: f32, max_temp: f32) -> (u8, u8, u8)"
+        outputs: 1
+        domains:
+          min_temp: "[-100.0..2000.0]"
+          max_temp: "[-100.0..2000.0]"
+      - name: "thermal_rainbow_rgb"
+        signature: "pub fn thermal_rainbow_rgb(temp: f32, min_temp: f32, max_temp: f32) -> (u8, u8, u8)"
+        outputs: 1
+        domains:
+          min_temp: "[-100.0..2000.0]"
+          max_temp: "[-100.0..2000.0]"
+      - name: "thermal_matrix_stats"
+        signature: "pub fn thermal_matrix_stats(matrix: &[f32]) -> Option<(f32, f32, f32)>"
+        outputs: 2
+        domains:
+          matrix_len: "[1..65536]"
   - module: "thermal_pid"
     file: "src/thermal_pid.rs"
     functions_count: 4

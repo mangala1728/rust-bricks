@@ -54,6 +54,10 @@
 | [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
 | [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
 | [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
+| [`ble_adv_parser`](src/ble_adv_parser.rs) | BLE 4.2/5.0 廣播封包 AD Structure 零拷貝檢索、發射功率、設備名稱、製造商自定義數據解析 | 醫療手環、工廠 Beacon 室內定位、物聯網低功耗廣播解析（消滅 GC 震盪） |
+| [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
+| [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |
+| [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 

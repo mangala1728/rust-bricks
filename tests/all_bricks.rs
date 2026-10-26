@@ -736,3 +736,126 @@ fn test_wish_board_listing() {
     let list = res.unwrap();
     assert!(list.len() >= 2);
 }
+
+#[test]
+fn test_thermal_palette_bricks() {
+    // 1. 鐵紅 (Ironbow) 低溫黑/紫、高溫白
+    let (r_low, g_low, b_low) = rust_bricks::thermal_palette::thermal_ironbow_rgb(0.0, 0.0, 100.0);
+    assert_eq!((r_low, g_low, b_low), (0, 0, 0));
+    let (r_high, g_high, b_high) = rust_bricks::thermal_palette::thermal_ironbow_rgb(100.0, 0.0, 100.0);
+    assert_eq!((r_high, g_high, b_high), (255, 255, 255));
+    let (r_mid, _, _) = rust_bricks::thermal_palette::thermal_ironbow_rgb(50.0, 0.0, 100.0);
+    assert!(r_mid >= 75);
+
+    // 2. 彩虹 (Rainbow) 低溫藍、高溫紅
+    let (r_c, g_c, b_c) = rust_bricks::thermal_palette::thermal_rainbow_rgb(0.0, 0.0, 100.0);
+    assert_eq!((r_c, g_c, b_c), (0, 0, 255));
+    let (r_h, g_h, b_h) = rust_bricks::thermal_palette::thermal_rainbow_rgb(100.0, 0.0, 100.0);
+    assert_eq!((r_h, g_h, b_h), (255, 0, 0));
+
+    // 3. 溫度矩陣統計
+    let matrix = [20.0, 30.0, 40.0, 10.0];
+    let stats_opt = rust_bricks::thermal_palette::thermal_matrix_stats(&matrix);
+    assert!(stats_opt.is_some());
+    // @safety-proof: stats_opt 已驗證 is_some()
+    let (min, max, avg) = stats_opt.unwrap();
+    assert_eq!(min, 10.0);
+    assert_eq!(max, 40.0);
+    assert!((avg - 25.0).abs() < 1e-5);
+}
+
+#[test]
+fn test_ble_adv_parser_bricks() {
+    // 構造標準 BLE 廣播封包：
+    // [0x02, 0x0A, 0xEC] -> Len 2, Type 0x0A (TX Power), Val -20 dBm (0xEC = -20)
+    // [0x06, 0x09, 'P', 'u', 'l', 's', 'e'] -> Len 6, Type 0x09 (Name), Val "Pulse"
+    // [0x04, 0xFF, 0x59, 0x00, 0x01] -> Len 4, Type 0xFF (Mfg), Nordic ID 0x0059, Payload 0x01
+    let packet = [
+        0x02, 0x0A, 0xEC,
+        0x06, 0x09, b'P', b'u', b'l', b's', b'e',
+        0x04, 0xFF, 0x59, 0x00, 0x01,
+    ];
+
+    // 1. 檢索特定 AD Type
+    let ad_type = rust_bricks::ble_adv_parser::ble_adv_find_ad_type(&packet, 0x0A);
+    assert_eq!(ad_type, Some(&[0xEC][..]));
+
+    // 2. 解析 TX Power
+    let tx_pwr = rust_bricks::ble_adv_parser::ble_adv_parse_tx_power(&packet);
+    assert_eq!(tx_pwr, Some(-20));
+
+    // 3. 解析設備名稱
+    let name = rust_bricks::ble_adv_parser::ble_adv_parse_device_name(&packet);
+    assert_eq!(name, Some("Pulse"));
+
+    // 4. 解析製造商數據
+    let mfg = rust_bricks::ble_adv_parser::ble_adv_parse_manufacturer_data(&packet);
+    assert!(mfg.is_some());
+    // @safety-proof: mfg 已驗證 is_some()
+    let (cid, payload) = mfg.unwrap();
+    assert_eq!(cid, 0x0059);
+    assert_eq!(payload, &[0x01]);
+}
+
+#[test]
+fn test_dsp_fixed_point_bricks() {
+    // 1. Q15 浮點相互轉換
+    let q_zero = rust_bricks::dsp_fixed_point::q15_from_f32(0.0);
+    assert_eq!(q_zero, 0);
+    let q_one = rust_bricks::dsp_fixed_point::q15_from_f32(0.5);
+    assert_eq!(q_one, 16384);
+    let f_back = rust_bricks::dsp_fixed_point::q15_to_f32(q_one);
+    assert!((f_back - 0.5).abs() < 1e-4);
+
+    // 2. Q15 乘法 (0.5 * 0.5 = 0.25 -> 16384 * 16384 = 8192)
+    let prod = rust_bricks::dsp_fixed_point::q15_multiply(16384, 16384);
+    assert!((prod - 8192).abs() <= 1);
+
+    // 3. FIR 濾波器步進 (均值濾波：兩個 0.5 係數，歷史為 1000, 1000 -> 輸出 1000)
+    let coeffs = [16384, 16384]; // 0.5, 0.5
+    let history = [1000, 1000];
+    let fir_out = rust_bricks::dsp_fixed_point::q15_fir_filter_step(&coeffs, &history);
+    assert!((fir_out - 1000).abs() <= 1);
+
+    // 4. Q15 增益調整 (半衰期 * 0.5)
+    let mut buf = [1000, 2000, 4000];
+    rust_bricks::dsp_fixed_point::q15_apply_gain(&mut buf, 16384);
+    assert!((buf[0] - 500).abs() <= 1);
+    assert!((buf[1] - 1000).abs() <= 1);
+    assert!((buf[2] - 2000).abs() <= 1);
+}
+
+#[test]
+fn test_crypto_kdf_bricks() {
+    // 1. PKCS#7 填充 (10 bytes 補到 16 bytes -> 補 6 個 0x06)
+    let data = b"helloworld";
+    let mut padded = [0u8; 32];
+    let pad_len_opt = rust_bricks::crypto_kdf::pkcs7_pad(data, 16, &mut padded);
+    assert_eq!(pad_len_opt, Some(16));
+    assert_eq!(&padded[10..16], &[0x06; 6]);
+
+    // 2. PKCS#7 去填充
+    let unpad_opt = rust_bricks::crypto_kdf::pkcs7_unpad(&padded[..16], 16);
+    assert_eq!(unpad_opt, Some(&b"helloworld"[..]));
+
+    // 剛好滿 16 bytes 時補滿一整塊 16 個 0x10
+    let full_block = [0x55u8; 16];
+    let mut full_padded = [0u8; 32];
+    let full_pad_len = rust_bricks::crypto_kdf::pkcs7_pad(&full_block, 16, &mut full_padded);
+    assert_eq!(full_pad_len, Some(32));
+    assert_eq!(&full_padded[16..32], &[16u8; 16]);
+
+    // 3. PBKDF 加鹽迭代拉伸
+    let mut stretched = [0u8; 16];
+    assert!(rust_bricks::crypto_kdf::pbkdf_xor_stretch(b"pin1234", b"salt5678", 1000, &mut stretched));
+    assert_ne!(stretched, [0u8; 16]);
+
+    // 4. KDF 衍生工作金鑰
+    let master = b"master_bank_key";
+    let mut key1 = [0u8; 16];
+    let mut key2 = [0u8; 16];
+    assert!(rust_bricks::crypto_kdf::simple_kdf_expand(master, b"session_1", &mut key1));
+    assert!(rust_bricks::crypto_kdf::simple_kdf_expand(master, b"session_2", &mut key2));
+    assert_ne!(key1, key2); // 不同 session 產生的派生金鑰互斥
+}
+

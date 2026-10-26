@@ -5,10 +5,11 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, audio_vad, bezier_curve, can_bus_frame, catalog, crypto_vault, fast_math,
-    geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, net_telemetry,
-    packet_checksum, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path,
-    text_cleaner, thermal_pid, touch_control, vision_feature, vision_yuv,
+    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, crypto_kdf,
+    crypto_vault, dsp_fixed_point, fast_math, geo_collision, guard, iso7816_smartcard, math_time,
+    motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer, sensor_hardware, sensor_motion,
+    spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control,
+    vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -75,11 +76,24 @@ fn verify_agent_and_physics_pid() -> bool {
 }
 
 /// @outputs: 1
+fn verify_thermal_ble_dsp_crypto() -> bool {
+    let rgb = thermal_palette::thermal_ironbow_rgb(100.0, 0.0, 100.0);
+    let ok_thermal = rgb == (255, 255, 255);
+    let ble_pkt = [0x02, 0x0A, 0xEC];
+    let ok_ble = ble_adv_parser::ble_adv_parse_tx_power(&ble_pkt) == Some(-20);
+    let ok_dsp = dsp_fixed_point::q15_multiply(16384, 16384) >= 8191;
+    let mut padded = [0u8; 16];
+    let ok_crypto = crypto_kdf::pkcs7_pad(b"test", 8, &mut padded) == Some(8);
+    ok_thermal && ok_ble && ok_dsp && ok_crypto
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
         && verify_security_and_automotive()
         && verify_agent_and_physics_pid()
+        && verify_thermal_ble_dsp_crypto()
 }
 
 /// @outputs: 1

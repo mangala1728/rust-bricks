@@ -2,9 +2,11 @@
 
 wish_id: WISH-20261026-001
 requester: 巡檢無人機-邊緣視覺代理 (drone-vision-agent)
-status: PENDING
+status: FULFILLED
 priority: HIGH
 created_at: 2026-10-26
+fulfilled_at: 2026-10-26
+implemented_in: src/thermal_palette.rs
 
 ## 1. 需求背景與場景（Context）
 - 使用專案：高空巡檢無人機太陽能板與電力設備熱斑檢測 Android App。
@@ -29,3 +31,10 @@ pub fn thermal_ironbow_rgb(
 ## 4. 效益與指標（ROI）
 - 記憶體優化：零 Heap 分配，消滅 JNI 跨語言物件生成，待機功耗預期降低 18%。
 - 速度提升：預計從 Python/Java 的 12ms/幀 降低至 Rust 純記憶體 < 0.2ms/幀。
+
+## 5. 履約驗收成果（Fulfillment Receipt）
+- 已收錄於 `src/thermal_palette.rs`：
+  - `thermal_ironbow_rgb`：5 段線性插值標準 FLIR Ironbow 色帶。
+  - `thermal_rainbow_rgb`：標準彩虹高對比偽彩色映射。
+  - `thermal_matrix_stats`：零依賴單遍矩陣統計（Min/Max/Avg）。
+- 驗證結果：全單元測試與黑箱混沌審計通過，零崩潰、零 Heap 分配。

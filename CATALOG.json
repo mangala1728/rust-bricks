@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 104,
+  "total_functions": 120,
   "modules": [
     {
       "module": "agent_terminal",
@@ -136,6 +136,33 @@
       ]
     },
     {
+      "module": "ble_adv_parser",
+      "file": "src/ble_adv_parser.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "ble_adv_find_ad_type<'a>",
+          "signature": "pub fn ble_adv_find_ad_type<'a>(raw_packet: &'a [u8], target_ad_type: u8) -> Option<&'a [u8]>",
+          "outputs": 2
+        },
+        {
+          "name": "ble_adv_parse_tx_power",
+          "signature": "pub fn ble_adv_parse_tx_power(raw_packet: &[u8]) -> Option<i8>",
+          "outputs": 2
+        },
+        {
+          "name": "ble_adv_parse_device_name<'a>",
+          "signature": "pub fn ble_adv_parse_device_name<'a>(raw_packet: &'a [u8]) -> Option<&'a str>",
+          "outputs": 2
+        },
+        {
+          "name": "ble_adv_parse_manufacturer_data<'a>",
+          "signature": "pub fn ble_adv_parse_manufacturer_data<'a>(raw_packet: &'a [u8]) -> Option<(u16, &'a [u8])>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "can_bus_frame",
       "file": "src/can_bus_frame.rs",
       "functions_count": 6,
@@ -185,6 +212,33 @@
       ]
     },
     {
+      "module": "crypto_kdf",
+      "file": "src/crypto_kdf.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "pkcs7_pad",
+          "signature": "pub fn pkcs7_pad(data: &[u8], block_size: usize, out: &mut [u8]) -> Option<usize>",
+          "outputs": 2
+        },
+        {
+          "name": "pkcs7_unpad<'a>",
+          "signature": "pub fn pkcs7_unpad<'a>(padded_data: &'a [u8], block_size: usize) -> Option<&'a [u8]>",
+          "outputs": 2
+        },
+        {
+          "name": "pbkdf_xor_stretch",
+          "signature": "pub fn pbkdf_xor_stretch(key: &[u8], salt: &[u8], rounds: u32, out_key: &mut [u8]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "simple_kdf_expand",
+          "signature": "pub fn simple_kdf_expand(master_key: &[u8], context: &[u8], out_key: &mut [u8]) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "crypto_vault",
       "file": "src/crypto_vault.rs",
       "functions_count": 4,
@@ -207,6 +261,38 @@
         {
           "name": "xor_stream",
           "signature": "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_fixed_point",
+      "file": "src/dsp_fixed_point.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "q15_from_f32",
+          "signature": "pub fn q15_from_f32(val: f32) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "q15_to_f32",
+          "signature": "pub fn q15_to_f32(val: i16) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "q15_multiply",
+          "signature": "pub fn q15_multiply(a: i16, b: i16) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "q15_fir_filter_step",
+          "signature": "pub fn q15_fir_filter_step(coeffs: &[i16], history: &[i16]) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "q15_apply_gain",
+          "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
           "outputs": 1
         }
       ]
@@ -591,6 +677,28 @@
           "name": "count_cjk_characters",
           "signature": "pub fn count_cjk_characters(text: &str) -> usize",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "thermal_palette",
+      "file": "src/thermal_palette.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "thermal_ironbow_rgb",
+          "signature": "pub fn thermal_ironbow_rgb(temp: f32, min_temp: f32, max_temp: f32) -> (u8, u8, u8)",
+          "outputs": 1
+        },
+        {
+          "name": "thermal_rainbow_rgb",
+          "signature": "pub fn thermal_rainbow_rgb(temp: f32, min_temp: f32, max_temp: f32) -> (u8, u8, u8)",
+          "outputs": 1
+        },
+        {
+          "name": "thermal_matrix_stats",
+          "signature": "pub fn thermal_matrix_stats(matrix: &[f32]) -> Option<(f32, f32, f32)>",
+          "outputs": 2
         }
       ]
     },
