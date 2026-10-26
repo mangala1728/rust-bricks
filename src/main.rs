@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
@@ -237,6 +237,17 @@ fn verify_decision_mcts() -> bool {
 }
 
 /// @outputs: 1
+fn verify_curve_fit_trend() -> bool {
+    let res = curve_fit_trend::curve_linear_regression_slope_intercept(&[1.0, 2.0, 3.0], &[2.0, 4.0, 6.0]);
+    let ok_reg = matches!(res, Some((m, c, r)) if (m - 2.0).abs() < 1e-4 && c.abs() < 1e-4 && (r - 1.0).abs() < 1e-4);
+    let w = curve_fit_trend::curve_lowess_tricube_weight(0.0);
+    let ok_w = (w - 1.0).abs() < 1e-4;
+    let silu = curve_fit_trend::curve_silu_activation(0.0);
+    let ok_silu = silu.abs() < 1e-4;
+    ok_reg && ok_w && ok_silu
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -258,6 +269,7 @@ fn verify_all_subsystems() -> bool {
         && verify_radar_cfar_doppler()
         && verify_dsp_fft_radix2()
         && verify_decision_mcts()
+        && verify_curve_fit_trend()
 }
 
 /// @outputs: 1

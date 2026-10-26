@@ -1675,3 +1675,54 @@ fn test_decision_mcts_bricks() {
     assert!((policy[1] - 0.3).abs() < 1e-4);
     assert!((policy[2] - 0.6).abs() < 1e-4);
 }
+
+#[test]
+fn test_curve_fit_trend_bricks() {
+    use rust_bricks::curve_fit_trend;
+
+    // 1. 線性回歸斜率與截距 (y = 2x + 1)
+    let x = [1.0, 2.0, 3.0, 4.0];
+    let y = [3.0, 5.0, 7.0, 9.0];
+    let (slope, intercept, r) = curve_fit_trend::curve_linear_regression_slope_intercept(&x, &y).unwrap();
+    assert!((slope - 2.0).abs() < 1e-4);
+    assert!((intercept - 1.0).abs() < 1e-4);
+    assert!((r - 1.0).abs() < 1e-4);
+
+    // 2. R² 判定係數 (完美預測 R² = 1.0)
+    let y_pred = [3.0, 5.0, 7.0, 9.0];
+    let r2 = curve_fit_trend::curve_r_squared_score(&y, &y_pred).unwrap();
+    assert!((r2 - 1.0).abs() < 1e-4);
+
+    // 3. Huber 穩健損失 (小誤差二次方，大誤差線性)
+    let loss_small = curve_fit_trend::curve_huber_loss_single(0.5, 1.0);
+    assert!((loss_small - 0.125).abs() < 1e-4);
+    let loss_large = curve_fit_trend::curve_huber_loss_single(2.0, 1.0);
+    assert!((loss_large - 1.5).abs() < 1e-4);
+
+    // 4. LOWESS Tricube 核權重與局部平滑
+    let w0 = curve_fit_trend::curve_lowess_tricube_weight(0.0);
+    assert!((w0 - 1.0).abs() < 1e-4);
+    let w_far = curve_fit_trend::curve_lowess_tricube_weight(1.0);
+    assert_eq!(w_far, 0.0);
+    let smoothed = curve_fit_trend::curve_lowess_smooth_point(2.0, &x, &y, 2.0).unwrap();
+    assert!((smoothed - 5.0).abs() < 0.1);
+
+    // 5. RBF 與 Matérn 3/2 核函數
+    let rbf_self = curve_fit_trend::curve_kernel_rbf(1.0, 1.0, 1.0, 2.0);
+    assert!((rbf_self - 4.0).abs() < 1e-4);
+    let matern_self = curve_fit_trend::curve_kernel_matern32(1.0, 1.0, 1.0, 2.0);
+    assert!((matern_self - 4.0).abs() < 1e-4);
+
+    // 6. 傅立葉特徵映射
+    let mut proj = [0.0f32; 4];
+    assert!(curve_fit_trend::curve_fourier_feature_proj(0.0, &[1.0, 2.0], &mut proj));
+    assert!((proj[0] - 1.0).abs() < 1e-4 && proj[1].abs() < 1e-4);
+
+    // 7. SIREN 正弦活化與 SiLU 活化
+    let siren = curve_fit_trend::curve_siren_sine_activation(0.0, 1.0, 0.0, 30.0);
+    assert!(siren.abs() < 1e-4);
+    let silu_zero = curve_fit_trend::curve_silu_activation(0.0);
+    assert!(silu_zero.abs() < 1e-4);
+    let silu_pos = curve_fit_trend::curve_silu_activation(2.0);
+    assert!(silu_pos > 1.7 && silu_pos < 1.8);
+}

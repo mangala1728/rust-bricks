@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 226,
+  "total_functions": 236,
   "modules": [
     {
       "module": "agent_terminal",
@@ -451,6 +451,63 @@
         {
           "name": "xor_stream",
           "signature": "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "curve_fit_trend",
+      "file": "src/curve_fit_trend.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "curve_linear_regression_slope_intercept",
+          "signature": "pub fn curve_linear_regression_slope_intercept(x: &[f64], y: &[f64]) -> Option<(f64, f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "curve_r_squared_score",
+          "signature": "pub fn curve_r_squared_score(y_actual: &[f64], y_predicted: &[f64]) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "curve_huber_loss_single",
+          "signature": "pub fn curve_huber_loss_single(residual: f64, delta: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "curve_lowess_tricube_weight",
+          "signature": "pub fn curve_lowess_tricube_weight(dist_norm: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "curve_lowess_smooth_point",
+          "signature": "pub fn curve_lowess_smooth_point(",
+          "outputs": 2
+        },
+        {
+          "name": "curve_kernel_rbf",
+          "signature": "pub fn curve_kernel_rbf(x1: f64, x2: f64, length_scale: f64, sigma: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "curve_kernel_matern32",
+          "signature": "pub fn curve_kernel_matern32(x1: f64, x2: f64, length_scale: f64, sigma: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "curve_fourier_feature_proj",
+          "signature": "pub fn curve_fourier_feature_proj(x: f32, freq_weights: &[f32], out_proj: &mut [f32]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "curve_siren_sine_activation",
+          "signature": "pub fn curve_siren_sine_activation(x: f32, weight: f32, bias: f32, omega_0: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "curve_silu_activation",
+          "signature": "pub fn curve_silu_activation(x: f32) -> f32",
           "outputs": 1
         }
       ]
