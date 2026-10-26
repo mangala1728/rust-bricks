@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：21 大核心模組、88 個純函式、39 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：24 大核心模組、99 個純函式、42 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -77,11 +77,13 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 
 | 模組 | 原始檔 | 主要能力 |
 |---|---|---|
+| `agent_terminal` | `src/agent_terminal.rs` | 終端 ANSI 脫色淨化、非遞迴極速 Glob 匹配、PTY 退格鍵行編輯模擬 |
 | `math_time` | `src/math_time.rs` | 數值夾止、滑動均線、儒略日曆法、占星大限週期比例、XorShift64 PRNG |
 | `audio_vad` | `src/audio_vad.rs` | PCM16 RMS 能量、靜音幀偵測、字幕 CPS 字速審查 |
 | `audio_dsp` | `src/audio_dsp.rs` | 幀功率/能量、零交叉率 (ZCR)、Biquad 高通濾波、噪聲能量縮放、減法 SNR |
 | `audio_wav` | `src/audio_wav.rs` | 零依賴 16-bit PCM WAV 檔頭解析與構建 |
 | `sensor_motion` | `src/sensor_motion.rs` | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 |
+| `spatial_physics` | `src/spatial_physics.rs` | 四元數哈密頓乘法、羅德里格向量旋轉、VR 射線拾取求交、彈簧阻尼系統步進 |
 | `sensor_hardware` | `src/sensor_hardware.rs` | 霍爾磁力翻蓋開合偵測、3軸磁力計傾斜補償指南針、閃光燈 PWM 頻閃與 SOS 時序 |
 | `net_telemetry` | `src/net_telemetry.rs` | RTT 網路延遲與抖動平滑、零配置 IPv4/IPv6 CIDR 子網比對、私有網段判定 |
 | `vision_yuv` | `src/vision_yuv.rs` | Android Camera2 (NV21 / YUV420sp) 預覽幀灰階快速抽取、2x2 平均降採樣、亮度直方圖 |
@@ -97,6 +99,7 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `geo_collision` | `src/geo_collision.rs` | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 |
 | `iso7816_smartcard` | `src/iso7816_smartcard.rs` | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 |
 | `can_bus_frame` | `src/can_bus_frame.rs` | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 |
+| `thermal_pid` | `src/thermal_pid.rs` | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 |
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |
 | `guard` | `src/guard.rs` | 純 Rust 內建合約守衛、檔案防膨脹、依賴審查、缺陷硬鎖 |
 | `catalog` | `src/catalog.rs` | 純 Rust 自動產生 CATALOG.yaml / CATALOG.json 機器索引 |

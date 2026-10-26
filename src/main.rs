@@ -5,10 +5,10 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, bezier_curve, can_bus_frame, catalog, crypto_vault, fast_math, geo_collision, guard,
-    iso7816_smartcard, math_time, motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer,
-    sensor_hardware, sensor_motion, sys_path, text_cleaner, touch_control, vision_feature,
-    vision_yuv,
+    agent_terminal, audio_vad, bezier_curve, can_bus_frame, catalog, crypto_vault, fast_math,
+    geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, net_telemetry,
+    packet_checksum, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path,
+    text_cleaner, thermal_pid, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -61,8 +61,25 @@ fn verify_security_and_automotive() -> bool {
 }
 
 /// @outputs: 1
+fn verify_agent_and_physics_pid() -> bool {
+    let q = (1.0_f32, 0.0, 0.0, 0.0);
+    let v_rot = spatial_physics::quaternion_rotate_vector(q, (1.0, 2.0, 3.0));
+    let ok_vr = (v_rot.0 - 1.0).abs() < 1e-4;
+    let (out_pid, _) = thermal_pid::pid_controller_step(100.0, 50.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.1, 0.0, 100.0);
+    let ok_pid = out_pid == 50.0;
+    let ok_glob = agent_terminal::simple_glob_match("*.rs", "main.rs");
+    let mut clean_buf = [0u8; 16];
+    let n = agent_terminal::strip_ansi_codes("\x1b[31mhi\x1b[0m", &mut clean_buf);
+    let ok_ansi = n == 2 && &clean_buf[..2] == b"hi";
+    ok_vr && ok_pid && ok_glob && ok_ansi
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
-    verify_edge_sensors_and_packets() && verify_new_kinematics_and_math() && verify_security_and_automotive()
+    verify_edge_sensors_and_packets()
+        && verify_new_kinematics_and_math()
+        && verify_security_and_automotive()
+        && verify_agent_and_physics_pid()
 }
 
 /// @outputs: 1

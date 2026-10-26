@@ -6,8 +6,33 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 88
+total_functions: 99
 modules:
+  - module: "agent_terminal"
+    file: "src/agent_terminal.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/agent_terminal — AI 代理馬具 (Agent Harness)、PTY 終端串流淨化與非遞迴 Glob 檔案檢索微積木。"
+      - "Inputs: 終端原始字串、Glob 萬用字元樣式、目標文字、PTY 位元組串流、目標緩衝區。"
+      - "Outputs: 脫色後字元數、萬用字元比對布林值、退格編輯後有效字元數。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、雙指針有界回溯、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "strip_ansi_codes"
+        signature: "pub fn strip_ansi_codes(input: &str, out_buf: &mut [u8]) -> usize"
+        outputs: 1
+        domains:
+          input_len: "[0..65536]"
+      - name: "simple_glob_match"
+        signature: "pub fn simple_glob_match(pattern: &str, text: &str) -> bool"
+        outputs: 2
+        domains:
+          pattern_len: "[0..1024]"
+          text_len: "[0..1024]"
+      - name: "pty_line_buffer_edit"
+        signature: "pub fn pty_line_buffer_edit(input: &[u8], out_buf: &mut [u8]) -> usize"
+        outputs: 1
+        domains:
+          input_len: "[0..65536]"
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
     functions_count: 8
@@ -509,6 +534,37 @@ modules:
           lon1: "[-180.0..180.0]"
           lat2: "[-90.0..90.0]"
           lon2: "[-180.0..180.0]"
+  - module: "spatial_physics"
+    file: "src/spatial_physics.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/spatial_physics — 3D VR/AR 空間運算、四元數旋轉、射線拾取與彈簧物理微積木。"
+      - "Inputs: 四元數 (w, x, y, z)、3D 向量 (x, y, z)、射線起點與方向、球體中心與半徑、彈簧係數與步長。"
+      - "Outputs: 四元數哈密頓乘積、旋轉後 3D 向量、射線與球體最近碰撞距離 Option<f32>、彈簧阻尼積分狀態 (pos, vel)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "quaternion_multiply"
+        signature: "pub fn quaternion_multiply("
+        outputs: 1
+        domains:
+          q1_w: "[-1000.0..1000.0]"
+      - name: "quaternion_rotate_vector"
+        signature: "pub fn quaternion_rotate_vector("
+        outputs: 1
+        domains:
+          q_w: "[-1000.0..1000.0]"
+      - name: "ray_sphere_intersect"
+        signature: "pub fn ray_sphere_intersect("
+        outputs: 2
+        domains:
+          radius: "[0.0..10000.0]"
+      - name: "spring_damper_step"
+        signature: "pub fn spring_damper_step("
+        outputs: 1
+        domains:
+          dt: "[0.0..1.0]"
+          k_spring: "[0.0..10000.0]"
+          c_damping: "[0.0..1000.0]"
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3
@@ -544,6 +600,41 @@ modules:
       - name: "count_cjk_characters"
         signature: "pub fn count_cjk_characters(text: &str) -> usize"
         outputs: 1
+  - module: "thermal_pid"
+    file: "src/thermal_pid.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/thermal_pid — 工業恆溫烙鐵/恆溫恆濕 PID 閉環控制、NTC 測溫、人眼知覺 LED 映射與電量監測微積木。"
+      - "Inputs: 目標溫度、當前測量值、PID 增益與時間步長、NTC 電阻值、線性亮度等級、電壓電流。"
+      - "Outputs: PID 控制輸出量與積分項、換算攝氏溫度 Option<f32>、對數感知 PWM Duty、有功電功率 (Watts)。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、抗積分飽和、浮點數防 NaN 守衛、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "pid_controller_step"
+        signature: "pub fn pid_controller_step("
+        outputs: 1
+        domains:
+          dt: "[0.0001..100.0]"
+          out_min: "[-10000.0..10000.0]"
+          out_max: "[-10000.0..10000.0]"
+      - name: "ntc_resistance_to_celsius"
+        signature: "pub fn ntc_resistance_to_celsius("
+        outputs: 2
+        domains:
+          r_ohms: "[0.1..10000000.0]"
+          r0: "[0.1..10000000.0]"
+          beta: "[100.0..10000.0]"
+      - name: "led_perceptual_pwm_duty"
+        signature: "pub fn led_perceptual_pwm_duty(linear_level: u16, max_level: u16) -> u16"
+        outputs: 1
+        domains:
+          linear_level: "[0..65535]"
+          max_level: "[1..65535]"
+      - name: "electrical_power_watts"
+        signature: "pub fn electrical_power_watts(voltage_v: f32, current_a: f32) -> f32"
+        outputs: 1
+        domains:
+          voltage_v: "[-10000.0..10000.0]"
+          current_a: "[-1000.0..1000.0]"
   - module: "touch_control"
     file: "src/touch_control.rs"
     functions_count: 4

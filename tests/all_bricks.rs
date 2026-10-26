@@ -629,3 +629,76 @@ fn test_can_bus_frame_bricks() {
     let (psc, arr) = timer_res.unwrap();
     assert_eq!((psc as u32 + 1) * (arr as u32 + 1), 72_000);
 }
+
+#[test]
+fn test_spatial_physics_bricks() {
+    // 1. 四元數乘法 (繞 Z 軸 90 度 * 90 度 = 180 度)
+    let q90_z = (0.7071068_f32, 0.0, 0.0, 0.7071068_f32);
+    let q180_z = rust_bricks::spatial_physics::quaternion_multiply(q90_z, q90_z);
+    assert!(q180_z.0.abs() < 1e-4);
+    assert!((q180_z.3 - 1.0).abs() < 1e-4);
+
+    // 2. 四元數旋轉向量 ((1, 0, 0) 繞 Z 軸轉 90 度 -> (0, 1, 0))
+    let v_x = (1.0_f32, 0.0_f32, 0.0_f32);
+    let v_rot = rust_bricks::spatial_physics::quaternion_rotate_vector(q90_z, v_x);
+    assert!(v_rot.0.abs() < 1e-4);
+    assert!((v_rot.1 - 1.0).abs() < 1e-4);
+    assert!(v_rot.2.abs() < 1e-4);
+
+    // 3. 射線-球體碰撞 (起點 (0, 0, -5), 方向 (0, 0, 1), 球心 (0, 0, 0), 半徑 2.0 -> 最近交點 t = 3.0)
+    let hit_opt = rust_bricks::spatial_physics::ray_sphere_intersect((0.0, 0.0, -5.0), (0.0, 0.0, 1.0), (0.0, 0.0, 0.0), 2.0);
+    assert!(hit_opt.is_some());
+    // @safety-proof: hit_opt 已驗證 is_some()
+    let t_hit = hit_opt.unwrap();
+    assert!((t_hit - 3.0).abs() < 1e-4);
+
+    // 4. 彈簧阻尼系統步進 (初始 10.0, 目標 0.0 -> 一步後向 0 移動)
+    let (p_next, v_next) = rust_bricks::spatial_physics::spring_damper_step(10.0, 0.0, 0.0, 10.0, 1.0, 0.1);
+    assert!(p_next < 10.0);
+    assert!(v_next < 0.0);
+}
+
+#[test]
+fn test_thermal_pid_bricks() {
+    // 1. PID 控制步進
+    let (out, integral) = rust_bricks::thermal_pid::pid_controller_step(100.0, 20.0, 0.0, 0.0, 2.0, 0.1, 0.5, 0.1, 0.0, 255.0);
+    assert!(out > 0.0 && out <= 255.0);
+    assert!(integral > 0.0);
+
+    // 2. NTC 測溫 (10k NTC at 25°C)
+    let temp_opt = rust_bricks::thermal_pid::ntc_resistance_to_celsius(10000.0, 10000.0, 3950.0, 25.0);
+    assert!(temp_opt.is_some());
+    // @safety-proof: temp_opt 已驗證 is_some()
+    let temp = temp_opt.unwrap();
+    assert!((temp - 25.0).abs() < 0.1);
+
+    // 3. 人眼知覺 LED 對數亮度映射
+    let duty_half = rust_bricks::thermal_pid::led_perceptual_pwm_duty(128, 255);
+    assert!(duty_half < 100); // 人眼平方感知消除低亮跳階
+
+    // 4. 有功電功率計算
+    let power = rust_bricks::thermal_pid::electrical_power_watts(5.0, 2.5);
+    assert_eq!(power, 12.5);
+}
+
+#[test]
+fn test_agent_terminal_bricks() {
+    // 1. ANSI 脫色 (PTY 日誌純文字淨化)
+    let raw_ansi = "\x1b[31;1mError:\x1b[0m disk full";
+    let mut clean_buf = [0u8; 64];
+    let n = rust_bricks::agent_terminal::strip_ansi_codes(raw_ansi, &mut clean_buf);
+    let cleaned = std::str::from_utf8(&clean_buf[..n]).unwrap_or("");
+    assert_eq!(cleaned, "Error: disk full");
+
+    // 2. 輕量非遞迴 Glob 匹配
+    assert!(rust_bricks::agent_terminal::simple_glob_match("*.rs", "main.rs"));
+    assert!(rust_bricks::agent_terminal::simple_glob_match("src/**/*.rs", "src/core/main.rs"));
+    assert!(rust_bricks::agent_terminal::simple_glob_match("test_?.rs", "test_1.rs"));
+    assert!(!rust_bricks::agent_terminal::simple_glob_match("*.rs", "main.py"));
+
+    // 3. PTY 終端退格模擬
+    let raw_input = b"carr\x08go";
+    let mut pty_buf = [0u8; 32];
+    let pty_len = rust_bricks::agent_terminal::pty_line_buffer_edit(raw_input, &mut pty_buf);
+    assert_eq!(&pty_buf[..pty_len], b"cargo");
+}

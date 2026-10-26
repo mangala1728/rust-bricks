@@ -78,6 +78,46 @@ Microchip, STMicroelectronics (STM32), NXP, TI, Nordic (nRF51/nRF52), Peak CAN �
 - **定時器中斷計數重裝載（Timer Prescaler & Period Calculation）**：
   - 輸入系統時鐘頻率、目標定時微秒/毫秒，輸出最佳預分頻器 (PSC) 與自動重裝載值 (ARR)，消除 C 語言整數溢出計算錯誤。
 
+### 7. 3D 虛擬實境與遊戲物理引擎（3D Spatial Computing & Physics Math）
+目前主流 3D 物理引擎（Bullet / PhysX / Three.js）大多由 C++ 或 JS 實現，其底層純數學是邊緣裝置極速渲染的基石：
+- **四元數姿態乘法與向量旋轉（Quaternion Hamilton Product & Vector Rotation）**：
+  - 徹底消除歐拉角萬向節死鎖（Gimbal Lock），以羅德里格旋轉公式替代龐大 3x3 矩陣運算，加速 VR 頭顯與手把姿態追蹤。
+- **射線-幾何相交拾取（Ray-Sphere / Ray-Plane Picking）**：
+  - VR/AR 手把射線點擊選取、空間碰撞反彈測試。
+- **物理彈簧阻尼系統（Spring-Damper Hooke's Law Step）**：
+  - 模擬彈性晃動、布料、虛擬手把拉扯動畫，狀態可窮舉數值積分。
+
+### 8. 工業閉環溫控與電氣採樣對偶性（Thermal PID & Sensor-Actuator Duality）
+感測器（Sensing）與執行器（Actuation）在物理底層具備強烈的「輸入/輸出對偶性」：
+- **感溫 $\leftrightarrow$ 加熱：恆溫烙鐵/烘烤箱 PID 閉環控制**：
+  - NTC 熱敏電阻 Steinhart-Hart / $\beta$ 方程電阻轉溫度；PID 控制器帶抗積分飽和（Anti-windup）輸出加熱 PWM。
+- **感光 $\leftrightarrow$ 發光：光敏電阻/照度 Lux 與人眼對數視覺 LED 驅動**：
+  - 基於韋伯-費希納定律（Weber-Fechner Law）的知覺對數 PWM 映射，解決線性調整導致的忽亮跳階感。
+- **電壓/電流採樣與功率監測（V/I Sampling & Wattage Calculation）**：
+  - 即時有功電功率 $P = V \times I$、微歐姆電阻差分採樣換算。
+
+### 9. AI 代理馬具、終端 PTY 與命令列路由（Agent Harness, PTY & Terminal Router）
+AI 代理執行代碼與操作 Shell（如 Tmux / Paseo / 子進程 Harness）時所需的進程內極速處理器：
+- **ANSI Escape SGR 脫色與控制符淨化（ANSI Code Strip）**：
+  - 消除終端彩色控制碼（如 `\x1b[31;1m`），將 PTY 串流淨化為純文字，便於 LLM 精準解析日誌。
+- **輕量極速非遞迴 Glob 萬用字元比對（Fast Zero-Allocation Glob）**：
+  - 無 Regex、零 Heap 分配的 `*` 與 `?` 雙指針回溯匹配，用於 AI 工具箱快速檔案檢索。
+- **PTY 虛擬終端行編輯模擬器（PTY Line Buffer Editor）**：
+  - 處理退格鍵（Backspace `0x08`, `0x7F`）字符消除與換行，完美復現人手終端互動輸出。
+
+---
+
+## 三、晶片 SDK 官方庫檢索與 AI+REA 逆向工程方法（SDK Mining & AI+REA Methodology）
+
+針對商業品牌 IC（Microchip, ST, NXP, TI, Nordic 等）的獵物挖掘管道：
+1. **官方開源 SDK 途徑**：
+   - 檢索官方 GitHub 或開源 CMSIS / HAL / Driver 倉庫（如 STM32Cube, NXP MCUXpresso, TI SimpleLink）。
+   - 提取其核心純 C 子函式（跳過硬體暫存器指標操作，聚焦通訊協定解碼、資料包校驗、濾波與數學換算）。
+2. **無原始碼/僅有韌體二進位之 AI+REA（Reverse Engineering Analysis）途徑**：
+   - 利用反編譯工具（如 Ghidra / IDA Pro）或十六進位分析提煉控制流圖（CFG）。
+   - 藉由 AI 代理研讀組合語言/虛擬代碼邏輯，推導出其數學本質公式與狀態機遷移條件。
+   - 使用純 Rust 重新手刻，並以雙向差分測試確保位元級（Bit-level）行為一致。
+
 ---
 
 ## 三、避坑指引：低價值與禁獵區

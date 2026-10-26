@@ -3,8 +3,30 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 88,
+  "total_functions": 99,
   "modules": [
+    {
+      "module": "agent_terminal",
+      "file": "src/agent_terminal.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "strip_ansi_codes",
+          "signature": "pub fn strip_ansi_codes(input: &str, out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "simple_glob_match",
+          "signature": "pub fn simple_glob_match(pattern: &str, text: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "pty_line_buffer_edit",
+          "signature": "pub fn pty_line_buffer_edit(input: &[u8], out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
     {
       "module": "audio_dsp",
       "file": "src/audio_dsp.rs",
@@ -485,6 +507,33 @@
       ]
     },
     {
+      "module": "spatial_physics",
+      "file": "src/spatial_physics.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "quaternion_multiply",
+          "signature": "pub fn quaternion_multiply(",
+          "outputs": 1
+        },
+        {
+          "name": "quaternion_rotate_vector",
+          "signature": "pub fn quaternion_rotate_vector(",
+          "outputs": 1
+        },
+        {
+          "name": "ray_sphere_intersect",
+          "signature": "pub fn ray_sphere_intersect(",
+          "outputs": 2
+        },
+        {
+          "name": "spring_damper_step",
+          "signature": "pub fn spring_damper_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "sys_path",
       "file": "src/sys_path.rs",
       "functions_count": 3,
@@ -519,6 +568,33 @@
         {
           "name": "count_cjk_characters",
           "signature": "pub fn count_cjk_characters(text: &str) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "thermal_pid",
+      "file": "src/thermal_pid.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "pid_controller_step",
+          "signature": "pub fn pid_controller_step(",
+          "outputs": 1
+        },
+        {
+          "name": "ntc_resistance_to_celsius",
+          "signature": "pub fn ntc_resistance_to_celsius(",
+          "outputs": 2
+        },
+        {
+          "name": "led_perceptual_pwm_duty",
+          "signature": "pub fn led_perceptual_pwm_duty(linear_level: u16, max_level: u16) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "electrical_power_watts",
+          "signature": "pub fn electrical_power_watts(voltage_v: f32, current_a: f32) -> f32",
           "outputs": 1
         }
       ]
