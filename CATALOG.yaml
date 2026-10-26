@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 466
+total_functions: 476
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -567,6 +567,70 @@ modules:
       - name: "ntp_clock_offset_and_delay"
         signature: "pub fn ntp_clock_offset_and_delay(t0_ms: i64, t1_ms: i64, t2_ms: i64, t3_ms: i64) -> (i64, i64)"
         outputs: 1
+  - module: "cnc_gcode_toolpath"
+    file: "src/cnc_gcode_toolpath.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "cnc_g01_linear_interpolation_step"
+        signature: "pub fn cnc_g01_linear_interpolation_step(start: [f64; 3], end: [f64; 3], progress: f64) -> [f64; 3]"
+        outputs: 1
+        domains:
+          progress: "[0.0, 1.0]"
+      - name: "cnc_g02_g03_arc_center_from_ij"
+        signature: "pub fn cnc_g02_g03_arc_center_from_ij(start_xy: [f64; 2], i: f64, j: f64) -> [f64; 2]"
+        outputs: 1
+        domains:
+          i: "[-10000.0, 10000.0]"
+          j: "[-10000.0, 10000.0]"
+      - name: "cnc_arc_radius_and_angles"
+        signature: "pub fn cnc_arc_radius_and_angles("
+        outputs: 1
+      - name: "cnc_arc_angular_span"
+        signature: "pub fn cnc_arc_angular_span(start_angle: f64, end_angle: f64, is_cw: bool) -> f64"
+        outputs: 1
+        domains:
+          start_angle: "[-10.0, 10.0]"
+          end_angle: "[-10.0, 10.0]"
+      - name: "cnc_feedrate_to_axis_velocities"
+        signature: "pub fn cnc_feedrate_to_axis_velocities("
+        outputs: 1
+        domains:
+          dx: "[-10000.0, 10000.0]"
+          dy: "[-10000.0, 10000.0]"
+          dz: "[-10000.0, 10000.0]"
+          feedrate_mm_min: "[0.001, 100000.0]"
+      - name: "cnc_cutter_radius_compensation_2d"
+        signature: "pub fn cnc_cutter_radius_compensation_2d("
+        outputs: 1
+        domains:
+          tool_radius_mm: "[0.001, 100.0]"
+      - name: "cnc_spindle_speed_surface_speed"
+        signature: "pub fn cnc_spindle_speed_surface_speed(diameter_mm: f64, cutting_speed_m_min: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          diameter_mm: "[0.01, 1000.0]"
+          cutting_speed_m_min: "[0.1, 10000.0]"
+      - name: "cnc_drilling_peck_cycles_step"
+        signature: "pub fn cnc_drilling_peck_cycles_step("
+        outputs: 2
+        domains:
+          total_depth_mm: "[0.01, 1000.0]"
+          peck_depth_mm: "[0.01, 1000.0]"
+      - name: "cnc_feed_per_tooth_to_feedrate"
+        signature: "pub fn cnc_feed_per_tooth_to_feedrate(spindle_rpm: f64, num_flutes: usize, fz_mm_tooth: f64) -> f64"
+        outputs: 1
+        domains:
+          spindle_rpm: "[1.0, 100000.0]"
+          fz_mm_tooth: "[0.0001, 10.0]"
+      - name: "cnc_trapezoidal_velocity_profile_step"
+        signature: "pub fn cnc_trapezoidal_velocity_profile_step("
+        outputs: 1
+        domains:
+          current_dist: "[0.0, 100000.0]"
+          total_dist: "[0.001, 100000.0]"
+          v_max: "[0.001, 10000.0]"
+          a_max: "[0.001, 100000.0]"
   - module: "comm_controller"
     file: "src/comm_controller.rs"
     functions_count: 6

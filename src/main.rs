@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -506,6 +506,17 @@ fn verify_radar_mimo_tracking() -> bool {
 }
 
 /// @outputs: 1
+fn verify_cnc_gcode_toolpath() -> bool {
+    let p = cnc_gcode_toolpath::cnc_g01_linear_interpolation_step([0.0, 0.0, 0.0], [10.0, 20.0, 30.0], 0.5);
+    let ok_g01 = (p[0] - 5.0).abs() < 1e-4 && (p[1] - 10.0).abs() < 1e-4 && (p[2] - 15.0).abs() < 1e-4;
+    let c = cnc_gcode_toolpath::cnc_g02_g03_arc_center_from_ij([10.0, 10.0], 2.0, 3.0);
+    let ok_c = (c[0] - 12.0).abs() < 1e-4 && (c[1] - 13.0).abs() < 1e-4;
+    let span = cnc_gcode_toolpath::cnc_arc_angular_span(0.0, 3.14159265, false);
+    let ok_span = (span - 3.14159265).abs() < 1e-4;
+    ok_g01 && ok_c && ok_span
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -551,6 +562,7 @@ fn verify_all_subsystems() -> bool {
         && verify_quant_orderbook_l2()
         && verify_doc_layout_typography()
         && verify_radar_mimo_tracking()
+        && verify_cnc_gcode_toolpath()
 }
 
 /// @outputs: 1

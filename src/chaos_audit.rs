@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
+    clock_pll_rtc, cnc_gcode_toolpath, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -759,6 +759,17 @@ fn audit_radar_mimo_tracking() -> bool {
 }
 
 /// @outputs: 1
+fn audit_cnc_gcode_toolpath() -> bool {
+    let mut ok = true;
+    ok &= cnc_gcode_toolpath::cnc_g01_linear_interpolation_step([0.0; 3], [1.0; 3], f64::NAN) == [0.0; 3];
+    ok &= cnc_gcode_toolpath::cnc_arc_radius_and_angles([0.0, 0.0], [5.0, 5.0], [0.0, 0.0]).is_none(); // 半徑不符
+    ok &= cnc_gcode_toolpath::cnc_cutter_radius_compensation_2d([0.0, 0.0], [0.0, 0.0], 1.5, true).is_none(); // 零長度
+    ok &= cnc_gcode_toolpath::cnc_spindle_speed_surface_speed(0.0, 100.0).is_none(); // 零直徑
+    ok &= cnc_gcode_toolpath::cnc_trapezoidal_velocity_profile_step(0.0, 100.0, 10.0, 2.0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -819,6 +830,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_quant_orderbook_l2(), "【量化L2訂單簿與微觀結構抽查失敗】存在除零溢出或無效買賣價", total, passed, failures);
     check_audit_domain(audit_doc_layout_typography(), "【Word與PPT排版字體抽查失敗】存在除零溢出或惡化度崩潰", total, passed, failures);
     check_audit_domain(audit_radar_mimo_tracking(), "【雷達MIMO虛擬陣列與追蹤抽查失敗】存在除零溢出或航跡發散", total, passed, failures);
+    check_audit_domain(audit_cnc_gcode_toolpath(), "【CNC工具路徑與G-Code抽查失敗】存在除零溢出或幾何畸形", total, passed, failures);
 }
 
 /// @outputs: 2

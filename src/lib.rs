@@ -22,6 +22,7 @@ pub mod can_lin_bus;
 pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;
+pub mod cnc_gcode_toolpath;
 pub mod comm_controller;
 pub mod comm_phy_bus;
 pub mod crypto_dukpt;

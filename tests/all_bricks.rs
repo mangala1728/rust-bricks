@@ -3058,6 +3058,77 @@ fn test_radar_mimo_tracking_bricks() {
     assert!(v_unambig.is_some());
 }
 
+#[test]
+fn test_cnc_gcode_toolpath_bricks() {
+    use rust_bricks::cnc_gcode_toolpath::*;
+
+    // 1. G01 3D 直線插補座標步進
+    let p = cnc_g01_linear_interpolation_step([0.0, 10.0, 20.0], [10.0, 20.0, 40.0], 0.25);
+    assert!((p[0] - 2.5).abs() < 1e-5);
+    assert!((p[1] - 12.5).abs() < 1e-5);
+    assert!((p[2] - 25.0).abs() < 1e-5);
+
+    // 2. G02/G03 I/J 偏移換算圓心
+    let c = cnc_g02_g03_arc_center_from_ij([5.0, 5.0], 5.0, 0.0);
+    assert_eq!(c, [10.0, 5.0]);
+
+    // 3. 圓弧半徑與起訖角度 (起點 (10, 0), 終點 (0, 10), 圓心 (0, 0) -> R = 10, 角 0 -> PI/2)
+    let arc = cnc_arc_radius_and_angles([10.0, 0.0], [0.0, 10.0], [0.0, 0.0]);
+    assert!(arc.is_some());
+    let (r, a_start, a_end) = arc.unwrap();
+    assert!((r - 10.0).abs() < 1e-4);
+    assert!(a_start.abs() < 1e-4);
+    assert!((a_end - std::f64::consts::FRAC_PI_2).abs() < 1e-4);
+
+    // 4. 圓弧跨越角 (CCW G03: 0 到 PI/2 跨度為 PI/2)
+    let span_ccw = cnc_arc_angular_span(0.0, std::f64::consts::FRAC_PI_2, false);
+    assert!((span_ccw - std::f64::consts::FRAC_PI_2).abs() < 1e-4);
+    // CW G02: 0 到 PI/2 跨度為 3*PI/2 (270度)
+    let span_cw = cnc_arc_angular_span(0.0, std::f64::consts::FRAC_PI_2, true);
+    assert!((span_cw - (1.5 * std::f64::consts::PI)).abs() < 1e-4);
+
+    // 5. 3軸進給率速度分解 (F = 600 mm/min = 10 mm/s，沿 X 軸移動)
+    let v_axis = cnc_feedrate_to_axis_velocities(100.0, 0.0, 0.0, 600.0);
+    assert!(v_axis.is_some());
+    let [vx, vy, vz] = v_axis.unwrap();
+    assert!((vx - 10.0).abs() < 1e-4);
+    assert!(vy.abs() < 1e-4);
+    assert!(vz.abs() < 1e-4);
+
+    // 6. G41 刀具半徑左側補償 (沿 +X 移動，向左為 +Y 方向偏移)
+    let comp = cnc_cutter_radius_compensation_2d([0.0, 0.0], [10.0, 0.0], 1.5, true);
+    assert!(comp.is_some());
+    let (p0_off, p1_off) = comp.unwrap();
+    assert!((p0_off[0] - 0.0).abs() < 1e-4);
+    assert!((p0_off[1] - 1.5).abs() < 1e-4);
+    assert!((p1_off[0] - 10.0).abs() < 1e-4);
+    assert!((p1_off[1] - 1.5).abs() < 1e-4);
+
+    // 7. 切削線速度與主軸 RPM (直徑 3.175 mm PCB銑刀, 線速 100 m/min)
+    let rpm = cnc_spindle_speed_surface_speed(3.175, 100.0);
+    assert!(rpm.is_some());
+    assert!((rpm.unwrap() - 10025.0).abs() < 100.0);
+
+    // 8. G83 啄鑽循環深度步進 (總深 10 mm, 每次 3 mm)
+    let (d0, done0) = cnc_drilling_peck_cycles_step(10.0, 3.0, 0);
+    assert_eq!(d0, 3.0);
+    assert!(!done0);
+    let (d3, done3) = cnc_drilling_peck_cycles_step(10.0, 3.0, 3);
+    assert_eq!(d3, 10.0);
+    assert!(done3);
+
+    // 9. 每齒進給量轉進給率 (20000 RPM, 2刃, 0.02 mm/齒 -> 800 mm/min)
+    let f = cnc_feed_per_tooth_to_feedrate(20000.0, 2, 0.02);
+    assert_eq!(f, 800.0);
+
+    // 10. 梯形速度輪廓規劃 (起點速度為0, 終點速度為0)
+    let v_start = cnc_trapezoidal_velocity_profile_step(0.0, 100.0, 50.0, 100.0);
+    assert_eq!(v_start, 0.0);
+    let v_mid = cnc_trapezoidal_velocity_profile_step(50.0, 100.0, 50.0, 100.0);
+    assert!(v_mid > 0.0);
+}
+
+
 
 
 

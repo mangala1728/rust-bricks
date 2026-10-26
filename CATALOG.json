@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 466,
+  "total_functions": 476,
   "modules": [
     {
       "module": "agent_terminal",
@@ -561,6 +561,63 @@
         {
           "name": "ntp_clock_offset_and_delay",
           "signature": "pub fn ntp_clock_offset_and_delay(t0_ms: i64, t1_ms: i64, t2_ms: i64, t3_ms: i64) -> (i64, i64)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "cnc_gcode_toolpath",
+      "file": "src/cnc_gcode_toolpath.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "cnc_g01_linear_interpolation_step",
+          "signature": "pub fn cnc_g01_linear_interpolation_step(start: [f64; 3], end: [f64; 3], progress: f64) -> [f64; 3]",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_g02_g03_arc_center_from_ij",
+          "signature": "pub fn cnc_g02_g03_arc_center_from_ij(start_xy: [f64; 2], i: f64, j: f64) -> [f64; 2]",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_arc_radius_and_angles",
+          "signature": "pub fn cnc_arc_radius_and_angles(",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_arc_angular_span",
+          "signature": "pub fn cnc_arc_angular_span(start_angle: f64, end_angle: f64, is_cw: bool) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_feedrate_to_axis_velocities",
+          "signature": "pub fn cnc_feedrate_to_axis_velocities(",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_cutter_radius_compensation_2d",
+          "signature": "pub fn cnc_cutter_radius_compensation_2d(",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_spindle_speed_surface_speed",
+          "signature": "pub fn cnc_spindle_speed_surface_speed(diameter_mm: f64, cutting_speed_m_min: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_drilling_peck_cycles_step",
+          "signature": "pub fn cnc_drilling_peck_cycles_step(",
+          "outputs": 2
+        },
+        {
+          "name": "cnc_feed_per_tooth_to_feedrate",
+          "signature": "pub fn cnc_feed_per_tooth_to_feedrate(spindle_rpm: f64, num_flutes: usize, fz_mm_tooth: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "cnc_trapezoidal_velocity_profile_step",
+          "signature": "pub fn cnc_trapezoidal_velocity_profile_step(",
           "outputs": 1
         }
       ]
