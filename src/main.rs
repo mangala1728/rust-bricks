@@ -7,9 +7,10 @@
 use rust_bricks::{
     agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, clock_pll_rtc,
     comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math,
-    geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_telemetry,
-    packet_checksum, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner,
-    thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
+    fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon,
+    motor_stepper, net_ethernet, net_telemetry, packet_checksum, ring_buffer, sensor_hardware,
+    sensor_motion, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -109,6 +110,16 @@ fn verify_comm_and_clock() -> bool {
 }
 
 /// @outputs: 1
+fn verify_ethernet_and_apdu() -> bool {
+    let mac = [0xFF; 6];
+    let ok_mac = net_ethernet::is_broadcast_mac(&mac);
+    let mut apdu_buf = [0u8; 16];
+    let ok_apdu = fin_apdu_track::apdu_encode_command(0, 0xA4, 4, 0, &[], None, &mut apdu_buf).is_some();
+    let ok_lrc = fin_apdu_track::lrc_checksum(b"A") == b'A';
+    ok_mac && ok_apdu && ok_lrc
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -117,6 +128,7 @@ fn verify_all_subsystems() -> bool {
         && verify_thermal_ble_dsp_crypto()
         && verify_motor_dukpt_and_env()
         && verify_comm_and_clock()
+        && verify_ethernet_and_apdu()
 }
 
 /// @outputs: 1

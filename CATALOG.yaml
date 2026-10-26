@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 141
+total_functions: 148
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -476,6 +476,33 @@ modules:
           edge0: "[-10000.0..10000.0]"
           edge1: "[-10000.0..10000.0]"
           x: "[-10000.0..10000.0]"
+  - module: "fin_apdu_track"
+    file: "src/fin_apdu_track.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/fin_apdu_track — 金融晶片卡 ISO 7816-4 APDU 命令/回應封包與磁條 Track 2 解碼微積木。"
+      - "Inputs: APDU 標頭參數 (CLA, INS, P1, P2)、指令負載、磁條字串、LRC 數據切片。"
+      - "Outputs: APDU 二進位訊框長度、回應 (Data, SW1, SW2) 元組、卡號 (PAN) 與效期切片、LRC 校驗碼。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、長度邊界防禦。"
+    functions:
+      - name: "apdu_encode_command"
+        signature: "pub fn apdu_encode_command("
+        outputs: 2
+        domains:
+          data_len: "[0..255]"
+      - name: "apdu_parse_response<'a>"
+        signature: "pub fn apdu_parse_response<'a>(resp: &'a [u8]) -> Option<(&'a [u8], u8, u8)>"
+        outputs: 2
+        domains:
+          resp_len: "[2..258]"
+      - name: "track2_parse_pan_and_exp<'a>"
+        signature: "pub fn track2_parse_pan_and_exp<'a>(track2_str: &'a str) -> Option<(&'a str, &'a str)>"
+        outputs: 2
+      - name: "lrc_checksum"
+        signature: "pub fn lrc_checksum(data: &[u8]) -> u8"
+        outputs: 1
+        domains:
+          data_len: "[0..1024]"
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3
@@ -638,6 +665,26 @@ modules:
           steps: "[0..10000000]"
           steps_per_rev: "[1..65536]"
           pitch_mm: "[0.0..1000.0]"
+  - module: "net_ethernet"
+    file: "src/net_ethernet.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/net_ethernet — 以太網 Ethernet II / 802.1Q 訊框標頭零拷貝解析與 MAC 位址分類微積木。"
+      - "Inputs: 原始以太網封包位元組切片、6 位元組 MAC 陣列。"
+      - "Outputs: MAC 類型判別 (單播/組播/廣播)、EtherType、VLAN ID、負載切片位移。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、長度邊界防禦。"
+    functions:
+      - name: "is_broadcast_mac"
+        signature: "pub fn is_broadcast_mac(mac: &[u8; 6]) -> bool"
+        outputs: 1
+      - name: "is_multicast_mac"
+        signature: "pub fn is_multicast_mac(mac: &[u8; 6]) -> bool"
+        outputs: 1
+      - name: "parse_ethernet_frame_header"
+        signature: "pub fn parse_ethernet_frame_header(packet: &[u8]) -> Option<EthernetFrameInfo>"
+        outputs: 1
+        domains:
+          packet_len: "[14..1518]"
   - module: "net_telemetry"
     file: "src/net_telemetry.rs"
     functions_count: 4

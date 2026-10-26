@@ -1,6 +1,6 @@
 // ## Map
 // Role: core/lib — rust-bricks 純淨函式積木庫總導出入口。
-// Inputs: 子模組 (agent_terminal, audio_dsp, audio_vad, audio_wav, bezier_curve, ble_adv_parser, can_bus_frame, catalog, chaos_audit, clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_telemetry, packet_checksum, receipt, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv, wish_board)。
+// Inputs: 子模組 (agent_terminal, audio_dsp, audio_vad, audio_wav, bezier_curve, ble_adv_parser, can_bus_frame, catalog, chaos_audit, clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, packet_checksum, receipt, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv, wish_board)。
 // Outputs: 導出安全、有界、零依賴之純函式介面。
 // Invariants: 零全域可變狀態、禁止 unsafe 代碼、100% 符合 09 號合約。
 
@@ -23,12 +23,14 @@ pub mod crypto_vault;
 pub mod dsp_fixed_point;
 pub mod env_sensor;
 pub mod fast_math;
+pub mod fin_apdu_track;
 pub mod geo_collision;
 pub mod guard;
 pub mod iso7816_smartcard;
 pub mod math_time;
 pub mod motion_dead_reckon;
 pub mod motor_stepper;
+pub mod net_ethernet;
 pub mod net_telemetry;
 pub mod packet_checksum;
 pub mod receipt;

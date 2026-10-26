@@ -1007,5 +1007,88 @@ fn test_clock_pll_rtc_bricks() {
     assert_eq!(offset, -2);
 }
 
+#[test]
+fn test_net_ethernet_bricks() {
+    // 1. MAC 廣播與組播判定
+    let bcast_mac = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+    assert!(rust_bricks::net_ethernet::is_broadcast_mac(&bcast_mac));
+    assert!(!rust_bricks::net_ethernet::is_multicast_mac(&bcast_mac));
+
+    let mcast_mac = [0x01, 0x00, 0x5E, 0x00, 0x00, 0xFB]; // mDNS 224.0.0.251
+    assert!(rust_bricks::net_ethernet::is_multicast_mac(&mcast_mac));
+    assert!(!rust_bricks::net_ethernet::is_broadcast_mac(&mcast_mac));
+
+    let ucast_mac = [0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E];
+    assert!(!rust_bricks::net_ethernet::is_broadcast_mac(&ucast_mac));
+    assert!(!rust_bricks::net_ethernet::is_multicast_mac(&ucast_mac));
+
+    // 2. 標準 Ethernet II 訊框解析 (IPv4 0x0800)
+    let mut std_pkt = [0u8; 64];
+    std_pkt[0..6].copy_from_slice(&bcast_mac);
+    std_pkt[6..12].copy_from_slice(&ucast_mac);
+    std_pkt[12] = 0x08;
+    std_pkt[13] = 0x00;
+    let eth_info = rust_bricks::net_ethernet::parse_ethernet_frame_header(&std_pkt);
+    assert!(eth_info.is_some());
+    // @safety-proof: eth_info 已驗證 is_some()
+    let info = eth_info.unwrap();
+    assert_eq!(info.ether_type, 0x0800);
+    assert_eq!(info.vlan_id, None);
+    assert_eq!(info.payload_offset, 14);
+
+    // 3. 802.1Q VLAN Tag 訊框解析 (VID=100, EtherType=0x0800)
+    let mut vlan_pkt = [0u8; 64];
+    vlan_pkt[0..6].copy_from_slice(&bcast_mac);
+    vlan_pkt[6..12].copy_from_slice(&ucast_mac);
+    vlan_pkt[12] = 0x81;
+    vlan_pkt[13] = 0x00; // 802.1Q Tag
+    vlan_pkt[14] = 0x00;
+    vlan_pkt[15] = 100;  // VID = 100
+    vlan_pkt[16] = 0x08;
+    vlan_pkt[17] = 0x00; // Inner EtherType IPv4
+    let vlan_info = rust_bricks::net_ethernet::parse_ethernet_frame_header(&vlan_pkt).unwrap();
+    // @safety-proof: vlan_info 構造保證有效
+    assert_eq!(vlan_info.vlan_id, Some(100));
+    assert_eq!(vlan_info.ether_type, 0x0800);
+    assert_eq!(vlan_info.payload_offset, 18);
+}
+
+#[test]
+fn test_fin_apdu_track_bricks() {
+    // 1. APDU 命令封裝 (SELECT PSE: CLA=0x00, INS=0xA4, P1=0x04, P2=0x00, Data=1PAY.SYS.DDF01)
+    let mut apdu_buf = [0u8; 64];
+    let aid = b"1PAY.SYS.DDF01";
+    let n = rust_bricks::fin_apdu_track::apdu_encode_command(0x00, 0xA4, 0x04, 0x00, aid, Some(0x00), &mut apdu_buf);
+    assert!(n.is_some());
+    // @safety-proof: n 已驗證 is_some()
+    let total_len = n.unwrap();
+    assert_eq!(total_len, 4 + 1 + aid.len() + 1);
+    assert_eq!(&apdu_buf[0..4], &[0x00, 0xA4, 0x04, 0x00]);
+    assert_eq!(apdu_buf[4], aid.len() as u8);
+    assert_eq!(apdu_buf[total_len - 1], 0x00); // Le
+
+    // 2. APDU 回應解析
+    let resp = [0x6F, 0x1A, 0x84, 0x0E, 0x90, 0x00];
+    let parsed = rust_bricks::fin_apdu_track::apdu_parse_response(&resp).unwrap();
+    // @safety-proof: parsed 構造保證有效
+    assert_eq!(parsed.1, 0x90);
+    assert_eq!(parsed.2, 0x00);
+    assert_eq!(parsed.0, &[0x6F, 0x1A, 0x84, 0x0E]);
+
+    // 3. 磁條 Track 2 解碼 (PAN=4000123456789010, EXP=2612)
+    let raw_t2 = ";4000123456789010=2612201000000?";
+    let t2_res = rust_bricks::fin_apdu_track::track2_parse_pan_and_exp(raw_t2);
+    assert!(t2_res.is_some());
+    // @safety-proof: t2_res 已驗證 is_some()
+    let (pan, exp) = t2_res.unwrap();
+    assert_eq!(pan, "4000123456789010");
+    assert_eq!(exp, "2612");
+
+    // 4. LRC 縱向冗餘校驗
+    let lrc = rust_bricks::fin_apdu_track::lrc_checksum(b"12345");
+    assert_eq!(lrc, b'1' ^ b'2' ^ b'3' ^ b'4' ^ b'5');
+}
+
+
 
 

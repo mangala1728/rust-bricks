@@ -7,8 +7,9 @@
 use crate::{
     agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, clock_pll_rtc,
     comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor, fast_math,
-    geo_collision, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper,
-    sensor_hardware, sensor_motion, spatial_physics, sys_path, thermal_palette, thermal_pid,
+    fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
+    motor_stepper, net_ethernet, sensor_hardware, sensor_motion, spatial_physics,
+    sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -125,22 +126,33 @@ fn audit_motor_env_and_dukpt() -> bool {
 /// @outputs: 1
 fn audit_comm_and_clock() -> bool {
     let mut ok = true;
-    // 1. I2C 越界地址
     ok &= comm_controller::i2c_address_frame(200, false) == 0x00;
-    // 2. QSPI 越界 Dummy
     let mut q_buf = [0u8; 8];
     ok &= comm_controller::qspi_flash_fast_read_cmd(0x1000_0000, 8, &mut q_buf) == 0;
     ok &= comm_controller::qspi_flash_fast_read_cmd(0x1000, 30, &mut q_buf) == 0;
-    // 3. UART 零波特率與非標準超取樣
     ok &= comm_controller::uart_baud_rate_divisor(16000000, 0, 16).is_none();
     ok &= comm_controller::uart_baud_rate_divisor(16000000, 115200, 4).is_none();
-    // 4. DMA 對齊非 2 的冪次
     ok &= comm_controller::dma_align_padding_bytes(13, 0) == 0;
     ok &= comm_controller::dma_align_padding_bytes(13, 7) == 0;
-    // 5. PLL 異常輸入
     ok &= clock_pll_rtc::pll_calculate_prescalers(0, 72000000).is_none();
-    // 6. NTP 極端時戳
     ok &= clock_pll_rtc::ntp_timestamp_to_unix_secs(1000) == 0;
+    ok
+}
+
+/// @outputs: 1
+fn audit_ethernet_and_apdu() -> bool {
+    let mut ok = true;
+    // 1. 以太網畸形截斷
+    let short_eth = [0u8; 10];
+    ok &= net_ethernet::parse_ethernet_frame_header(&short_eth).is_none();
+    let mut vlan_pkt = [0u8; 16]; // 宣告 VLAN 但不足 18 字節
+    vlan_pkt[12] = 0x81;
+    vlan_pkt[13] = 0x00;
+    ok &= net_ethernet::parse_ethernet_frame_header(&vlan_pkt).is_none();
+    // 2. APDU 截斷回應與畸形磁條
+    ok &= fin_apdu_track::apdu_parse_response(&[0x90]).is_none(); // 僅 1 字節不足 SW1/SW2
+    ok &= fin_apdu_track::track2_parse_pan_and_exp("").is_none();
+    ok &= fin_apdu_track::track2_parse_pan_and_exp(";123=45?").is_none(); // PAN 太短
     ok
 }
 
@@ -193,6 +205,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_comm_and_clock() { passed += 1; } else { failures.push("【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰".to_string()); }
+
+    total += 1;
+    if audit_ethernet_and_apdu() { passed += 1; } else { failures.push("【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }

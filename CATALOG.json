@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 141,
+  "total_functions": 148,
   "modules": [
     {
       "module": "agent_terminal",
@@ -443,6 +443,33 @@
       ]
     },
     {
+      "module": "fin_apdu_track",
+      "file": "src/fin_apdu_track.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "apdu_encode_command",
+          "signature": "pub fn apdu_encode_command(",
+          "outputs": 2
+        },
+        {
+          "name": "apdu_parse_response<'a>",
+          "signature": "pub fn apdu_parse_response<'a>(resp: &'a [u8]) -> Option<(&'a [u8], u8, u8)>",
+          "outputs": 2
+        },
+        {
+          "name": "track2_parse_pan_and_exp<'a>",
+          "signature": "pub fn track2_parse_pan_and_exp<'a>(track2_str: &'a str) -> Option<(&'a str, &'a str)>",
+          "outputs": 2
+        },
+        {
+          "name": "lrc_checksum",
+          "signature": "pub fn lrc_checksum(data: &[u8]) -> u8",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "geo_collision",
       "file": "src/geo_collision.rs",
       "functions_count": 3,
@@ -573,6 +600,28 @@
         {
           "name": "stepper_steps_to_distance_mm",
           "signature": "pub fn stepper_steps_to_distance_mm(steps: u32, steps_per_rev: u32, pitch_mm: f32) -> f32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "net_ethernet",
+      "file": "src/net_ethernet.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "is_broadcast_mac",
+          "signature": "pub fn is_broadcast_mac(mac: &[u8; 6]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "is_multicast_mac",
+          "signature": "pub fn is_multicast_mac(mac: &[u8; 6]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "parse_ethernet_frame_header",
+          "signature": "pub fn parse_ethernet_frame_header(packet: &[u8]) -> Option<EthernetFrameInfo>",
           "outputs": 1
         }
       ]
