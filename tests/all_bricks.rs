@@ -2159,3 +2159,73 @@ fn test_robotics_motion_profile_bricks() {
     let feed = robotics_motion_profile::robotics_scara_z_axis_feed_rate(10.0, 600.0).unwrap();
     assert_eq!(feed, 100.0);
 }
+
+#[test]
+fn test_ai_tensor_gemm_bricks() {
+    use rust_bricks::ai_tensor_gemm;
+
+    // 1. 分塊矩陣乘法 GEMM (2x2 * 2x2)
+    let a = [1.0f32, 2.0, 3.0, 4.0];
+    let b = [5.0f32, 6.0, 7.0, 8.0];
+    let mut c = [0.0f32; 4];
+    assert!(ai_tensor_gemm::gemm_tiled_f32_step(&a, &b, &mut c, 2, 2, 2, 1));
+    // C00 = 1*5 + 2*7 = 19, C01 = 1*6 + 2*8 = 22
+    // C10 = 3*5 + 4*7 = 43, C11 = 3*6 + 4*8 = 50
+    assert_eq!(c, [19.0, 22.0, 43.0, 50.0]);
+
+    // 2. Conv2D 卷積步進 (3x3 輸入, 2x2 卷積核 -> 2x2 輸出)
+    let in_img = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+    let kernel = [1.0f32, 0.0, 0.0, 1.0]; // 對角卷積核
+    let mut out_conv = [0.0f32; 4];
+    assert!(ai_tensor_gemm::conv2d_valid_forward_step(&in_img, &kernel, &mut out_conv, 3, 3, 2, 2));
+    assert_eq!(out_conv[0], 1.0 + 5.0); // 6.0
+    assert_eq!(out_conv[1], 2.0 + 6.0); // 8.0
+    assert_eq!(out_conv[2], 4.0 + 8.0); // 12.0
+    assert_eq!(out_conv[3], 5.0 + 9.0); // 14.0
+
+    // 3. MaxPool2D 2x2 池化
+    let mut out_pool = [0.0f32; 1];
+    let pool_in = [1.0f32, 9.0, 4.0, 2.0];
+    assert!(ai_tensor_gemm::maxpool2d_2x2_stride2_step(&pool_in, &mut out_pool, 2, 2));
+    assert_eq!(out_pool[0], 9.0);
+
+    // 4. Batch Normalization 前向推論
+    let x = [10.0f32, 20.0];
+    let mean = [10.0f32];
+    let var = [25.0f32]; // std = 5
+    let gamma = [1.0f32];
+    let beta = [0.0f32];
+    let mut out_bn = [0.0f32; 2];
+    assert!(ai_tensor_gemm::batch_norm_forward_inference(&x, &mean, &var, &gamma, &beta, 1e-5, &mut out_bn));
+    assert!((out_bn[0] - 0.0).abs() < 1e-3);
+    assert!((out_bn[1] - 2.0).abs() < 1e-3);
+
+    // 5. Inverted Dropout 遮罩應用
+    let mut x_drop = [10.0f32, 10.0];
+    let mask_rand = [0u32, u32::MAX]; // 保留第一個，拋棄第二個
+    assert!(ai_tensor_gemm::dropout_inverted_mask_apply(&mut x_drop, &mask_rand, 0.5));
+    assert_eq!(x_drop[0], 20.0); // 縮放 1 / 0.5 = 2.0
+    assert_eq!(x_drop[1], 0.0);
+
+    // 6. Embedding 查找
+    let emb_table = [0.1f32, 0.2, 0.3, 0.4, 0.5, 0.6];
+    let mut emb_vec = [0.0f32; 3];
+    assert!(ai_tensor_gemm::embedding_lookup_1d(&emb_table, 1, 3, &mut emb_vec));
+    assert_eq!(emb_vec, [0.4, 0.5, 0.6]);
+
+    // 7. LeakyReLU 與 Smooth L1 Loss
+    assert!((ai_tensor_gemm::leaky_relu_f32(-10.0, 0.01) - (-0.1)).abs() < 1e-6);
+    assert_eq!(ai_tensor_gemm::leaky_relu_f32(10.0, 0.01), 10.0);
+    assert_eq!(ai_tensor_gemm::smooth_l1_loss_step(0.5, 0.0, 1.0), 0.125);
+
+    // 8. 餘弦相似度
+    let sim = ai_tensor_gemm::cosine_similarity_f32(&[1.0, 0.0], &[0.0, 1.0]).unwrap();
+    assert_eq!(sim, 0.0);
+    let sim_same = ai_tensor_gemm::cosine_similarity_f32(&[2.0, 3.0], &[4.0, 6.0]).unwrap();
+    assert!((sim_same - 1.0).abs() < 1e-4);
+
+    // 9. One-Hot 編碼
+    let mut oh = [0u8; 4];
+    assert!(ai_tensor_gemm::one_hot_encode_u8(2, 4, &mut oh));
+    assert_eq!(oh, [0, 0, 1, 0]);
+}

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 317
+total_functions: 327
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -82,6 +82,57 @@ modules:
           max_norm: "[1e-6..10000.0]"
       - name: "log_sum_exp_f32"
         signature: "pub fn log_sum_exp_f32(logits: &[f32]) -> Option<f32>"
+        outputs: 1
+  - module: "ai_tensor_gemm"
+    file: "src/ai_tensor_gemm.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: ai/tensor_gemm — 神經網路高效張量運算 (分塊 GEMM、Conv2D、MaxPool、BatchNorm、Dropout、Embedding、餘弦相似度) 微積木。"
+      - "Inputs: 權重矩陣、輸入張量、均值方差、Token ID、遺失率 (p)、平滑閾值。"
+      - "Outputs: 矩陣乘積、卷積特徵圖、最大池化、標準化張量、嵌入向量、餘弦相似度。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零與 NaN 剛性防護、單一函式 <= 60 行。"
+    functions:
+      - name: "gemm_tiled_f32_step"
+        signature: "pub fn gemm_tiled_f32_step("
+        outputs: 1
+        domains:
+          m: "[1..4096]"
+          n: "[1..4096]"
+          k: "[1..4096]"
+      - name: "conv2d_valid_forward_step"
+        signature: "pub fn conv2d_valid_forward_step("
+        outputs: 1
+      - name: "maxpool2d_2x2_stride2_step"
+        signature: "pub fn maxpool2d_2x2_stride2_step("
+        outputs: 1
+      - name: "batch_norm_forward_inference"
+        signature: "pub fn batch_norm_forward_inference("
+        outputs: 1
+        domains:
+          eps: "[1.0e-12..1.0e-3]"
+      - name: "dropout_inverted_mask_apply"
+        signature: "pub fn dropout_inverted_mask_apply("
+        outputs: 1
+        domains:
+          p_drop: "[0.0..0.999]"
+      - name: "embedding_lookup_1d"
+        signature: "pub fn embedding_lookup_1d("
+        outputs: 1
+      - name: "leaky_relu_f32"
+        signature: "pub fn leaky_relu_f32(x: f32, negative_slope: f32) -> f32"
+        outputs: 1
+        domains:
+          negative_slope: "[0.0..1.0]"
+      - name: "smooth_l1_loss_step"
+        signature: "pub fn smooth_l1_loss_step(pred: f32, target: f32, beta: f32) -> f32"
+        outputs: 1
+        domains:
+          beta: "[1.0e-6..100.0]"
+      - name: "cosine_similarity_f32"
+        signature: "pub fn cosine_similarity_f32(vec_a: &[f32], vec_b: &[f32]) -> Option<f32>"
+        outputs: 1
+      - name: "one_hot_encode_u8"
+        signature: "pub fn one_hot_encode_u8(class_id: usize, num_classes: usize, out_buf: &mut [u8]) -> bool"
         outputs: 1
   - module: "ai_tensor_train"
     file: "src/ai_tensor_train.rs"

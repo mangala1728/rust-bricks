@@ -8,6 +8,7 @@
 
 pub mod agent_terminal;
 pub mod ai_autograd_train;
+pub mod ai_tensor_gemm;
 pub mod ai_tensor_train;
 pub mod audio_dsp;
 pub mod audio_vad;

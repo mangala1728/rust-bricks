@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -498,6 +498,29 @@ fn audit_robotics_motion_profile() -> bool {
 }
 
 /// @outputs: 1
+fn audit_ai_tensor_gemm() -> bool {
+    let mut ok = true;
+    let mut c = [0.0f32; 4];
+    ok &= !ai_tensor_gemm::gemm_tiled_f32_step(&[], &[], &mut c, 2, 2, 2, 1);
+    let mut out_conv = [0.0f32; 1];
+    ok &= !ai_tensor_gemm::conv2d_valid_forward_step(&[], &[], &mut out_conv, 1, 1, 2, 2);
+    let mut out_pool = [0.0f32; 1];
+    ok &= !ai_tensor_gemm::maxpool2d_2x2_stride2_step(&[], &mut out_pool, 3, 3);
+    let mut out_bn = [0.0f32; 2];
+    ok &= !ai_tensor_gemm::batch_norm_forward_inference(&[1.0, 2.0], &[0.0], &[1.0], &[1.0], &[0.0], 0.0, &mut out_bn);
+    let mut x_drop = [1.0f32; 2];
+    ok &= !ai_tensor_gemm::dropout_inverted_mask_apply(&mut x_drop, &[1], 1.5);
+    let mut emb = [0.0f32; 4];
+    ok &= !ai_tensor_gemm::embedding_lookup_1d(&[], 0, 4, &mut emb);
+    ok &= (ai_tensor_gemm::leaky_relu_f32(f32::NAN, 0.1) - 0.0).abs() < 1e-6;
+    ok &= (ai_tensor_gemm::smooth_l1_loss_step(0.0, 1.0, 0.0) - 0.0).abs() < 1e-6;
+    ok &= ai_tensor_gemm::cosine_similarity_f32(&[0.0], &[0.0]).is_none();
+    let mut one_hot = [0u8; 3];
+    ok &= !ai_tensor_gemm::one_hot_encode_u8(5, 3, &mut one_hot);
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -547,6 +570,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

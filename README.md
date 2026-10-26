@@ -82,6 +82,7 @@
 | [`decision_mcts`](src/decision_mcts.rs) | 蒙地卡羅樹狀搜尋 (MCTS) UCB1 評分、最佳子節點選擇、反向傳播更新、訪問次數溫度策略映射 | 智慧決策系統、棋盤博弈 AI (AlphaGo 核心)、強化學習樹搜索、自主代理多步推理 |
 | [`curve_fit_trend`](src/curve_fit_trend.rs) | 物理實驗線性回歸 (斜率/截距/相關係數)、R² 擬合判定係數、Huber 穩健抗噪損失、LOWESS Tricube 局部加權平滑、RBF/Matérn 3/2 核函數、傅立葉特徵映射、SIREN 正弦週期表示、KAN SiLU 活化 | 實驗物理數據擬合、儀表趨勢平滑濾除雜訊、高斯過程回歸核方法、隱式神經表示 (INR)、KAN 神經架構 |
 | [`ai_autograd_train`](src/ai_autograd_train.rs) | Micrograd 標量自動求導反向傳播 (加/乘/冪/ReLU)、BPE 詞元頻率統計與合併、GPT-2 因果自注意力遮罩 (Causal Mask)、餘弦退火排程 (Cosine Annealing with Warmup)、全域梯度 L2 Norm 截斷、數值穩定 Log-Sum-Exp | 極簡神經網路訓練迴圈 (Karpathy nanoGPT / llm.c / Raschka)、純 Rust 詞元編碼、微型自求導引擎 |
+| [`ai_tensor_gemm`](src/ai_tensor_gemm.rs) | 分塊矩陣乘法 (Tiled GEMM)、Conv2D 卷積前向步進、MaxPool2D 2x2 最大池化、Batch Normalization、Inverted Dropout、Embedding 查找、LeakyReLU、Smooth L1 Loss、餘弦相似度、One-Hot 編碼 | 深度學習神經網路推理與訓練底層算子、邊緣視覺卷積特徵提取、嵌入向量比對 |
 | [`dsp_fft_radix2`](src/dsp_fft_radix2.rs) | Cooley-Tukey 基-2 (Radix-2) 快速傅立葉轉換 (FFT/IFFT)、Q15 定點數蝶形運算、位元反轉置換 | 雷達頻譜分析、圖像去噪、音訊壓縮與濾波、無 FPU 單晶片信號處理 |
 | [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
 | [`crypto_dukpt`](src/crypto_dukpt.rs) | ANSI X9.24 DUKPT 交易金鑰衍生、21-bit 交易計數器管理、PIN/Data 變體金鑰生成 | 金融刷卡機 POS、ATM 提款機每筆交易動態密鑰（防前向破解） |

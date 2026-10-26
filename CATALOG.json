@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 317,
+  "total_functions": 327,
   "modules": [
     {
       "module": "agent_terminal",
@@ -80,6 +80,63 @@
         {
           "name": "log_sum_exp_f32",
           "signature": "pub fn log_sum_exp_f32(logits: &[f32]) -> Option<f32>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "ai_tensor_gemm",
+      "file": "src/ai_tensor_gemm.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "gemm_tiled_f32_step",
+          "signature": "pub fn gemm_tiled_f32_step(",
+          "outputs": 1
+        },
+        {
+          "name": "conv2d_valid_forward_step",
+          "signature": "pub fn conv2d_valid_forward_step(",
+          "outputs": 1
+        },
+        {
+          "name": "maxpool2d_2x2_stride2_step",
+          "signature": "pub fn maxpool2d_2x2_stride2_step(",
+          "outputs": 1
+        },
+        {
+          "name": "batch_norm_forward_inference",
+          "signature": "pub fn batch_norm_forward_inference(",
+          "outputs": 1
+        },
+        {
+          "name": "dropout_inverted_mask_apply",
+          "signature": "pub fn dropout_inverted_mask_apply(",
+          "outputs": 1
+        },
+        {
+          "name": "embedding_lookup_1d",
+          "signature": "pub fn embedding_lookup_1d(",
+          "outputs": 1
+        },
+        {
+          "name": "leaky_relu_f32",
+          "signature": "pub fn leaky_relu_f32(x: f32, negative_slope: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "smooth_l1_loss_step",
+          "signature": "pub fn smooth_l1_loss_step(pred: f32, target: f32, beta: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "cosine_similarity_f32",
+          "signature": "pub fn cosine_similarity_f32(vec_a: &[f32], vec_b: &[f32]) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "one_hot_encode_u8",
+          "signature": "pub fn one_hot_encode_u8(class_id: usize, num_classes: usize, out_buf: &mut [u8]) -> bool",
           "outputs": 1
         }
       ]
