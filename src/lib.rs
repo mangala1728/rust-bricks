@@ -14,6 +14,7 @@ pub mod audio_vad;
 pub mod audio_wav;
 pub mod bezier_curve;
 pub mod ble_adv_parser;
+pub mod cad_geom_model;
 pub mod can_bus_frame;
 pub mod can_lin_bus;
 pub mod catalog;

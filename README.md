@@ -58,6 +58,7 @@
 | [`instrument_industrial`](src/instrument_industrial.rs) | SCPI 科學計數法零拷貝解析、六位半電表量程指令構建、CANopen SDO 加速下載/心跳訊框、Modbus ASCII LRC/RTU 訊框構建、雙暫存器轉 Float32、DSLogic 深度換算、LiteVNA 步進頻率 | 工廠自動化 (PLC/CANopen/Modbus)、Keysight 34461A / Siglent SDM3065X 六位半電表、DSLogic 邏輯分析儀、LiteVNA 向量網絡分析儀 |
 | [`instrument_scpi_vna`](src/instrument_scpi_vna.rs) | SCPI 儀器指令解析、六位半電表讀值統計、VNA S11 反射係數與 Smith 圓圖阻抗解算、VSWR/回波損耗、示波器過零頻率 | 實驗室儀器自動化 (Keysight/Siglent)、向量網絡分析儀 (LiteVNA)、示波器/六位半電表邊緣控制 |
 | [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
+| [`cad_geom_model`](src/cad_geom_model.rs) | KiCAD 焊盤孔環寬度 (Annular Ring)、走線間距 (DRC Clearance) 違規校驗、IPC-2152 走線溫升、FreeCAD 圓角弦長/拉伸柱體體積/3D 包圍盒包含、OpenEMS Mur 吸收邊界係數與奈奎斯特網格步長、Remotion 彈簧阻尼比 | PCB 電路板製造驗證 (KiCAD)、開源機構 CAD (FreeCAD)、電磁仿真 (OpenEMS)、網頁影音動態渲染 (Remotion) |
 | [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
 | [`can_lin_bus`](src/can_lin_bus.rs) | 車載 LIN 2.x PID 同位計算、Classic/Enhanced 增強校驗和、I2S 32-bit 數位音訊立體聲解包 | 車身車門/後視鏡/車窗 LIN 控制器、I2S 數位麥克風與音訊編解碼晶片 |
 | [`comm_controller`](src/comm_controller.rs) | I2C 7-bit 讀寫訊框、SPI Mode 0..3 映射、5 線 SPI D/C 螢幕命令訊框、QSPI 0xEB 快速讀取、UART 波特率定點除數、DMA 跨架構記憶體對齊 | OLED/TFT 螢幕驅動、QSPI Flash 晶片、串口通信、8/16/32/64-bit CPU DMA 對齊 |

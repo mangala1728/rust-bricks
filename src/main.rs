@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_autograd_train, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -292,6 +292,17 @@ fn verify_instrument_industrial() -> bool {
 }
 
 /// @outputs: 1
+fn verify_cad_geom_model() -> bool {
+    let ring = cad_geom_model::kicad_via_annular_ring_width_mm(0.3, 0.6);
+    let ok_ring = matches!(ring, Some(w) if (w - 0.15).abs() < 1e-4);
+    let vol = cad_geom_model::freecad_extrude_cylinder_volume_mm3(1.0, 10.0);
+    let ok_vol = matches!(vol, Some(v) if (v - 10.0 * std::f64::consts::PI).abs() < 1e-3);
+    let zeta = cad_geom_model::remotion_spring_damping_ratio(1.0, 100.0, 20.0);
+    let ok_zeta = matches!(zeta, Some(z) if (z - 1.0).abs() < 1e-4);
+    ok_ring && ok_vol && ok_zeta
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -318,6 +329,7 @@ fn verify_all_subsystems() -> bool {
         && verify_comm_phy_bus()
         && verify_radar_biomed_dsp()
         && verify_instrument_industrial()
+        && verify_cad_geom_model()
 }
 
 /// @outputs: 1

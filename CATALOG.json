@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 276,
+  "total_functions": 286,
   "modules": [
     {
       "module": "agent_terminal",
@@ -288,6 +288,63 @@
           "name": "ble_adv_parse_manufacturer_data<'a>",
           "signature": "pub fn ble_adv_parse_manufacturer_data<'a>(raw_packet: &'a [u8]) -> Option<(u16, &'a [u8])>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "cad_geom_model",
+      "file": "src/cad_geom_model.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "kicad_via_annular_ring_width_mm",
+          "signature": "pub fn kicad_via_annular_ring_width_mm(drill_mm: f64, pad_diameter_mm: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "kicad_trace_clearance_violation",
+          "signature": "pub fn kicad_trace_clearance_violation(",
+          "outputs": 1
+        },
+        {
+          "name": "ipc2152_trace_temp_rise_celsius",
+          "signature": "pub fn ipc2152_trace_temp_rise_celsius(",
+          "outputs": 1
+        },
+        {
+          "name": "freecad_fillet_chord_length_mm",
+          "signature": "pub fn freecad_fillet_chord_length_mm(radius_mm: f64, angle_deg: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "freecad_extrude_cylinder_volume_mm3",
+          "signature": "pub fn freecad_extrude_cylinder_volume_mm3(radius_mm: f64, height_mm: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "freecad_bounding_box_3d_containment",
+          "signature": "pub fn freecad_bounding_box_3d_containment(",
+          "outputs": 1
+        },
+        {
+          "name": "openems_mur_absorbing_boundary_coeff",
+          "signature": "pub fn openems_mur_absorbing_boundary_coeff(c_m_s: f64, dt_s: f64, dx_m: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "openems_mesh_nyquist_cell_size_m",
+          "signature": "pub fn openems_mesh_nyquist_cell_size_m(",
+          "outputs": 1
+        },
+        {
+          "name": "svg_path_arc_bounding_box",
+          "signature": "pub fn svg_path_arc_bounding_box(",
+          "outputs": 2
+        },
+        {
+          "name": "remotion_spring_damping_ratio",
+          "signature": "pub fn remotion_spring_damping_ratio(mass: f64, stiffness: f64, damping: f64) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },

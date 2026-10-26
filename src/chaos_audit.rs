@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -433,6 +433,22 @@ fn audit_instrument_industrial() -> bool {
 }
 
 /// @outputs: 1
+fn audit_cad_geom_model() -> bool {
+    let mut ok = true;
+    ok &= cad_geom_model::kicad_via_annular_ring_width_mm(0.5, 0.4).is_none();
+    ok &= cad_geom_model::kicad_trace_clearance_violation((f64::NAN, 0.0), (0.0, 0.0), 0.2);
+    ok &= cad_geom_model::ipc2152_trace_temp_rise_celsius(0.0, 100.0, false).is_none();
+    ok &= cad_geom_model::freecad_fillet_chord_length_mm(-1.0, 90.0).is_none();
+    ok &= cad_geom_model::freecad_extrude_cylinder_volume_mm3(1.0, 0.0).is_none();
+    ok &= !cad_geom_model::freecad_bounding_box_3d_containment((1.0, 1.0, 1.0), (0.0, 0.0, 0.0), (0.5, 0.5, 0.5));
+    ok &= cad_geom_model::openems_mur_absorbing_boundary_coeff(0.0, 1e-12, 1e-3).is_none();
+    ok &= cad_geom_model::openems_mesh_nyquist_cell_size_m(1e9, 0.5, 10).is_none();
+    ok &= cad_geom_model::svg_path_arc_bounding_box((0.0, 0.0), 0.0).is_none();
+    ok &= cad_geom_model::remotion_spring_damping_ratio(0.0, 100.0, 10.0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -478,6 +494,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_comm_phy_bus(), "【實體層總線MIPI與RGMII抽查失敗】存在除零溢出或無效速率", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_radar_biomed_dsp(), "【雷達生醫與FMCW測距抽查失敗】存在除零溢出或無效頻寬", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

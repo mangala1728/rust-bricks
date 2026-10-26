@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 276
+total_functions: 286
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -296,6 +296,71 @@ modules:
         outputs: 2
         domains:
           adv_len: "[1..255]"
+  - module: "cad_geom_model"
+    file: "src/cad_geom_model.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: cad/geom_model — KiCAD PCB DFM 製程校驗、IPC-2152 走線溫升、FreeCAD 幾何實體計算、OpenEMS 網格與 Mur 吸收邊界微積木。"
+      - "Inputs: 鑽孔徑、焊盤直徑、走線截面積 (mils²)、電流 (A)、圓角半徑、3D 包圍盒、網格頻率 (Hz) 與介電常數。"
+      - "Outputs: 焊盤環寬 (Annular Ring)、溫升 (°C)、弦長、體積、3D 包含判定、Mur 邊界係數、FDTD 網格步長 (m)。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、無溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "kicad_via_annular_ring_width_mm"
+        signature: "pub fn kicad_via_annular_ring_width_mm(drill_mm: f64, pad_diameter_mm: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          drill_mm: "[0.1..20.0]"
+          pad_diameter_mm: "[0.2..30.0]"
+      - name: "kicad_trace_clearance_violation"
+        signature: "pub fn kicad_trace_clearance_violation("
+        outputs: 1
+        domains:
+          min_clearance_mm: "[0.01..50.0]"
+      - name: "ipc2152_trace_temp_rise_celsius"
+        signature: "pub fn ipc2152_trace_temp_rise_celsius("
+        outputs: 1
+        domains:
+          current_amps: "[0.01..50.0]"
+          area_mils_sq: "[1.0..10000.0]"
+      - name: "freecad_fillet_chord_length_mm"
+        signature: "pub fn freecad_fillet_chord_length_mm(radius_mm: f64, angle_deg: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          radius_mm: "[0.1..10000.0]"
+          angle_deg: "[0.1..360.0]"
+      - name: "freecad_extrude_cylinder_volume_mm3"
+        signature: "pub fn freecad_extrude_cylinder_volume_mm3(radius_mm: f64, height_mm: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          radius_mm: "[0.01..10000.0]"
+          height_mm: "[0.01..10000.0]"
+      - name: "freecad_bounding_box_3d_containment"
+        signature: "pub fn freecad_bounding_box_3d_containment("
+        outputs: 1
+      - name: "openems_mur_absorbing_boundary_coeff"
+        signature: "pub fn openems_mur_absorbing_boundary_coeff(c_m_s: f64, dt_s: f64, dx_m: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          c_m_s: "[1.0e6..3.0e8]"
+          dt_s: "[1.0e-15..1.0e-6]"
+          dx_m: "[1.0e-6..1.0]"
+      - name: "openems_mesh_nyquist_cell_size_m"
+        signature: "pub fn openems_mesh_nyquist_cell_size_m("
+        outputs: 1
+        domains:
+          max_freq_hz: "[1.0e6..100.0e9]"
+          eps_r: "[1.0..100.0]"
+          cells_per_wavelength: "[5..100]"
+      - name: "svg_path_arc_bounding_box"
+        signature: "pub fn svg_path_arc_bounding_box("
+        outputs: 2
+        domains:
+          radius: "[0.01..10000.0]"
+      - name: "remotion_spring_damping_ratio"
+        signature: "pub fn remotion_spring_damping_ratio(mass: f64, stiffness: f64, damping: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          scale: "[0.001..1000.0]"
   - module: "can_bus_frame"
     file: "src/can_bus_frame.rs"
     functions_count: 6

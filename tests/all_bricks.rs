@@ -1947,3 +1947,51 @@ fn test_instrument_industrial_bricks() {
     let f_step = instrument_industrial::litevna_frequency_sweep_step(50_000, 900_000_000, 101, 50).unwrap();
     assert_eq!(f_step, 50_000 + (900_000_000 - 50_000) / 2);
 }
+
+#[test]
+fn test_cad_geom_model_bricks() {
+    use rust_bricks::cad_geom_model;
+
+    // 1. KiCAD 焊盤孔環寬度 (Annular Ring)
+    let ring = cad_geom_model::kicad_via_annular_ring_width_mm(0.3, 0.6).unwrap();
+    assert!((ring - 0.15).abs() < 1e-4);
+
+    // 2. KiCAD 走線間距違規判定 (DRC Clearance)
+    assert!(cad_geom_model::kicad_trace_clearance_violation((0.0, 0.0), (0.1, 0.0), 0.2));
+    assert!(!cad_geom_model::kicad_trace_clearance_violation((0.0, 0.0), (1.0, 0.0), 0.2));
+
+    // 3. IPC-2152 走線溫升解算
+    let delta_t = cad_geom_model::ipc2152_trace_temp_rise_celsius(2.0, 100.0, false).unwrap();
+    assert!(delta_t > 0.0 && delta_t.is_finite());
+
+    // 4. FreeCAD 圓角弦長
+    let chord = cad_geom_model::freecad_fillet_chord_length_mm(10.0, 60.0).unwrap();
+    assert!((chord - 10.0).abs() < 1e-4); // 60度等邊三角形弦長 = 半徑
+
+    // 5. FreeCAD 柱體拉伸體積
+    let vol = cad_geom_model::freecad_extrude_cylinder_volume_mm3(2.0, 10.0).unwrap();
+    assert!((vol - 40.0 * std::f64::consts::PI).abs() < 1e-3);
+
+    // 6. FreeCAD 3D AABB 空間包含判定
+    let min_pt = (0.0, 0.0, 0.0);
+    let max_pt = (10.0, 10.0, 10.0);
+    assert!(cad_geom_model::freecad_bounding_box_3d_containment(min_pt, max_pt, (5.0, 5.0, 5.0)));
+    assert!(!cad_geom_model::freecad_bounding_box_3d_containment(min_pt, max_pt, (15.0, 5.0, 5.0)));
+
+    // 7. OpenEMS Mur 吸收邊界係數
+    let mur = cad_geom_model::openems_mur_absorbing_boundary_coeff(3.0e8, 1.0e-12, 1.0e-3).unwrap();
+    assert!(mur < 0.0 && mur.is_finite());
+
+    // 8. OpenEMS 奈奎斯特網格步長
+    let cell_sz = cad_geom_model::openems_mesh_nyquist_cell_size_m(1.0e9, 4.0, 10).unwrap();
+    assert!((cell_sz - (0.3 / 2.0 / 10.0)).abs() < 1e-4);
+
+    // 9. SVG 圓弧邊界包圍盒
+    let (arc_min, arc_max) = cad_geom_model::svg_path_arc_bounding_box((100.0, 100.0), 50.0).unwrap();
+    assert_eq!(arc_min, (50.0, 50.0));
+    assert_eq!(arc_max, (150.0, 150.0));
+
+    // 10. Remotion 彈簧阻尼比
+    let zeta = cad_geom_model::remotion_spring_damping_ratio(1.0, 100.0, 20.0).unwrap();
+    assert!((zeta - 1.0).abs() < 1e-4); // 臨界阻尼
+}
