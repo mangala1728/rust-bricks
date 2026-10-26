@@ -2539,7 +2539,7 @@
       "functions": [
         {
           "name": "radar_hadamard_cdma_code",
-          "signature": "pub fn radar_hadamard_cdma_code(tx_index: usize, code_len: usize) -> Option<i8>",
+          "signature": "pub fn radar_hadamard_cdma_code(tx_index: usize, chip_index: usize, code_len: usize) -> Option<i8>",
           "outputs": 1
         },
         {
