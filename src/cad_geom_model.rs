@@ -144,7 +144,7 @@ pub fn svg_path_arc_bounding_box(
 }
 
 /// @outputs: 1
-/// @domain: scale [0.001..1000.0]
+/// @domain: mass > 0.0 && stiffness > 0.0 && damping >= 0.0
 pub fn remotion_spring_damping_ratio(mass: f64, stiffness: f64, damping: f64) -> Option<f64> {
     if mass <= 0.0 || stiffness <= 0.0 || damping < 0.0
         || !mass.is_finite() || !stiffness.is_finite() || !damping.is_finite() {

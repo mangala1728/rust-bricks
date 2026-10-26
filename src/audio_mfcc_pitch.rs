@@ -55,7 +55,7 @@ pub fn audio_dct_type2_step(energies: &[f32], k_coeff: usize, total_coeffs: usiz
     for (n, &e) in energies.iter().enumerate() {
         if e.is_nan() { continue; }
         let angle = factor * ((n as f32) + 0.5);
-        let cos_val = fast_cos_approx(angle);
+        let cos_val = angle.cos();
         sum += e * cos_val;
     }
     Some(sum)
@@ -216,8 +216,4 @@ fn fast_exp_f32(x: f32) -> f32 {
     x.clamp(-80.0, 80.0).exp()
 }
 
-/// 內部餘弦
-/// @outputs: 1
-fn fast_cos_approx(rad: f32) -> f32 {
-    rad.cos()
-}
+

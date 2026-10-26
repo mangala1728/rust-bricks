@@ -46,13 +46,13 @@ pub fn robotics_quaternion_slerp_step(q1: [f64; 4], mut q2: [f64; 4], t: f64) ->
         return robotics_quaternion_normalize(q_res).unwrap_or(q1);
     }
     // theta = acos(dot)
-    let theta = fast_acos_approx(dot.clamp(-1.0, 1.0));
+    let theta = dot.clamp(-1.0, 1.0).acos();
     let sin_theta = (1.0 - dot * dot).max(0.0).sqrt();
     if sin_theta < 1e-6 {
         return q1;
     }
-    let s1 = fast_sin_approx((1.0 - t) * theta) / sin_theta;
-    let s2 = fast_sin_approx(t * theta) / sin_theta;
+    let s1 = ((1.0 - t) * theta).sin() / sin_theta;
+    let s2 = (t * theta).sin() / sin_theta;
     [
         s1 * q1[0] + s2 * q2[0],
         s1 * q1[1] + s2 * q2[1],
@@ -72,8 +72,8 @@ pub fn robotics_axis_angle_to_matrix(axis: [f64; 3], angle_rad: f64) -> [f64; 9]
     let kx = axis[0] / norm;
     let ky = axis[1] / norm;
     let kz = axis[2] / norm;
-    let c = fast_cos_approx(angle_rad);
-    let s = fast_sin_approx(angle_rad);
+    let c = angle_rad.cos();
+    let s = angle_rad.sin();
     let v = 1.0 - c;
 
     [
@@ -88,11 +88,11 @@ pub fn robotics_axis_angle_to_matrix(axis: [f64; 3], angle_rad: f64) -> [f64; 9]
 pub fn robotics_matrix_to_axis_angle(rot: &[f64; 9]) -> Option<([f64; 3], f64)> {
     let tr = rot[0] + rot[4] + rot[8];
     let cos_theta = ((tr - 1.0) * 0.5).clamp(-1.0, 1.0);
-    let theta = fast_acos_approx(cos_theta);
+    let theta = cos_theta.clamp(-1.0, 1.0).acos();
     if theta.abs() < 1e-6 {
         return Some(([0.0, 0.0, 1.0], 0.0));
     }
-    let denom = 2.0 * fast_sin_approx(theta);
+    let denom = 2.0 * theta.sin();
     if denom.abs() < 1e-6 {
         // 接近 180 度奇異點（保留軸向符號）
         return Some((axis_at_pi(rot), theta));
@@ -141,7 +141,7 @@ pub fn robotics_gravity_load_torque(mass_kg: f64, link_cm_dist_m: f64, theta_rad
         return 0.0;
     }
     let g = 9.80665f64;
-    mass_kg * g * link_cm_dist_m * fast_cos_approx(theta_rad)
+    mass_kg * g * link_cm_dist_m * theta_rad.cos()
 }
 
 /// ## Map: 笛卡爾三維空間歐氏幾何距離
@@ -181,23 +181,7 @@ pub fn robotics_cartesian_linear_blend(p0: [f64; 3], p1: [f64; 3], alpha: f64) -
 // 內部三角函式改用 std（屬標準庫，不違反零依賴）：原多項式近似 acos(1) 得 0.404、cos(π) 得 -1.211，
 // 導致 SLERP 非單位四元數、旋轉矩陣不正交 (INC-20261026-06)
 
-/// 內部正弦
-/// @outputs: 1
-fn fast_sin_approx(x: f64) -> f64 {
-    x.sin()
-}
 
-/// 內部餘弦
-/// @outputs: 1
-fn fast_cos_approx(x: f64) -> f64 {
-    x.cos()
-}
-
-/// 內部反餘弦（輸入夾止至 [-1, 1]）
-/// @outputs: 1
-fn fast_acos_approx(x: f64) -> f64 {
-    x.clamp(-1.0, 1.0).acos()
-}
 
 /// 內部 180° 奇異點旋轉軸還原：R = 2kk^T - I，取最大對角分量為正並由非對角項決定其餘符號
 /// @outputs: 1

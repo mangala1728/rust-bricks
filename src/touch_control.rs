@@ -125,12 +125,17 @@ pub fn gesture_tap_state_machine(
             }
         }
         2 => {
-            if is_down {
-                (3, 0)
-            } else if elapsed_ms > double_tap_window_ms {
-                (0, 1) // Single tap confirmed
+            // 必須先檢查雙擊視窗是否逾時，避免逾時後之新按壓仍被誤判為雙擊 (INC-20261026)
+            if elapsed_ms > double_tap_window_ms {
+                if is_down {
+                    (1, 1) // 逾時：結算前次單擊事件，並將本次新按壓轉入 DOWN 態
+                } else {
+                    (0, 1) // 逾時：結算前次單擊事件
+                }
+            } else if is_down {
+                (3, 0) // 雙擊視窗內再次按下，轉入 DOUBLE_DOWN
             } else {
-                (2, 0)
+                (2, 0) // 視窗內持續等待
             }
         }
         3 => {

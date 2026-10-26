@@ -379,10 +379,14 @@ fn test_touch_control_bricks() {
     assert_eq!(rust_bricks::touch_control::pressure_touch_level(0.05, 0.2, 0.8, 0), 0);
     assert_eq!(rust_bricks::touch_control::pressure_touch_level(0.9, 0.2, 0.8, 0), 2);
 
-    // 手勢狀態機（單擊與雙擊）
+    // 手勢狀態機（單擊、逾時結算與雙擊）
     let (s1, ev1) = rust_bricks::touch_control::gesture_tap_state_machine(0, true, 0, 300, 250);
     assert_eq!(s1, 1);
     assert_eq!(ev1, 0);
+    // 處於等待雙擊態 (state=2)，若已超過 window (300 > 250)，此時再次按下必須結算單擊事件
+    let (s_to, ev_to) = rust_bricks::touch_control::gesture_tap_state_machine(2, true, 300, 300, 250);
+    assert_eq!(s_to, 1); // 轉為新的一擊
+    assert_eq!(ev_to, 1); // 結算前次單擊事件 (SINGLE_TAP)
 }
 
 #[test]
