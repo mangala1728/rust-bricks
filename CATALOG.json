@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 357,
+  "total_functions": 367,
   "modules": [
     {
       "module": "agent_terminal",
@@ -256,6 +256,63 @@
         {
           "name": "agc_apply_gain_pcm16",
           "signature": "pub fn agc_apply_gain_pcm16(samples: &mut [i16], target_dbfs: f32, max_gain: f32)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "audio_mfcc_pitch",
+      "file": "src/audio_mfcc_pitch.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "audio_hz_to_mel",
+          "signature": "pub fn audio_hz_to_mel(hz: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_mel_to_hz",
+          "signature": "pub fn audio_mel_to_hz(mel: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_mel_filterbank_weights",
+          "signature": "pub fn audio_mel_filterbank_weights(center_mel: f32, left_mel: f32, right_mel: f32, sample_mel: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_dct_type2_step",
+          "signature": "pub fn audio_dct_type2_step(energies: &[f32], k_coeff: usize, total_coeffs: usize) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "audio_autocorrelation_pitch_hz",
+          "signature": "pub fn audio_autocorrelation_pitch_hz(",
+          "outputs": 1
+        },
+        {
+          "name": "audio_yin_difference_step",
+          "signature": "pub fn audio_yin_difference_step(pcm: &[i16], tau: usize, window_len: usize) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "audio_yin_cumulative_mean_normalized_difference",
+          "signature": "pub fn audio_yin_cumulative_mean_normalized_difference(d_tau: f32, sum_d: f32, tau: usize) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_drc_compressor_gain_db",
+          "signature": "pub fn audio_drc_compressor_gain_db(input_db: f32, threshold_db: f32, ratio: f32, knee_width_db: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "audio_pre_emphasis_filter_step",
+          "signature": "pub fn audio_pre_emphasis_filter_step(curr_sample: i16, prev_sample: i16, alpha_q15: i16) -> i16",
+          "outputs": 1
+        },
+        {
+          "name": "audio_spectral_flatness_measure",
+          "signature": "pub fn audio_spectral_flatness_measure(power_spectrum: &[f32]) -> Option<f32>",
           "outputs": 1
         }
       ]

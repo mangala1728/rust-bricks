@@ -2392,3 +2392,53 @@ fn test_vision_morphology_fast_bricks() {
     assert_eq!(v, 255);
     assert!(vision_morphology_fast::vision_color_hsv_in_range(h, s, v, 100, 140, 200, 200));
 }
+
+#[test]
+fn test_audio_mfcc_pitch_bricks() {
+    use rust_bricks::audio_mfcc_pitch;
+
+    // 1. Hz 與 Mel 刻度互轉 (1000 Hz 大約對應 1000 Mel)
+    let mel = audio_mfcc_pitch::audio_hz_to_mel(1000.0);
+    assert!((mel - 999.98).abs() < 50.0);
+    let hz = audio_mfcc_pitch::audio_mel_to_hz(mel);
+    assert!((hz - 1000.0).abs() < 50.0);
+
+    // 2. 三角梅爾濾波器組權重
+    let w_center = audio_mfcc_pitch::audio_mel_filterbank_weights(100.0, 50.0, 150.0, 100.0);
+    assert_eq!(w_center, 1.0);
+    let w_outside = audio_mfcc_pitch::audio_mel_filterbank_weights(100.0, 50.0, 150.0, 40.0);
+    assert_eq!(w_outside, 0.0);
+
+    // 3. DCT-II 倒頻譜係數求解
+    let energies = [1.0f32, 2.0, 3.0, 4.0];
+    let c0 = audio_mfcc_pitch::audio_dct_type2_step(&energies, 0, 4).unwrap();
+    assert!((c0 - 10.0).abs() < 0.2); // k=0 時近似等於總能量和
+
+    // 4. 自相關法基頻檢測 (構造 100 Hz 正弦波，採樣率 8000 Hz -> 週期 80 samples)
+    let mut pcm = [0i16; 320];
+    for (i, sample) in pcm.iter_mut().enumerate() {
+        let phase = ((i % 80) as f32) * (2.0 * 3.14159 / 80.0);
+        *sample = (phase.sin() * 10000.0) as i16;
+    }
+    let pitch = audio_mfcc_pitch::audio_autocorrelation_pitch_hz(&pcm, 8000, 50.0, 200.0).unwrap();
+    assert!((pitch - 100.0).abs() < 5.0);
+
+    // 5. YIN 差分與歸一化
+    let d_tau = audio_mfcc_pitch::audio_yin_difference_step(&pcm, 80, 100).unwrap();
+    assert!(d_tau < 1e6); // 週期延遲處差分極小
+    let cmnd = audio_mfcc_pitch::audio_yin_cumulative_mean_normalized_difference(d_tau, 1e7, 80);
+    assert!(cmnd < 1.0);
+
+    // 6. DRC 軟拐點壓縮增益 (輸入 -5 dB，門檻 -20 dB，ratio 4 -> 被大幅壓縮)
+    let out_db = audio_mfcc_pitch::audio_drc_compressor_gain_db(-5.0, -20.0, 4.0, 6.0);
+    assert!(out_db < -5.0 && out_db > -20.0);
+
+    // 7. Q15 預加重濾波器
+    let filtered = audio_mfcc_pitch::audio_pre_emphasis_filter_step(1000, 1000, 31130); // ~0.95 in Q15
+    assert!(filtered < 100); // 直流偏置大幅衰減
+
+    // 8. 頻譜平坦度 (SFM)
+    let flat_spec = [10.0f32, 10.0, 10.0, 10.0];
+    let sfm_white = audio_mfcc_pitch::audio_spectral_flatness_measure(&flat_spec).unwrap();
+    assert!((sfm_white - 1.0).abs() < 0.1); // 白噪聲 SFM ~ 1.0
+}

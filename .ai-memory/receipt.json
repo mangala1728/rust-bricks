@@ -2,5 +2,5 @@
   "schema": "agy-arbitration-receipt-v1",
   "model": "kev-4b",
   "verdict": "PASS",
-  "diff_sha256": "6424d22a6ff80f936409c27f219b3c103f5dfb53117c1e206ef3da8f0435d220"
+  "diff_sha256": "e9bb085447c6a5b661706bffe50454076598ee937c053bad7676f94e0a5f08ff"
 }

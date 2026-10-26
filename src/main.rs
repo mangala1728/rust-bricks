@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -384,6 +384,17 @@ fn verify_vision_morphology_fast() -> bool {
 }
 
 /// @outputs: 1
+fn verify_audio_mfcc_pitch() -> bool {
+    let mel = audio_mfcc_pitch::audio_hz_to_mel(1000.0);
+    let ok_mel = (mel - 999.98).abs() < 50.0;
+    let hz = audio_mfcc_pitch::audio_mel_to_hz(mel);
+    let ok_hz = (hz - 1000.0).abs() < 50.0;
+    let w = audio_mfcc_pitch::audio_mel_filterbank_weights(100.0, 50.0, 150.0, 100.0);
+    let ok_w = (w - 1.0).abs() < 1e-4;
+    ok_mel && ok_hz && ok_w
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -418,6 +429,7 @@ fn verify_all_subsystems() -> bool {
         && verify_iot_wire_protocol()
         && verify_radar_aoa_mti()
         && verify_vision_morphology_fast()
+        && verify_audio_mfcc_pitch()
 }
 
 /// @outputs: 1

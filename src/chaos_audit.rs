@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -581,6 +581,22 @@ fn audit_vision_morphology_fast() -> bool {
 }
 
 /// @outputs: 1
+fn audit_audio_mfcc_pitch() -> bool {
+    let mut ok = true;
+    ok &= (audio_mfcc_pitch::audio_hz_to_mel(f32::NAN) - 0.0).abs() < 1e-6;
+    ok &= (audio_mfcc_pitch::audio_mel_to_hz(f32::NAN) - 0.0).abs() < 1e-6;
+    ok &= (audio_mfcc_pitch::audio_mel_filterbank_weights(100.0, 50.0, 150.0, f32::NAN) - 0.0).abs() < 1e-6;
+    ok &= audio_mfcc_pitch::audio_dct_type2_step(&[], 0, 10).is_none();
+    ok &= audio_mfcc_pitch::audio_autocorrelation_pitch_hz(&[0; 10], 1000, 50.0, 500.0).is_none(); // 採樣率超界
+    ok &= audio_mfcc_pitch::audio_yin_difference_step(&[0; 5], 10, 5).is_none(); // 越界
+    ok &= (audio_mfcc_pitch::audio_yin_cumulative_mean_normalized_difference(10.0, 0.0, 1) - 1.0).abs() < 1e-6; // 除零歸一
+    ok &= (audio_mfcc_pitch::audio_drc_compressor_gain_db(-20.0, -10.0, 0.5, 5.0) - (-20.0)).abs() < 1e-6; // 比率無效
+    ok &= audio_mfcc_pitch::audio_pre_emphasis_filter_step(0, 0, 0) == 0;
+    ok &= audio_mfcc_pitch::audio_spectral_flatness_measure(&[]).is_none(); // 空頻譜
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -634,6 +650,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

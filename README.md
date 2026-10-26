@@ -37,6 +37,7 @@
 | [`math_time`](src/math_time.rs) | 高精度數值夾止、滑動均線、儒略日曆法轉換、占星大限 (Dasha) 比例運算、XorShift64 | 股市量化、時間序列平滑、極速亂數生成 |
 | [`audio_vad`](src/audio_vad.rs) | PCM16 音訊取樣點能量 (RMS) 計算、靜音幀判定、CPS 字幕字速審查 | 語音活動檢測 (VAD)、即時翻譯 App、多模態字幕對齊 |
 | [`audio_dsp`](src/audio_dsp.rs) | 聲學功率、dBFS 能量、零交越率、Butterworth 高通濾波、語音預加重、軟削峰防破音 | 麥克風音訊前處理、即時降噪前置濾波、音訊串流 |
+| [`audio_mfcc_pitch`](src/audio_mfcc_pitch.rs) | Hz 與 Mel 刻度互轉、三角梅爾濾波器組權重、DCT-II 倒頻譜係數 (MFCC)、自相關基頻 (Pitch / F0) 估算、YIN 演算法平方差分與 CMND 歸一化、DRC 軟拐點動態壓縮、Q15 預加重、頻譜平坦度 (SFM) | 語音辨識聲學特徵提取 (ASR)、說話人識別、音高偵測、動態範圍壓縮增益控制、濁音/噪聲分類 |
 | [`audio_wav`](src/audio_wav.rs) | 零依賴 16-bit PCM WAV 檔頭解析與二進位編碼 | 音訊錄音檔存檔、跨平台 WAV 串流解析 |
 | [`ring_buffer`](src/ring_buffer.rs) | 純記憶體無鎖固定容量 PCM16 環形緩衝區、批次讀寫、溢出守衛 | 手機麥克風串流 (Oboe/AudioRecord)、感測器事件佇列、消滅 GC 停頓 |
 | [`sensor_motion`](src/sensor_motion.rs) | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 | 手機小遊戲體感控制、防手震、GPS 經緯度去噪與定位 |
