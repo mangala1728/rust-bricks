@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 327
+total_functions: 337
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1044,6 +1044,50 @@ modules:
         outputs: 2
         domains:
           sample_rate: "[1.0..10000000000.0]"
+  - module: "iot_wire_protocol"
+    file: "src/iot_wire_protocol.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "mqtt_remaining_length_encode"
+        signature: "pub fn mqtt_remaining_length_encode(length: u32, out_buf: &mut [u8]) -> usize"
+        outputs: 1
+        domains:
+          length: "[0, 268435455]"
+      - name: "mqtt_remaining_length_decode"
+        signature: "pub fn mqtt_remaining_length_decode(buf: &[u8]) -> Option<(u32, usize)>"
+        outputs: 1
+      - name: "mqtt_publish_header_pack"
+        signature: "pub fn mqtt_publish_header_pack(dup: bool, qos: u8, retain: bool, out_byte: &mut u8) -> bool"
+        outputs: 1
+        domains:
+          qos: "[0, 2]"
+      - name: "coap_header_pack"
+        signature: "pub fn coap_header_pack(type_field: u8, code: u8, message_id: u16, out_buf: &mut [u8; 4]) -> bool"
+        outputs: 1
+        domains:
+          type_field: "[0, 3]"
+          code: "[0, 255]"
+      - name: "coap_option_delta_encode"
+        signature: "pub fn coap_option_delta_encode(prev_opt_num: u16, curr_opt_num: u16, opt_len: usize, out_buf: &mut [u8]) -> usize"
+        outputs: 1
+      - name: "lorawan_mhdr_unpack"
+        signature: "pub fn lorawan_mhdr_unpack(mhdr_byte: u8) -> (u8, u8)"
+        outputs: 1
+      - name: "lorawan_frame_counter_unroll"
+        signature: "pub fn lorawan_frame_counter_unroll(short_fcnt16: u16, last_fcnt32: u32) -> u32"
+        outputs: 1
+      - name: "modbus_fc10_request_pack"
+        signature: "pub fn modbus_fc10_request_pack(unit_id: u8, start_addr: u16, reg_values: &[u16], out_buf: &mut [u8]) -> usize"
+        outputs: 1
+        domains:
+          unit_id: "[0, 247]"
+      - name: "slip_encode_packet"
+        signature: "pub fn slip_encode_packet(data: &[u8], out_buf: &mut [u8]) -> usize"
+        outputs: 1
+      - name: "slip_decode_packet"
+        signature: "pub fn slip_decode_packet(slip_frame: &[u8], out_buf: &mut [u8]) -> Option<usize>"
+        outputs: 1
   - module: "iso7816_smartcard"
     file: "src/iso7816_smartcard.rs"
     functions_count: 6

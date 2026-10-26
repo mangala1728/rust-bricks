@@ -37,6 +37,7 @@ pub mod geo_collision;
 pub mod guard;
 pub mod instrument_industrial;
 pub mod instrument_scpi_vna;
+pub mod iot_wire_protocol;
 pub mod iso7816_smartcard;
 pub mod math_time;
 pub mod motion_dead_reckon;

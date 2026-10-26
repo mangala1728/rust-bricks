@@ -8,7 +8,7 @@ use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
-    iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
+    iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
@@ -348,6 +348,21 @@ fn verify_ai_tensor_gemm() -> bool {
 }
 
 /// @outputs: 1
+fn verify_iot_wire_protocol() -> bool {
+    let mut mqtt_buf = [0u8; 4];
+    let enc_len = iot_wire_protocol::mqtt_remaining_length_encode(321, &mut mqtt_buf);
+    let ok_mqtt = enc_len == 2 && iot_wire_protocol::mqtt_remaining_length_decode(&mqtt_buf) == Some((321, 2));
+    let mut coap_hdr = [0u8; 4];
+    let ok_coap = iot_wire_protocol::coap_header_pack(0, 1, 0x1234, &mut coap_hdr) && coap_hdr[2] == 0x12 && coap_hdr[3] == 0x34;
+    let mut slip_buf = [0u8; 10];
+    let slip_len = iot_wire_protocol::slip_encode_packet(&[0xC0, 0x01], &mut slip_buf);
+    let mut dec_buf = [0u8; 10];
+    let dec_len = iot_wire_protocol::slip_decode_packet(&slip_buf[..slip_len], &mut dec_buf);
+    let ok_slip = dec_len == Some(2) && dec_buf[0] == 0xC0 && dec_buf[1] == 0x01;
+    ok_mqtt && ok_coap && ok_slip
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -379,6 +394,7 @@ fn verify_all_subsystems() -> bool {
         && verify_quant_finance_market()
         && verify_robotics_motion_profile()
         && verify_ai_tensor_gemm()
+        && verify_iot_wire_protocol()
 }
 
 /// @outputs: 1

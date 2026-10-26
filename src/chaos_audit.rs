@@ -8,7 +8,7 @@ use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
-    iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
+    iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
@@ -521,6 +521,29 @@ fn audit_ai_tensor_gemm() -> bool {
 }
 
 /// @outputs: 1
+fn audit_iot_wire_protocol() -> bool {
+    let mut ok = true;
+    let mut mqtt_buf = [0u8; 2];
+    ok &= iot_wire_protocol::mqtt_remaining_length_encode(300_000_000, &mut mqtt_buf) == 0;
+    ok &= iot_wire_protocol::mqtt_remaining_length_decode(&[]).is_none();
+    let mut p_hdr = 0u8;
+    ok &= !iot_wire_protocol::mqtt_publish_header_pack(false, 3, false, &mut p_hdr);
+    let mut coap_hdr = [0u8; 4];
+    ok &= !iot_wire_protocol::coap_header_pack(5, 0, 0, &mut coap_hdr);
+    let mut coap_opt = [0u8; 4];
+    ok &= iot_wire_protocol::coap_option_delta_encode(10, 5, 1, &mut coap_opt) == 0;
+    let (mtype, major) = iot_wire_protocol::lorawan_mhdr_unpack(0xFF);
+    ok &= mtype == 7 && major == 3;
+    ok &= iot_wire_protocol::lorawan_frame_counter_unroll(0, 0x8000) == 0x8000;
+    let mut modbus_buf = [0u8; 10];
+    ok &= iot_wire_protocol::modbus_fc10_request_pack(250, 0, &[1, 2], &mut modbus_buf) == 0;
+    let mut slip_buf = [0u8; 4];
+    ok &= iot_wire_protocol::slip_encode_packet(&[1, 2, 3, 4, 5], &mut slip_buf) == 0;
+    ok &= iot_wire_protocol::slip_decode_packet(&[0xDB], &mut slip_buf).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -571,6 +594,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

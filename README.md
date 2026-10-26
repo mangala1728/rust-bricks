@@ -56,6 +56,7 @@
 | [`fast_math`](src/fast_math.rs) | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep | 邊緣手遊物理引擎、粒子光照著色、UI 動畫平滑過渡 |
 | [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
 | [`instrument_industrial`](src/instrument_industrial.rs) | SCPI 科學計數法零拷貝解析、六位半電表量程指令構建、CANopen SDO 加速下載/心跳訊框、Modbus ASCII LRC/RTU 訊框構建、雙暫存器轉 Float32、DSLogic 深度換算、LiteVNA 步進頻率 | 工廠自動化 (PLC/CANopen/Modbus)、Keysight 34461A / Siglent SDM3065X 六位半電表、DSLogic 邏輯分析儀、LiteVNA 向量網絡分析儀 |
+| [`iot_wire_protocol`](src/iot_wire_protocol.rs) | MQTT 3.1.1/5.0 變長整數 (Variable Byte Integer) 編解碼、PUBLISH 固定頭標誌打包、RFC 7252 CoAP 4-byte 固定頭封裝與 Option 增量壓縮、LoRaWAN MHDR 解碼與 16-bit 訊框計數器解纏繞、Modbus FC 0x10 封裝、RFC 1055 SLIP 串列封裝與轉義還原 | 物聯網雲端對接 (MQTT/CoAP)、遠距離低功耗廣域網 (LoRaWAN)、工控 PLC 多暫存器寫入 (Modbus)、串列通訊網路封裝 (SLIP) |
 | [`instrument_scpi_vna`](src/instrument_scpi_vna.rs) | SCPI 儀器指令解析、六位半電表讀值統計、VNA S11 反射係數與 Smith 圓圖阻抗解算、VSWR/回波損耗、示波器過零頻率 | 實驗室儀器自動化 (Keysight/Siglent)、向量網絡分析儀 (LiteVNA)、示波器/六位半電表邊緣控制 |
 | [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
 | [`cad_geom_model`](src/cad_geom_model.rs) | KiCAD 焊盤孔環寬度 (Annular Ring)、走線間距 (DRC Clearance) 違規校驗、IPC-2152 走線溫升、FreeCAD 圓角弦長/拉伸柱體體積/3D 包圍盒包含、OpenEMS Mur 吸收邊界係數與奈奎斯特網格步長、Remotion 彈簧阻尼比 | PCB 電路板製造驗證 (KiCAD)、開源機構 CAD (FreeCAD)、電磁仿真 (OpenEMS)、網頁影音動態渲染 (Remotion) |

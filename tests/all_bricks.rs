@@ -2229,3 +2229,64 @@ fn test_ai_tensor_gemm_bricks() {
     assert!(ai_tensor_gemm::one_hot_encode_u8(2, 4, &mut oh));
     assert_eq!(oh, [0, 0, 1, 0]);
 }
+
+#[test]
+fn test_iot_wire_protocol_bricks() {
+    use rust_bricks::iot_wire_protocol;
+
+    // 1. MQTT 剩餘長度編碼與解碼 (測試單字節 64 與雙字節 321)
+    let mut buf = [0u8; 4];
+    let n1 = iot_wire_protocol::mqtt_remaining_length_encode(64, &mut buf);
+    assert_eq!(n1, 1);
+    assert_eq!(buf[0], 64);
+    assert_eq!(iot_wire_protocol::mqtt_remaining_length_decode(&buf[..n1]), Some((64, 1)));
+
+    let n2 = iot_wire_protocol::mqtt_remaining_length_encode(321, &mut buf);
+    assert_eq!(n2, 2);
+    assert_eq!(iot_wire_protocol::mqtt_remaining_length_decode(&buf[..n2]), Some((321, 2)));
+
+    // 2. MQTT PUBLISH 固定頭打包 (DUP=true, QoS=1, RETAIN=false -> 0x30 | 0x08 | 0x02 = 0x3A)
+    let mut p_hdr = 0u8;
+    assert!(iot_wire_protocol::mqtt_publish_header_pack(true, 1, false, &mut p_hdr));
+    assert_eq!(p_hdr, 0x3A);
+
+    // 3. CoAP 固定頭打包 (Type=CON (0), Code=0x01 (GET), MsgID=0xABCD)
+    let mut coap_hdr = [0u8; 4];
+    assert!(iot_wire_protocol::coap_header_pack(0, 0x01, 0xABCD, &mut coap_hdr));
+    assert_eq!(coap_hdr, [0x40, 0x01, 0xAB, 0xCD]);
+
+    // 4. CoAP Option 增量編碼 (Delta=11, Len=3)
+    let mut opt_buf = [0u8; 4];
+    let opt_bytes = iot_wire_protocol::coap_option_delta_encode(0, 11, 3, &mut opt_buf);
+    assert_eq!(opt_bytes, 1);
+    assert_eq!(opt_buf[0], 0xB3); // 11 << 4 | 3
+
+    // 5. LoRaWAN MHDR 解碼 (MType=0b100 = 4 (Confirmed Data Up), Major=0)
+    let (mtype, major) = iot_wire_protocol::lorawan_mhdr_unpack(0x80);
+    assert_eq!(mtype, 4);
+    assert_eq!(major, 0);
+
+    // 6. LoRaWAN 16-bit 訊框計數器解纏繞
+    let unrolled = iot_wire_protocol::lorawan_frame_counter_unroll(5, 0x0001_0000);
+    assert_eq!(unrolled, 0x0001_0005);
+
+    // 7. Modbus FC 0x10 封裝
+    let mut mb_buf = [0u8; 32];
+    let mb_len = iot_wire_protocol::modbus_fc10_request_pack(1, 100, &[0x1234, 0x5678], &mut mb_buf);
+    assert_eq!(mb_len, 11);
+    assert_eq!(&mb_buf[..7], &[1, 0x10, 0, 100, 0, 2, 4]);
+    assert_eq!(&mb_buf[7..11], &[0x12, 0x34, 0x56, 0x78]);
+
+    // 8. RFC 1055 SLIP 封裝與解碼
+    let original = [0x01, 0xC0, 0x02, 0xDB, 0x03];
+    let mut slip_enc = [0u8; 32];
+    let enc_sz = iot_wire_protocol::slip_encode_packet(&original, &mut slip_enc);
+    assert!(enc_sz > 0);
+    assert_eq!(slip_enc[0], 0xC0);
+    assert_eq!(slip_enc[enc_sz - 1], 0xC0);
+
+    let mut slip_dec = [0u8; 32];
+    let dec_sz = iot_wire_protocol::slip_decode_packet(&slip_enc[..enc_sz], &mut slip_dec);
+    assert_eq!(dec_sz, Some(original.len()));
+    assert_eq!(&slip_dec[..dec_sz.unwrap()], &original);
+}
