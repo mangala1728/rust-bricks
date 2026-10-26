@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 68,
+  "total_functions": 78,
   "modules": [
     {
       "module": "audio_dsp",
@@ -141,6 +141,55 @@
       ]
     },
     {
+      "module": "fast_math",
+      "file": "src/fast_math.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "fast_inv_sqrt_f32",
+          "signature": "pub fn fast_inv_sqrt_f32(x: f32) -> f32",
+          "outputs": 2
+        },
+        {
+          "name": "isqrt_u64",
+          "signature": "pub fn isqrt_u64(n: u64) -> u64",
+          "outputs": 2
+        },
+        {
+          "name": "lerp_f32",
+          "signature": "pub fn lerp_f32(start: f32, end: f32, t: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "smoothstep_f32",
+          "signature": "pub fn smoothstep_f32(edge0: f32, edge1: f32, x: f32) -> f32",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "geo_collision",
+      "file": "src/geo_collision.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "bounding_box_overlap",
+          "signature": "pub fn bounding_box_overlap(",
+          "outputs": 2
+        },
+        {
+          "name": "segment_intersection_2d",
+          "signature": "pub fn segment_intersection_2d(",
+          "outputs": 2
+        },
+        {
+          "name": "point_in_polygon_raycast",
+          "signature": "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "math_time",
       "file": "src/math_time.rs",
       "functions_count": 5,
@@ -169,6 +218,28 @@
           "name": "xorshift64_step",
           "signature": "pub fn xorshift64_step(state: u64) -> u64",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "motion_dead_reckon",
+      "file": "src/motion_dead_reckon.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "zupt_zero_velocity_detect",
+          "signature": "pub fn zupt_zero_velocity_detect(",
+          "outputs": 2
+        },
+        {
+          "name": "dead_reckon_1d_step",
+          "signature": "pub fn dead_reckon_1d_step(",
+          "outputs": 1
+        },
+        {
+          "name": "haptic_vibration_timing",
+          "signature": "pub fn haptic_vibration_timing(pattern_id: u8, elapsed_ms: u32) -> bool",
+          "outputs": 2
         }
       ]
     },

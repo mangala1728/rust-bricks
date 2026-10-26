@@ -43,6 +43,9 @@
 | [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
 | [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
 | [`bezier_curve`](src/bezier_curve.rs) | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 | 網頁 Wasm 動態圖表、AI 簡報路徑平滑動畫、粒子幾何軌跡 |
+| [`motion_dead_reckon`](src/motion_dead_reckon.rs) | 手機慣性導航零速更新 (ZUPT)、一維航位推算積分、觸覺震動馬達多模式時序生成 | 手機遊戲體感位移、步態/停頓消除漂移、馬達短震/警示反饋 |
+| [`fast_math`](src/fast_math.rs) | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep | 邊緣手遊物理引擎、粒子光照著色、UI 動畫平滑過渡 |
+| [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 
 ---

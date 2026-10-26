@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 68
+total_functions: 78
 modules:
   - module: "audio_dsp"
     file: "src/audio_dsp.rs"
@@ -143,6 +143,64 @@ modules:
       - name: "xor_stream"
         signature: "pub fn xor_stream(data: &[u8], key: &[u8]) -> Vec<u8>"
         outputs: 1
+  - module: "fast_math"
+    file: "src/fast_math.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/fast_math — 邊緣裝置極速倒數平方根、純整數開方與平滑內插快速數學微積木。"
+      - "Inputs: 浮點數、無號整數、邊界閾值、內插權重 t。"
+      - "Outputs: 快速倒數平方根 (1/sqrt)、整數截斷平方根、線性內插值、Hermite 平滑階躍值。"
+      - "Invariants: 零外部依賴、100% 零 unsafe、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "fast_inv_sqrt_f32"
+        signature: "pub fn fast_inv_sqrt_f32(x: f32) -> f32"
+        outputs: 2
+        domains:
+          x: "[0.000001..1000000.0]"
+      - name: "isqrt_u64"
+        signature: "pub fn isqrt_u64(n: u64) -> u64"
+        outputs: 2
+        domains:
+          n: "[0..18446744073709551615]"
+      - name: "lerp_f32"
+        signature: "pub fn lerp_f32(start: f32, end: f32, t: f32) -> f32"
+        outputs: 1
+        domains:
+          start: "[-1000000.0..1000000.0]"
+          end: "[-1000000.0..1000000.0]"
+          t: "[0.0..1.0]"
+      - name: "smoothstep_f32"
+        signature: "pub fn smoothstep_f32(edge0: f32, edge1: f32, x: f32) -> f32"
+        outputs: 2
+        domains:
+          edge0: "[-10000.0..10000.0]"
+          edge1: "[-10000.0..10000.0]"
+          x: "[-10000.0..10000.0]"
+  - module: "geo_collision"
+    file: "src/geo_collision.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/geo_collision — 手遊虛擬按鍵/點擊命中判定、AABB 碰撞盒與 2D 線段相交幾何微積木。"
+      - "Inputs: 2D 點座標、軸對齊邊界盒 (AABB)、線段端點、凸/凹多邊形頂點序列。"
+      - "Outputs: 碰撞重疊布林值、相交座標點 Option<(f32, f32)>、點在多邊形內外布林值。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、頂點數量上限 <= 100、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "bounding_box_overlap"
+        signature: "pub fn bounding_box_overlap("
+        outputs: 2
+        domains:
+          min_a_x: "[-10000.0..10000.0]"
+      - name: "segment_intersection_2d"
+        signature: "pub fn segment_intersection_2d("
+        outputs: 2
+        domains:
+          p1_x: "[-10000.0..10000.0]"
+      - name: "point_in_polygon_raycast"
+        signature: "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool"
+        outputs: 2
+        domains:
+          px: "[-10000.0..10000.0]"
+          py: "[-10000.0..10000.0]"
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5
@@ -179,6 +237,37 @@ modules:
       - name: "xorshift64_step"
         signature: "pub fn xorshift64_step(state: u64) -> u64"
         outputs: 1
+  - module: "motion_dead_reckon"
+    file: "src/motion_dead_reckon.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/motion_dead_reckon — 手機慣性導航航位推算（Dead Reckoning）、零速更新（ZUPT）與震動馬達時序生成微積木。"
+      - "Inputs: 加速度計模長、陀螺儀角速度模長、時間步長 dt、當前速度與位移、震動模式與時序。"
+      - "Outputs: 靜止狀態布林值、更新後之一維速度與位移、馬達高低電位驅動布林值。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、浮點數防 NaN/Inf 守衛、數值邊界截斷、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "zupt_zero_velocity_detect"
+        signature: "pub fn zupt_zero_velocity_detect("
+        outputs: 2
+        domains:
+          accel_mag: "[0.0..100.0]"
+          gyro_mag: "[0.0..100.0]"
+          accel_threshold: "[0.0..10.0]"
+          gyro_threshold: "[0.0..10.0]"
+      - name: "dead_reckon_1d_step"
+        signature: "pub fn dead_reckon_1d_step("
+        outputs: 1
+        domains:
+          accel: "[-100.0..100.0]"
+          dt: "[0.0..1.0]"
+          current_vel: "[-100.0..100.0]"
+          current_pos: "[-10000.0..10000.0]"
+      - name: "haptic_vibration_timing"
+        signature: "pub fn haptic_vibration_timing(pattern_id: u8, elapsed_ms: u32) -> bool"
+        outputs: 2
+        domains:
+          pattern_id: "[0..3]"
+          elapsed_ms: "[0..10000]"
   - module: "net_telemetry"
     file: "src/net_telemetry.rs"
     functions_count: 4

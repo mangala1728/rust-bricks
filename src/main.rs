@@ -5,8 +5,9 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    audio_vad, bezier_curve, catalog, crypto_vault, guard, math_time, net_telemetry, packet_checksum, ring_buffer,
-    sensor_hardware, sensor_motion, sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
+    audio_vad, bezier_curve, catalog, crypto_vault, fast_math, geo_collision, guard, math_time,
+    motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer, sensor_hardware,
+    sensor_motion, sys_path, text_cleaner, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -26,6 +27,22 @@ fn verify_edge_sensors_and_packets() -> bool {
     let ok_hw = sensor_hardware::flashlight_pwm_duty(1000, 50, 100);
     let ok_net = net_telemetry::is_private_ipv4([192, 168, 1, 1]);
     ok_sensor && ok_vision && ok_chk && ok_rb && ok_touch && ok_feat && ok_bez && ok_hw && ok_net
+}
+
+/// @outputs: 1
+fn verify_new_kinematics_and_math() -> bool {
+    let ok_inv = (fast_math::fast_inv_sqrt_f32(4.0) - 0.5).abs() < 0.01;
+    let ok_isqrt = fast_math::isqrt_u64(144) == 12;
+    let ok_lerp = (fast_math::lerp_f32(10.0, 20.0, 0.5) - 15.0).abs() < 1e-5;
+    let ok_zupt = motion_dead_reckon::zupt_zero_velocity_detect(0.01, 0.02, 0.1, 0.1);
+    let (vel, pos) = motion_dead_reckon::dead_reckon_1d_step(2.0, 1.0, false, 0.0, 0.0);
+    let ok_reckon = (vel - 2.0).abs() < 1e-5 && (pos - 1.0).abs() < 1e-5;
+    let ok_haptic = motion_dead_reckon::haptic_vibration_timing(0, 10);
+    let ok_box = geo_collision::bounding_box_overlap((0.0, 0.0), (10.0, 10.0), (5.0, 5.0), (15.0, 15.0));
+    let ok_seg = geo_collision::segment_intersection_2d((0.0, 0.0), (2.0, 2.0), (0.0, 2.0), (2.0, 0.0)).is_some();
+    let poly = [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)];
+    let ok_poly = geo_collision::point_in_polygon_raycast(2.0, 2.0, &poly);
+    ok_inv && ok_isqrt && ok_lerp && ok_zupt && ok_reckon && ok_haptic && ok_box && ok_seg && ok_poly
 }
 
 /// @outputs: 1
@@ -70,6 +87,12 @@ fn run_selftest() {
         process::exit(1);
     }
     println!("  ✅ edge_sensors_and_packets: PASS");
+
+    if !verify_new_kinematics_and_math() {
+        println!("  ❌ kinematics_and_math: FAIL");
+        process::exit(1);
+    }
+    println!("  ✅ kinematics_and_math: PASS");
 
     println!("✨ [rust-bricks] All core brick modules verified successfully! 100% PASS.");
 }

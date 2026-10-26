@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：16 大核心模組、34 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：19 大核心模組、78 個純函式、37 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -92,6 +92,9 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `touch_control` | `src/touch_control.rs` | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 |
 | `vision_feature` | `src/vision_feature.rs` | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 |
 | `bezier_curve` | `src/bezier_curve.rs` | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 |
+| `motion_dead_reckon` | `src/motion_dead_reckon.rs` | 零速更新 (ZUPT)、1D 航位推算積分、觸覺震動馬達多模式時序生成 |
+| `fast_math` | `src/fast_math.rs` | Safe Quake 快速倒數平方根 (0x5f3759df)、純整數開方 isqrt_u64、線性內插 lerp、Hermite 平滑階躍 smoothstep |
+| `geo_collision` | `src/geo_collision.rs` | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 |
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |
 | `guard` | `src/guard.rs` | 純 Rust 內建合約守衛、檔案防膨脹、依賴審查、缺陷硬鎖 |
 | `catalog` | `src/catalog.rs` | 純 Rust 自動產生 CATALOG.yaml / CATALOG.json 機器索引 |

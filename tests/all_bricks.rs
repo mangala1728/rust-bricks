@@ -452,3 +452,104 @@ fn test_net_telemetry_bricks() {
     let net6 = [0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     assert!(rust_bricks::net_telemetry::ipv6_in_cidr(ip6, net6, 64));
 }
+
+#[test]
+fn test_motion_dead_reckon_bricks() {
+    // 零速更新 (ZUPT)
+    assert!(rust_bricks::motion_dead_reckon::zupt_zero_velocity_detect(0.05, 0.02, 0.1, 0.05));
+    assert!(!rust_bricks::motion_dead_reckon::zupt_zero_velocity_detect(1.5, 0.02, 0.1, 0.05));
+    assert!(!rust_bricks::motion_dead_reckon::zupt_zero_velocity_detect(-1.0, 0.02, 0.1, 0.05));
+
+    // 1D 航位推算積分
+    let (v_stat, p_stat) = rust_bricks::motion_dead_reckon::dead_reckon_1d_step(2.0, 1.0, true, 5.0, 10.0);
+    assert_eq!(v_stat, 0.0);
+    assert_eq!(p_stat, 10.0);
+
+    let (v_dyn, p_dyn) = rust_bricks::motion_dead_reckon::dead_reckon_1d_step(2.0, 1.0, false, 0.0, 0.0);
+    assert!((v_dyn - 2.0).abs() < 1e-5);
+    assert!((p_dyn - 1.0).abs() < 1e-5);
+
+    // 馬達振動時序模式
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(0, 15));
+    assert!(!rust_bricks::motion_dead_reckon::haptic_vibration_timing(0, 30));
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(1, 50));
+    assert!(!rust_bricks::motion_dead_reckon::haptic_vibration_timing(1, 150));
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(1, 250));
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(2, 20));
+    assert!(!rust_bricks::motion_dead_reckon::haptic_vibration_timing(2, 60));
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(2, 100));
+    assert!(rust_bricks::motion_dead_reckon::haptic_vibration_timing(3, 50));
+    assert!(!rust_bricks::motion_dead_reckon::haptic_vibration_timing(3, 80));
+    assert!(!rust_bricks::motion_dead_reckon::haptic_vibration_timing(99, 10));
+}
+
+#[test]
+fn test_fast_math_bricks() {
+    // 快速倒數平方根 (Quake safe)
+    let inv_4 = rust_bricks::fast_math::fast_inv_sqrt_f32(4.0);
+    assert!((inv_4 - 0.5).abs() < 0.005);
+    let inv_100 = rust_bricks::fast_math::fast_inv_sqrt_f32(100.0);
+    assert!((inv_100 - 0.1).abs() < 0.002);
+    assert_eq!(rust_bricks::fast_math::fast_inv_sqrt_f32(-1.0), 0.0);
+
+    // 純整數平方根 isqrt_u64
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(0), 0);
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(1), 1);
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(15), 3);
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(16), 4);
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(1_000_000), 1000);
+    assert_eq!(rust_bricks::fast_math::isqrt_u64(u64::MAX), 4294967295);
+
+    // 線性內插 lerp_f32
+    assert_eq!(rust_bricks::fast_math::lerp_f32(10.0, 20.0, 0.0), 10.0);
+    assert_eq!(rust_bricks::fast_math::lerp_f32(10.0, 20.0, 1.0), 20.0);
+    assert_eq!(rust_bricks::fast_math::lerp_f32(10.0, 20.0, 0.5), 15.0);
+    assert_eq!(rust_bricks::fast_math::lerp_f32(10.0, 20.0, -0.5), 10.0); // 截斷守衛
+    assert_eq!(rust_bricks::fast_math::lerp_f32(10.0, 20.0, 1.5), 20.0);
+
+    // Hermite 平滑階躍 smoothstep_f32
+    assert_eq!(rust_bricks::fast_math::smoothstep_f32(0.0, 10.0, -1.0), 0.0);
+    assert_eq!(rust_bricks::fast_math::smoothstep_f32(0.0, 10.0, 11.0), 1.0);
+    assert!((rust_bricks::fast_math::smoothstep_f32(0.0, 10.0, 5.0) - 0.5).abs() < 1e-5);
+    assert_eq!(rust_bricks::fast_math::smoothstep_f32(5.0, 5.0, 5.0), 1.0); // 重合除零防禦
+}
+
+#[test]
+fn test_geo_collision_bricks() {
+    // AABB 碰撞盒重疊
+    let box_a_min = (0.0, 0.0);
+    let box_a_max = (10.0, 10.0);
+    let box_b_min = (5.0, 5.0);
+    let box_b_max = (15.0, 15.0);
+    let box_c_min = (15.0, 15.0);
+    let box_c_max = (20.0, 20.0);
+
+    assert!(rust_bricks::geo_collision::bounding_box_overlap(box_a_min, box_a_max, box_b_min, box_b_max));
+    assert!(!rust_bricks::geo_collision::bounding_box_overlap(box_a_min, box_a_max, box_c_min, box_c_max));
+    assert!(!rust_bricks::geo_collision::bounding_box_overlap((10.0, 10.0), (0.0, 0.0), box_b_min, box_b_max)); // 倒置
+
+    // 2D 線段交點
+    let inter_opt = rust_bricks::geo_collision::segment_intersection_2d(
+        (0.0, 0.0), (2.0, 2.0),
+        (0.0, 2.0), (2.0, 0.0),
+    );
+    assert!(inter_opt.is_some());
+    // @safety-proof: inter_opt 已驗證 is_some()
+    let pt = inter_opt.unwrap();
+    assert!((pt.0 - 1.0).abs() < 1e-5);
+    assert!((pt.1 - 1.0).abs() < 1e-5);
+
+    // 平行線無交點
+    let parallel = rust_bricks::geo_collision::segment_intersection_2d(
+        (0.0, 0.0), (2.0, 0.0),
+        (0.0, 1.0), (2.0, 1.0),
+    );
+    assert!(parallel.is_none());
+
+    // 多邊形射線法包含測試 (Jordan Curve)
+    let poly = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)];
+    assert!(rust_bricks::geo_collision::point_in_polygon_raycast(5.0, 5.0, &poly));
+    assert!(!rust_bricks::geo_collision::point_in_polygon_raycast(15.0, 5.0, &poly));
+    assert!(!rust_bricks::geo_collision::point_in_polygon_raycast(-1.0, 5.0, &poly));
+    assert!(!rust_bricks::geo_collision::point_in_polygon_raycast(5.0, 5.0, &[])); // 頂點不足
+}
