@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 476
+total_functions: 486
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2223,6 +2223,73 @@ modules:
         outputs: 1
         domains:
           alpha: "[0.0, 1.0]"
+  - module: "robotics_dynamics_jacobian"
+    file: "src/robotics_dynamics_jacobian.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "robotics_jacobian_2link_planar_vel"
+        signature: "pub fn robotics_jacobian_2link_planar_vel("
+        outputs: 2
+        domains:
+          theta1_rad: "[-10.0, 10.0]"
+          theta2_rad: "[-10.0, 10.0]"
+          l1: "[0.001, 10.0]"
+          l2: "[0.001, 10.0]"
+          omega1: "[-1000.0, 1000.0]"
+          omega2: "[-1000.0, 1000.0]"
+      - name: "robotics_manipulability_index_2d"
+        signature: "pub fn robotics_manipulability_index_2d(j11: f64, j12: f64, j21: f64, j22: f64) -> f64"
+        outputs: 1
+      - name: "robotics_jacobian_transpose_joint_torques_2d"
+        signature: "pub fn robotics_jacobian_transpose_joint_torques_2d("
+        outputs: 2
+        domains:
+          fx: "[-1e6, 1e6]"
+          fy: "[-1e6, 1e6]"
+      - name: "robotics_coriolis_centrifugal_torque_2link"
+        signature: "pub fn robotics_coriolis_centrifugal_torque_2link("
+        outputs: 2
+        domains:
+          theta2_rad: "[-10.0, 10.0]"
+          omega1: "[-1000.0, 1000.0]"
+          omega2: "[-1000.0, 1000.0]"
+          m2: "[0.001, 1000.0]"
+          l1: "[0.001, 10.0]"
+          lc2: "[0.001, 10.0]"
+      - name: "robotics_inertia_matrix_2link"
+        signature: "pub fn robotics_inertia_matrix_2link("
+        outputs: 1
+        domains:
+          theta2_rad: "[-10.0, 10.0]"
+          m1: "[0.001, 1000.0]"
+          m2: "[0.001, 1000.0]"
+      - name: "robotics_joint_limit_repulsive_potential"
+        signature: "pub fn robotics_joint_limit_repulsive_potential("
+        outputs: 1
+        domains:
+          eta: "[0.0, 1e6]"
+          dist_threshold: "[0.001, 10.0]"
+      - name: "robotics_forward_euler_dynamics_step"
+        signature: "pub fn robotics_forward_euler_dynamics_step("
+        outputs: 2
+        domains:
+          dt: "[0.0001, 1.0]"
+      - name: "robotics_computed_torque_control_step"
+        signature: "pub fn robotics_computed_torque_control_step("
+        outputs: 1
+        domains:
+          kp: "[0.0, 1e6]"
+          kd: "[0.0, 1e6]"
+      - name: "robotics_friction_coulomb_viscous_step"
+        signature: "pub fn robotics_friction_coulomb_viscous_step("
+        outputs: 1
+        domains:
+          f_coulomb: "[0.0, 1e6]"
+          f_viscous: "[0.0, 1e6]"
+      - name: "robotics_cartesian_compliance_spring_force"
+        signature: "pub fn robotics_cartesian_compliance_spring_force("
+        outputs: 1
   - module: "robotics_motion_profile"
     file: "src/robotics_motion_profile.rs"
     functions_count: 10

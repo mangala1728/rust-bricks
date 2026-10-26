@@ -3128,6 +3128,60 @@ fn test_cnc_gcode_toolpath_bricks() {
     assert!(v_mid > 0.0);
 }
 
+#[test]
+fn test_robotics_dynamics_jacobian_bricks() {
+    use rust_bricks::robotics_dynamics_jacobian::*;
+
+    // 1. 雅可比矩陣前向線速度 (theta1=0, theta2=0, l1=1, l2=1, omega1=1, omega2=0)
+    // J = [ 0, 0 ]
+    //     [ 2, 1 ]
+    // vx = 0, vy = 2*1 = 2
+    let (vx, vy) = robotics_jacobian_2link_planar_vel(0.0, 0.0, 1.0, 1.0, 1.0, 0.0);
+    assert!(vx.abs() < 1e-4);
+    assert!((vy - 2.0).abs() < 1e-4);
+
+    // 2. Yoshikawa 可操縱度指標
+    let w = robotics_manipulability_index_2d(1.0, 0.0, 0.0, 2.0);
+    assert!((w - 2.0).abs() < 1e-4);
+
+    // 3. 雅可比轉置關節靜態力矩 (J = [[1, 0], [0, 2]], F = [10, 5] -> tau = [10, 10])
+    let (t1, t2) = robotics_jacobian_transpose_joint_torques_2d([[1.0, 0.0], [0.0, 2.0]], 10.0, 5.0);
+    assert!((t1 - 10.0).abs() < 1e-4);
+    assert!((t2 - 10.0).abs() < 1e-4);
+
+    // 4. 柯氏力與離心力 (theta2=0 時 sin=0, 力矩為 0)
+    let (c1, c2) = robotics_coriolis_centrifugal_torque_2link(0.0, 1.0, 1.0, 1.0, 1.0, 0.5);
+    assert!(c1.abs() < 1e-4);
+    assert!(c2.abs() < 1e-4);
+
+    // 5. 對稱慣性矩陣 M(q)
+    let m = robotics_inertia_matrix_2link(0.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.1, 0.1);
+    assert!(m[0][0] > 0.0);
+    assert_eq!(m[0][1], m[1][0]); // 對稱性
+
+    // 6. 人工勢場關節邊界排斥力矩
+    let f_rep = robotics_joint_limit_repulsive_potential(0.05, 0.0, 1.0, 1.0, 0.1);
+    assert!(f_rep > 0.0); // 靠近下限，產生正向排斥力
+
+    // 7. 前向歐拉狀態積分
+    let (q_next, qd_next) = robotics_forward_euler_dynamics_step(0.0, 1.0, 2.0, 0.1);
+    assert!((q_next - 0.1).abs() < 1e-4);
+    assert!((qd_next - 1.2).abs() < 1e-4);
+
+    // 8. 計算力矩控制虛擬加速度
+    let a_cmd = robotics_computed_torque_control_step(1.0, 0.0, 0.0, 0.5, 0.0, 10.0, 2.0);
+    assert!((a_cmd - 5.0).abs() < 1e-4); // Kp * error = 10 * 0.5 = 5.0
+
+    // 9. 關節庫侖與黏性摩擦
+    let tau_f = robotics_friction_coulomb_viscous_step(1.0, 0.5, 0.1);
+    assert!((tau_f - 0.6).abs() < 1e-4);
+
+    // 10. 笛卡爾順應性阻抗彈簧力
+    let f_spring = robotics_cartesian_compliance_spring_force([1.0, 2.0, 3.0], [0.0, 0.0, 0.0], [10.0, 10.0, 10.0]);
+    assert_eq!(f_spring, [10.0, 20.0, 30.0]);
+}
+
+
 
 
 

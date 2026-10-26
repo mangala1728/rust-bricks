@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -770,6 +770,20 @@ fn audit_cnc_gcode_toolpath() -> bool {
 }
 
 /// @outputs: 1
+fn audit_robotics_dynamics_jacobian() -> bool {
+    let mut ok = true;
+    let (vx, vy) = robotics_dynamics_jacobian::robotics_jacobian_2link_planar_vel(0.0, 0.0, 1.0, 1.0, 0.0, 0.0);
+    ok &= vx == 0.0 && vy == 0.0;
+    ok &= robotics_dynamics_jacobian::robotics_manipulability_index_2d(f64::NAN, 0.0, 0.0, 0.0) == 0.0;
+    ok &= robotics_dynamics_jacobian::robotics_joint_limit_repulsive_potential(0.0, 1.0, 0.0, 1.0, 0.1) == 0.0; // 邊界倒置
+    let (q, q_dot) = robotics_dynamics_jacobian::robotics_forward_euler_dynamics_step(1.0, 2.0, 3.0, -0.1);
+    ok &= q == 0.0 && q_dot == 0.0; // 負步長
+    let f_imp = robotics_dynamics_jacobian::robotics_cartesian_compliance_spring_force([f64::NAN; 3], [0.0; 3], [100.0; 3]);
+    ok &= f_imp == [0.0, 0.0, 0.0];
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -831,6 +845,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_doc_layout_typography(), "【Word與PPT排版字體抽查失敗】存在除零溢出或惡化度崩潰", total, passed, failures);
     check_audit_domain(audit_radar_mimo_tracking(), "【雷達MIMO虛擬陣列與追蹤抽查失敗】存在除零溢出或航跡發散", total, passed, failures);
     check_audit_domain(audit_cnc_gcode_toolpath(), "【CNC工具路徑與G-Code抽查失敗】存在除零溢出或幾何畸形", total, passed, failures);
+    check_audit_domain(audit_robotics_dynamics_jacobian(), "【機器人動力學與雅可比抽查失敗】存在除零溢出或發散", total, passed, failures);
 }
 
 /// @outputs: 2

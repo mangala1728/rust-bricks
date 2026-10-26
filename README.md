@@ -103,6 +103,7 @@
 | [`motor_stepper`](src/motor_stepper.rs) | 步進馬達梯形加減速微秒延遲計算、正交 AB 編碼器 4x 倍頻狀態機、行程換算 | 3D 列印機、CNC 雕刻機、送錫機、工控滑台高精度運動控制 |
 | [`robotics_motion_profile`](src/robotics_motion_profile.rs) | 2-Link 平面機械臂逆向/正向運動學 (IK/FK)、雅可比奇異點檢測、梯形與 S-curve 躍度運動曲線、Q15 步進微步電流比、關節軟極限、滾珠螺桿導程 | 工業機械手臂 (SCARA/Delta)、六軸協作機器人逆解、高階 CNC 運動控制器 |
 | [`robotics_6dof_slerp`](src/robotics_6dof_slerp.rs) | 6 軸機械手臂腕部球心解耦、單位四元數 SLERP 球面線性插值、Rodrigues 旋轉軸角與 SO(3) 矩陣互轉、五次多項式零衝擊軌跡規劃、單連桿重力負載靜力矩補償、笛卡爾直線插補 (Blend) | 六軸工業手臂 (UR5/Puma 560) 運動學逆解、末端姿態平滑過渡、無衝擊點對點軌跡規劃 |
+| [`robotics_dynamics_jacobian`](src/robotics_dynamics_jacobian.rs) | 2 連桿平面雅可比末端線速度、Yoshikawa 可操縱度橢球指標、雅可比轉置力矩換算 (tau = J^T * F)、柯氏力與離心力矩、關節空間對稱慣性矩陣 (M 矩陣)、人工勢場關節極限斥力、前向歐拉動力學狀態積分、計算力矩控制 (Computed Torque)、庫侖與黏性關節摩擦力、笛卡爾順應性阻抗彈簧力 | 工業機器人動力學前饋補償、協作機器人順應性力控/碰撞偵測、柔性裝配阻抗控制、高精度軌跡跟隨 |
 | [`env_sensor`](src/env_sensor.rs) | SHT3x 溫濕度 CRC8 校驗、Magnus-Tetens 露點溫度計算、美國/台灣 EPA PM2.5 AQI 換算 | 恆溫恆濕環境試驗箱、防凝露結霜控制、智慧家庭環境儀 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
