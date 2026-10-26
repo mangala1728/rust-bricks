@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -835,6 +835,17 @@ fn audit_decision_minimax_alphabeta() -> bool {
 }
 
 /// @outputs: 1
+fn audit_rpa_mobile_touch_macro() -> bool {
+    let mut ok = true;
+    ok &= rpa_mobile_touch_macro::rpa_screen_rotate_coords(100, 100, 0, 0, 90) == (0, 0); // 零螢幕尺寸
+    ok &= rpa_mobile_touch_macro::rpa_human_jitter_offset(0.0, 0.0, 5.0) == (0.0, 0.0);
+    ok &= rpa_mobile_touch_macro::rpa_parse_accessibility_bounds_text(b"NOT_BOUNDS").is_none();
+    ok &= rpa_mobile_touch_macro::rpa_android_keycode_valid(99999).is_none();
+    ok &= rpa_mobile_touch_macro::rpa_touch_gesture_state(0.0, 100, 10.0, 500) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -901,6 +912,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_ai_transformer_attention(), "【AI注意力與大模型運算抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
     check_audit_domain(audit_analyzer_sigrok_protocol(), "【邏輯分析儀與協議解碼抽查失敗】存在除零溢出或無效通道", total, passed, failures);
     check_audit_domain(audit_decision_minimax_alphabeta(), "【對抗搜尋與極大極小決策抽查失敗】存在除零溢出或剪枝發散", total, passed, failures);
+    check_audit_domain(audit_rpa_mobile_touch_macro(), "【手機自動化連點與觸控巨集抽查失敗】存在除零溢出或坐標越界", total, passed, failures);
 }
 
 /// @outputs: 2

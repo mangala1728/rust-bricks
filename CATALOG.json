@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 526,
+  "total_functions": 536,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2619,6 +2619,63 @@
         {
           "name": "robotics_scara_z_axis_feed_rate",
           "signature": "pub fn robotics_scara_z_axis_feed_rate(lead_mm: f64, motor_rpm: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "rpa_mobile_touch_macro",
+      "file": "src/rpa_mobile_touch_macro.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "rpa_screen_rotate_coords",
+          "signature": "pub fn rpa_screen_rotate_coords(",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_pinch_to_zoom_step",
+          "signature": "pub fn rpa_pinch_to_zoom_step(",
+          "outputs": 4
+        },
+        {
+          "name": "rpa_human_jitter_offset",
+          "signature": "pub fn rpa_human_jitter_offset(u1: f32, u2: f32, sigma_px: f32) -> (f32, f32)",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_bbox_click_target_center",
+          "signature": "pub fn rpa_bbox_click_target_center(x_min: u32, y_min: u32, x_max: u32, y_max: u32) -> (u32, u32)",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_fling_velocity_decay",
+          "signature": "pub fn rpa_fling_velocity_decay(",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_android_keycode_valid",
+          "signature": "pub fn rpa_android_keycode_valid(keycode: u32) -> Option<&'static str>",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_parse_accessibility_bounds_text",
+          "signature": "pub fn rpa_parse_accessibility_bounds_text(bounds_str: &[u8]) -> Option<[u32; 4]>",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_curved_swipe_waypoint",
+          "signature": "pub fn rpa_curved_swipe_waypoint(",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_touch_gesture_state",
+          "signature": "pub fn rpa_touch_gesture_state(",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_pixel_color_tolerance_match",
+          "signature": "pub fn rpa_pixel_color_tolerance_match(",
           "outputs": 1
         }
       ]

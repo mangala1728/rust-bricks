@@ -3425,6 +3425,59 @@ fn test_decision_minimax_alphabeta_bricks() {
     assert!((q_new - 2.1).abs() < 1e-4);
 }
 
+#[test]
+fn test_rpa_mobile_touch_macro_bricks() {
+    use rust_bricks::rpa_mobile_touch_macro::*;
+
+    // 1. 螢幕旋轉坐標映射 (90 度橫向旋轉)
+    let (rx90, ry90) = rpa_screen_rotate_coords(100, 200, 1080, 1920, 90);
+    assert_eq!(rx90, 200);
+    assert_eq!(ry90, 1080 - 1 - 100);
+
+    // 2. 雙指縮放 (放大 2.0 倍)
+    let ((f1, _), (f2, _)) = rpa_pinch_to_zoom_step(500.0, 500.0, 100.0, 2.0, 1.0);
+    assert!((f2 - f1 - 200.0).abs() < 1e-4); // 初始 100 * 2.0 = 200
+
+    // 3. 高斯抖動偏移
+    let (jx, jy) = rpa_human_jitter_offset(0.5, 0.25, 10.0);
+    assert!(jx.is_finite() && jy.is_finite());
+
+    // 4. 包圍盒點擊中心
+    let (cx, cy) = rpa_bbox_click_target_center(50, 100, 150, 300);
+    assert_eq!(cx, 100);
+    assert_eq!(cy, 200);
+
+    // 5. 慣性滑動甩動衰減
+    let (vt, ds) = rpa_fling_velocity_decay(1000.0, 2.0, 0.5);
+    assert!(vt < 1000.0 && vt > 0.0);
+    assert!(ds > 0.0);
+
+    // 6. Android Keycode 驗證
+    assert_eq!(rpa_android_keycode_valid(3), Some("KEYCODE_HOME"));
+    assert_eq!(rpa_android_keycode_valid(4), Some("KEYCODE_BACK"));
+
+    // 7. 無障礙節點邊界解析
+    let bounds = rpa_parse_accessibility_bounds_text(b"[120,340][560,780]");
+    assert_eq!(bounds, Some([120, 340, 560, 780]));
+
+    // 8. 彎曲手勢路徑內插 (t=0 回傳起點，t=1 回傳終點)
+    let p_start = rpa_curved_swipe_waypoint((0.0, 0.0), (100.0, 100.0), 20.0, 0.0);
+    assert_eq!(p_start, (0.0, 0.0));
+    let p_end = rpa_curved_swipe_waypoint((0.0, 0.0), (100.0, 100.0), 20.0, 1.0);
+    assert!((p_end.0 - 100.0).abs() < 1e-4);
+    assert!((p_end.1 - 100.0).abs() < 1e-4);
+
+    // 9. 觸控長按/拖曳遲滯狀態
+    assert_eq!(rpa_touch_gesture_state(2.0, 100, 10.0, 500), 0); // TAP
+    assert_eq!(rpa_touch_gesture_state(2.0, 600, 10.0, 500), 1); // LONG_PRESS
+    assert_eq!(rpa_touch_gesture_state(15.0, 100, 10.0, 500), 2); // DRAG
+
+    // 10. 螢幕像素色差比對
+    assert!(rpa_pixel_color_tolerance_match([100, 150, 200], [102, 149, 198], 5));
+    assert!(!rpa_pixel_color_tolerance_match([100, 150, 200], [120, 150, 200], 5));
+}
+
+
 
 
 

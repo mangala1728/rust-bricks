@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
@@ -576,6 +576,17 @@ fn verify_decision_minimax_alphabeta() -> bool {
 }
 
 /// @outputs: 1
+fn verify_rpa_mobile_touch_macro() -> bool {
+    let (rx, ry) = rpa_mobile_touch_macro::rpa_screen_rotate_coords(100, 200, 1080, 1920, 90);
+    let ok_rot = rx == 200 && ry == (1080 - 1 - 100);
+    let ((f1x, _), (f2x, _)) = rpa_mobile_touch_macro::rpa_pinch_to_zoom_step(500.0, 500.0, 100.0, 2.0, 1.0);
+    let ok_pinch = (f2x - f1x - 200.0).abs() < 1e-3;
+    let (cx, cy) = rpa_mobile_touch_macro::rpa_bbox_click_target_center(100, 200, 300, 400);
+    let ok_center = cx == 200 && cy == 300;
+    ok_rot && ok_pinch && ok_center
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -627,6 +638,7 @@ fn verify_all_subsystems() -> bool {
         && verify_ai_transformer_attention()
         && verify_analyzer_sigrok_protocol()
         && verify_decision_minimax_alphabeta()
+        && verify_rpa_mobile_touch_macro()
 }
 
 /// @outputs: 1
