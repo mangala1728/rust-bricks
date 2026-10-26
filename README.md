@@ -126,13 +126,16 @@ cargo test
 
 # 巡檢外部 contrib 貢獻分支（防撞車與體檢驗收）
 cargo run -- patrol
+
+# 執行零信任品質總監黑箱混沌抽檢（0 崩潰破壞性測試）
+cargo run -- audit
 ```
 
 ---
 
 ## 六、多專案防撞車與核心策展管家協議（Curation & Integration）
 
-為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
+為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/ZERO-TRUST-QUALITY-DIRECTOR.md`](docs/ZERO-TRUST-QUALITY-DIRECTOR.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
 
 1. **巡檢外部貢獻分支**：執行 `cargo run -- patrol` 主動拉取並檢查 `origin/contrib/*`。
 2. **機械防重發明輪子**：`guard.rs` 自動掃描全庫函式名稱，禁止重複命名。

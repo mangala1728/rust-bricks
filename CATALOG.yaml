@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 99
+total_functions: 100
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -182,6 +182,20 @@ modules:
         domains:
           sys_clock_hz: "[1..1000000000]"
           target_freq_hz: "[1..100000000]"
+  - module: "chaos_audit"
+    file: "src/chaos_audit.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: core/chaos_audit — 零信任品質總監黑箱動態巡檢引擎 (Zero-Trust Chaos Auditor)。"
+      - "Inputs: 倉庫全模組公開函式、惡意與極限邊界測試案例集。"
+      - "Outputs: 巡檢抽查報告 Result<AuditSummary, Vec<String>>。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "run_chaos_audit"
+        signature: "pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>>"
+        outputs: 2
+        domains:
+          dummy_level: "[0..10]"
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4

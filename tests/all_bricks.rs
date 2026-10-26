@@ -702,3 +702,13 @@ fn test_agent_terminal_bricks() {
     let pty_len = rust_bricks::agent_terminal::pty_line_buffer_edit(raw_input, &mut pty_buf);
     assert_eq!(&pty_buf[..pty_len], b"cargo");
 }
+
+#[test]
+fn test_chaos_audit_director() {
+    let res = rust_bricks::chaos_audit::run_chaos_audit(0);
+    assert!(res.is_ok());
+    // @safety-proof: res 已驗證 is_ok()
+    let summary = res.unwrap();
+    assert_eq!(summary.failed_inspections, 0);
+    assert_eq!(summary.total_inspections, summary.passed_inspections);
+}

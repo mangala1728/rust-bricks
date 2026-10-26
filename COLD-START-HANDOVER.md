@@ -3,7 +3,7 @@
 > **專案定位**：純淨零依賴 Rust 跨語言演算法轉譯微積木庫（09 合約規範）。  
 > **唯一戰場**：`c:\For Gemini\rust-bricks`（GitHub: `mangala1728/rust-bricks`）。  
 > **編制組織**：指揮官（架構統籌與任務派發）＋ 工兵（純淨演算法轉譯）＋ 審查員（三道防線與收據驗收）。  
-> **當前狀態**：24 大核心模組、99 個純函式、42 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
+> **當前狀態**：25 大核心模組、100 個純函式、43 個單元測試全綠、Guard 剛性檢查 100% 通過、0 OPEN 缺陷。  
 > **更新日期**：2026-10-26  
 
 ---
@@ -45,6 +45,13 @@
 │   審查員 / 守衛 (Reviewer / Guard / Arbiter)            │
 │   • 執行 `cargo run -- guard`（三道硬體級防線剛性紅線）│
 │   • Defect Gate（未結缺陷單阻擋）與簽署 Kev-4B 收據     │
+└───────────────────────────┬────────────────────────────┘
+                            │ 零信任動態破壞性巡檢
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│   品質總監 (Zero-Trust Quality Director)               │
+│   • 不看代碼實現，純模擬黑客與惡意用戶呼叫             │
+│   • 執行 `cargo run -- audit` 極限混沌抽檢（0 崩潰保證）│
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -65,10 +72,11 @@
 完成模組編寫後，執行標準驗收五板斧指令：
 ```bash
 cargo test                                # 1. 單元測試全綠
-cargo run -- guard                        # 2. 機械合約檢查通過
-cargo run -- catalog                      # 3. 重建 CATALOG.yaml / JSON
-cargo run -- receipt kev-4b PASS          # 4. 本地決策模型驗證語義並簽發 SHA-256 收據
-cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 100% 吻合
+cargo run -- guard                        # 2. 機械合約檢查通過 (含品質總監混沌黑箱防線)
+cargo run -- audit                        # 3. 零信任品質總監黑箱極端抽檢 (0 崩潰保證)
+cargo run -- catalog                      # 4. 重建 CATALOG.yaml / JSON
+cargo run -- receipt kev-4b PASS          # 5. 本地決策模型驗證語義並簽發 SHA-256 收據
+cargo run -- verify-receipt               # 6. 確保收據與當前 Git Diff 100% 吻合
 ```
 
 ---
@@ -103,4 +111,5 @@ cargo run -- verify-receipt               # 5. 確保收據與當前 Git Diff 10
 | `text_cleaner` | `src/text_cleaner.rs` | UTF-8 字元邊界安全截斷、CJK 字元計數 |
 | `guard` | `src/guard.rs` | 純 Rust 內建合約守衛、檔案防膨脹、依賴審查、缺陷硬鎖 |
 | `catalog` | `src/catalog.rs` | 純 Rust 自動產生 CATALOG.yaml / CATALOG.json 機器索引 |
+| `chaos_audit` | `src/chaos_audit.rs` | 零信任品質總監黑箱動態混沌抽檢、反向思維破壞性測試、0 崩潰保證 |
 | `receipt` | `src/receipt.rs` | Git Diff 綁定之 SHA-256 本地決策收據簽發與校驗 |

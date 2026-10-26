@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 99,
+  "total_functions": 100,
   "modules": [
     {
       "module": "agent_terminal",
@@ -163,6 +163,18 @@
         {
           "name": "timer_calc_prescaler_and_period",
           "signature": "pub fn timer_calc_prescaler_and_period(sys_clock_hz: u32, target_freq_hz: u32) -> Option<(u16, u16)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "chaos_audit",
+      "file": "src/chaos_audit.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "run_chaos_audit",
+          "signature": "pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>>",
           "outputs": 2
         }
       ]

@@ -195,6 +195,23 @@ fn run_verify_receipt_cmd() {
 }
 
 /// @outputs: 1
+fn run_audit_cmd() {
+    println!("🕵️ [rust-bricks] Running Zero-Trust Quality Director Chaos Audit (Black-Box)...");
+    match rust_bricks::chaos_audit::run_chaos_audit(0) {
+        Ok(summary) => {
+            println!("✨ [rust-bricks] 零信任黑箱巡檢完成！共抽查 {} 項極限反向輸入，全部安全收斂 (0 崩潰，100% 通過)！", summary.total_inspections);
+        }
+        Err(issues) => {
+            eprintln!("\n🚨 [rust-bricks] 品質總監零信任黑箱抽查發現嚴重隱患：");
+            for issue in issues {
+                eprintln!("  - {}", issue);
+            }
+            process::exit(1);
+        }
+    }
+}
+
+/// @outputs: 1
 fn run_patrol_cmd() {
     println!("🚨 [rust-bricks] Running Remote Branch Patrol & Collision Check...");
     let _ = Command::new("git").args(["fetch", "--all"]).output();
@@ -232,6 +249,7 @@ fn print_help() {
     println!("  cargo run -- catalog           # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
     println!("  cargo run -- guard             # Run capacity & contract guard hook (Pure Rust)");
     println!("  cargo run -- patrol            # Patrol external contrib branches & collisions");
+    println!("  cargo run -- audit             # Run Zero-Trust Quality Director Chaos Audit");
     println!("  cargo run -- receipt <model>   # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt    # Verify Receipt against current Git Diff");
     println!("  cargo test                     # Run full unit test suite");
@@ -247,6 +265,7 @@ fn main() {
         "catalog" => run_catalog_cmd(),
         "guard" => run_guard_cmd(),
         "patrol" => run_patrol_cmd(),
+        "audit" | "chaos" => run_audit_cmd(),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");
