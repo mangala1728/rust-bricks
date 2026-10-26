@@ -12,7 +12,7 @@ use rust_bricks::{
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, storage_block_geometry, sys_path, text_cleaner, thermal_palette, thermal_pid,
-    touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
+    touch_control, vision_camera_calibration_pnp, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -788,6 +788,17 @@ fn verify_storage_block_geometry() -> bool {
 }
 
 /// @outputs: 1
+fn verify_vision_camera_calibration_pnp() -> bool {
+    let uv = vision_camera_calibration_pnp::camera_pinhole_project_point([1.0, 2.0, 5.0], 500.0, 500.0, 320.0, 240.0);
+    let ok_proj = matches!(uv, Some([u, v]) if (u - 420.0).abs() < 1e-4 && (v - 440.0).abs() < 1e-4);
+    let dist = vision_camera_calibration_pnp::camera_radial_distortion_apply(0.1, 0.1, 0.0, 0.0, 0.0);
+    let ok_dist = (dist[0] - 0.1).abs() < 1e-5;
+    let err = vision_camera_calibration_pnp::camera_reprojection_rmse(&[[10.0, 20.0]], &[[10.0, 20.0]]);
+    let ok_err = matches!(err, Some(e) if e.abs() < 1e-5);
+    ok_proj && ok_dist && ok_err
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -860,6 +871,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_geo_spatial_projection()
         && verify_audio_beamforming_doa()
         && verify_storage_block_geometry()
+        && verify_vision_camera_calibration_pnp()
 }
 
 /// @outputs: 1

@@ -102,6 +102,7 @@ pub mod text_cleaner;
 pub mod thermal_palette;
 pub mod thermal_pid;
 pub mod touch_control;
+pub mod vision_camera_calibration_pnp;
 pub mod vision_feature;
 pub mod vision_morphology_fast;
 pub mod vision_optical_flow_homography;

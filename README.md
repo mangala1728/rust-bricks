@@ -55,6 +55,7 @@
 | [`crypto_modern_wire`](src/crypto_modern_wire.rs) | RFC 8439 ChaCha20 四分之一輪與 16-word 狀態初始化、Poly1305 金鑰夾緊、32-bit 與 Curve25519 常數時間條件交換 (CSWAP)、安全 Zeroize 記憶體清除、BLAKE2s G 函數混合置換、GF(2^8) 有限域無分支乘法、Shamir 秘密共享門檻多項式求值、RFC 4226 HOTP/TOTP 動態截斷 | 現代線路加密通訊、雙向認證金鑰交換、防側信道時序攻擊、多方門檻密鑰分片、兩步驟動態驗證 (2FA) |
 | [`sys_path`](src/sys_path.rs) | 跨平台相對路徑防穿越校驗、史實層只增不刪 (Append-Only) 差異校驗 | 檔案系統守衛、檔案總管路徑校驗、日誌保鮮關卡 |
 | [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
+| [`vision_camera_calibration_pnp`](src/vision_camera_calibration_pnp.rs) | 針孔相機 3D 透視投影、Brown-Conrady 徑向與切向鏡頭畸變多項式、定點反向去畸變步進、對極幾何基本矩陣對極線、Sampson 幾何誤差、本質矩陣 E = [t]x R、Hartley 坐標等向歸一化、重投影均方根誤差 (RMSE)、P3P Grunert 餘弦定理邊長約束 | 相機標定 (Camera Calibration)、視覺 SLAM 與立體雙目測距、PnP 空間位姿求解、鏡頭畸變校正、機器視覺幾何定位 |
 | [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
 | [`vision_morphology_fast`](src/vision_morphology_fast.rs) | 3x3 二值形態學膨脹/侵蝕、形態學梯度邊緣提取、FAST-9 圓環特徵角點判定、霍夫直線累積索引換算、投影積分直方圖、IoU 邊界框交併比、NCC 標準化互相關樣板匹配、RGB 轉 HSV 色彩空間與環形色相遮罩 | 邊緣視覺特徵提取、目標定位與 NMS 非極大值抑制、OCR 文本行切割、即時樣板比對、HSV 顏色分割 |
 | [`vision_optical_flow_homography`](src/vision_optical_flow_homography.rs) | Harris 局部梯度結構張量步進、Lucas-Kanade 2x2 稀疏光流克萊姆法則求解、3x3 單應矩陣 (Homography) 齊次射影轉換、2D 仿射變換前向映射、次像素雙線性插值採樣、3x3 伴隨矩陣求逆、RANSAC 單應內點判定、SE(2) 平面剛體運動變換、Graham Scan 凸包外積轉向判定、2D 點集最小二乘直線擬合 | 影像特徵追蹤、透視投影畸變校正、全景拼接、相機位姿估計、機器視覺引導定位 |

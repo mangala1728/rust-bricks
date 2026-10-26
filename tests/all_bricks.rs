@@ -4379,6 +4379,75 @@ fn test_storage_block_geometry_bricks() {
     assert_eq!(gib, 1.0);
 }
 
+#[test]
+fn test_vision_camera_calibration_pnp_bricks() {
+    use rust_bricks::vision_camera_calibration_pnp::*;
+
+    // 1. 針孔相機透視投影
+    // @safety-proof: Z=5.0 > 0.001
+    let [u, v] = camera_pinhole_project_point([1.0, 2.0, 5.0], 500.0, 500.0, 320.0, 240.0).unwrap();
+    assert_eq!(u, 420.0);
+    assert_eq!(v, 440.0);
+
+    // 2. 徑向畸變正向映射
+    let [xd, yd] = camera_radial_distortion_apply(0.1, 0.2, 0.1, 0.0, 0.0);
+    assert!((xd - 0.1005).abs() < 1e-4);
+    assert!((yd - 0.2010).abs() < 1e-4);
+
+    // 3. 切向畸變
+    let [tdx, tdy] = camera_tangential_distortion_apply(0.1, 0.1, 0.01, 0.01);
+    assert!(tdx > 0.0);
+    assert!(tdy > 0.0);
+
+    // 4. 定點反向去畸變步進
+    let [xu, yu] = camera_radial_undistort_step(0.1005, 0.2010, 0.1, 0.0);
+    assert!((xu - 0.1).abs() < 1e-3);
+    assert!((yu - 0.2).abs() < 1e-3);
+
+    // 5. 基本矩陣對極線
+    let f_mat = [
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, -1.0, 0.0],
+    ];
+    // @safety-proof: 坐標合法
+    let line = epipolar_line_from_fundamental(f_mat, [100.0, 200.0]).unwrap();
+    assert_eq!(line[0], 0.0);
+
+    // 6. Sampson 幾何誤差
+    // @safety-proof: 坐標合法
+    let err = epipolar_sampson_distance_error(f_mat, [0.0, 0.0], [0.0, 0.0]).unwrap();
+    assert_eq!(err, 0.0);
+
+    // 7. 本質矩陣構造 E = [t]x R
+    let rot = [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let e = essential_matrix_from_rt(rot, [1.0, 0.0, 0.0]);
+    assert_eq!(e[1][2], -1.0);
+
+    // 8. Hartley 坐標等向歸一化
+    let pts = [[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]];
+    // @safety-proof: pts 長度 4 >= 4
+    let (center, scale) = vision_dlt_point_normalize_scale(&pts).unwrap();
+    assert_eq!(center, [1.0, 1.0]);
+    assert!(scale > 0.0);
+
+    // 9. 重投影 RMSE
+    let obs = [[10.0, 10.0], [20.0, 20.0]];
+    let proj = [[10.0, 10.0], [20.0, 20.0]];
+    // @safety-proof: 長度吻合且大於 0
+    let rmse = camera_reprojection_rmse(&obs, &proj).unwrap();
+    assert_eq!(rmse, 0.0);
+
+    // 10. P3P Grunert 餘弦定理邊長約制
+    let dab = p3p_grunert_cosine_law_step(3.0, 4.0, 0.0);
+    assert_eq!(dab, 5.0);
+}
+
+
 
 
 

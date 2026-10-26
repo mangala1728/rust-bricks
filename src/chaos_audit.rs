@@ -11,8 +11,8 @@ use crate::{
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, storage_block_geometry, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
-    vision_morphology_fast, vision_optical_flow_homography,
+    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, storage_block_geometry, sys_path, thermal_palette, thermal_pid,
+    vision_camera_calibration_pnp, vision_morphology_fast, vision_optical_flow_homography,
 };
 
 pub struct AuditSummary {
@@ -1120,6 +1120,25 @@ fn audit_storage_block_geometry() -> bool {
 }
 
 /// @outputs: 1
+fn audit_vision_camera_calibration_pnp() -> bool {
+    let mut ok = true;
+    ok &= vision_camera_calibration_pnp::camera_pinhole_project_point([0.0, 0.0, 0.0], 500.0, 500.0, 320.0, 240.0).is_none();
+    ok &= vision_camera_calibration_pnp::camera_pinhole_project_point([0.0, 0.0, 1.0], -500.0, 500.0, 320.0, 240.0).is_none();
+    let r_dist = vision_camera_calibration_pnp::camera_radial_distortion_apply(f32::NAN, 0.0, 0.1, 0.0, 0.0);
+    ok &= r_dist[0].is_nan();
+    let t_dist = vision_camera_calibration_pnp::camera_tangential_distortion_apply(0.0, 0.0, 0.01, 0.01);
+    ok &= t_dist == [0.0, 0.0];
+    ok &= vision_camera_calibration_pnp::epipolar_line_from_fundamental([[0.0; 3]; 3], [0.0, 0.0]).is_none();
+    ok &= vision_camera_calibration_pnp::epipolar_sampson_distance_error([[0.0; 3]; 3], [0.0, 0.0], [0.0, 0.0]) == Some(0.0);
+    ok &= vision_camera_calibration_pnp::vision_dlt_point_normalize_scale(&[]).is_none();
+    ok &= vision_camera_calibration_pnp::vision_dlt_point_normalize_scale(&[[0.0, 0.0]; 3]).is_none();
+    ok &= vision_camera_calibration_pnp::camera_reprojection_rmse(&[], &[]).is_none();
+    ok &= vision_camera_calibration_pnp::camera_reprojection_rmse(&[[0.0, 0.0]], &[[0.0, 0.0]]) == Some(0.0);
+    ok &= vision_camera_calibration_pnp::p3p_grunert_cosine_law_step(1.0, 1.0, 1.0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1203,6 +1222,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_geo_spatial_projection(), "【地理空間與大地投影抽查失敗】存在奇異點發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_audio_beamforming_doa(), "【聲學陣列與波束成形抽查失敗】存在除零溢出或相位發散", total, passed, failures);
     check_audit_domain(audit_storage_block_geometry(), "【儲存幾何與磁碟分區抽查失敗】存在溢出或非法邊界", total, passed, failures);
+    check_audit_domain(audit_vision_camera_calibration_pnp(), "【相機標定與對極位姿抽查失敗】存在除零溢出或退化矩陣崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

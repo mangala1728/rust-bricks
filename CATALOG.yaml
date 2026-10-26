@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 690
+total_functions: 700
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3779,6 +3779,45 @@ modules:
           elapsed_ms: "[0..3600000]"
           max_tap_ms: "[10..5000]"
           double_tap_window_ms: "[50..5000]"
+  - module: "vision_camera_calibration_pnp"
+    file: "src/vision_camera_calibration_pnp.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "camera_pinhole_project_point"
+        signature: "pub fn camera_pinhole_project_point("
+        outputs: 1
+        domains:
+          p_cam: "[2] > 0.001 && fx > 0.0 && fy > 0.0"
+      - name: "camera_radial_distortion_apply"
+        signature: "pub fn camera_radial_distortion_apply("
+        outputs: 1
+      - name: "camera_tangential_distortion_apply"
+        signature: "pub fn camera_tangential_distortion_apply("
+        outputs: 1
+      - name: "camera_radial_undistort_step"
+        signature: "pub fn camera_radial_undistort_step("
+        outputs: 1
+      - name: "epipolar_line_from_fundamental"
+        signature: "pub fn epipolar_line_from_fundamental("
+        outputs: 1
+      - name: "epipolar_sampson_distance_error"
+        signature: "pub fn epipolar_sampson_distance_error("
+        outputs: 1
+      - name: "essential_matrix_from_rt"
+        signature: "pub fn essential_matrix_from_rt("
+        outputs: 1
+      - name: "vision_dlt_point_normalize_scale"
+        signature: "pub fn vision_dlt_point_normalize_scale(points: &[[f32; 2]]) -> Option<([f32; 2], f32)>"
+        outputs: 1
+      - name: "camera_reprojection_rmse"
+        signature: "pub fn camera_reprojection_rmse("
+        outputs: 1
+      - name: "p3p_grunert_cosine_law_step"
+        signature: "pub fn p3p_grunert_cosine_law_step(ra: f32, rb: f32, cos_gamma: f32) -> f32"
+        outputs: 1
+        domains:
+          ra >= 0.0 && rb >= 0.0 && cos_gamma: "[-1.0..=1.0]"
   - module: "vision_feature"
     file: "src/vision_feature.rs"
     functions_count: 4
