@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
@@ -686,6 +686,18 @@ fn verify_doc_office_drawing_shape() -> bool {
 }
 
 /// @outputs: 1
+fn verify_radar_clustering_dbscan_tracker() -> bool {
+    let ok_db = radar_clustering_dbscan_tracker::radar_dbscan_density_reachable(2.0, 4.0);
+    let pts = [[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]];
+    let v_rad = [10.0, 20.0];
+    let cent_opt = radar_clustering_dbscan_tracker::radar_cluster_centroid_and_radial_velocity(&pts, &v_rad, &[0, 1]);
+    let ok_cent = matches!(cent_opt, Some((c, v)) if (c[0] - 2.0).abs() < 1e-4 && (v - 15.0).abs() < 1e-4);
+    let next_s = radar_clustering_dbscan_tracker::radar_ctrv_motion_model_predict([0.0, 0.0, 10.0, 0.0, 0.0], 0.1);
+    let ok_ctrv = (next_s[0] - 1.0).abs() < 1e-4;
+    ok_db && ok_cent && ok_ctrv
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -750,6 +762,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_rpa_desktop_macro_driver()
         && verify_dsp_fft_multirate_2d()
         && verify_doc_office_drawing_shape()
+        && verify_radar_clustering_dbscan_tracker()
 }
 
 /// @outputs: 1

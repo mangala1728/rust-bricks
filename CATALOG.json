@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 612,
+  "total_functions": 620,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2721,6 +2721,53 @@
         {
           "name": "radar_mimo_virtual_array_positions",
           "signature": "pub fn radar_mimo_virtual_array_positions(tx_pos: &[f32], rx_pos: &[f32], out_virtual_pos: &mut [f32]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "radar_clustering_dbscan_tracker",
+      "file": "src/radar_clustering_dbscan_tracker.rs",
+      "functions_count": 8,
+      "functions": [
+        {
+          "name": "radar_dbscan_density_reachable",
+          "signature": "pub fn radar_dbscan_density_reachable(dist_sq: f32, eps_sq: f32) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "radar_cluster_centroid_and_radial_velocity",
+          "signature": "pub fn radar_cluster_centroid_and_radial_velocity(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_jpda_association_weights",
+          "signature": "pub fn radar_jpda_association_weights(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_imm_mode_probabilities_step",
+          "signature": "pub fn radar_imm_mode_probabilities_step(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_ctrv_motion_model_predict",
+          "signature": "pub fn radar_ctrv_motion_model_predict(state: [f32; 5], dt: f32) -> [f32; 5]",
+          "outputs": 1
+        },
+        {
+          "name": "radar_vital_signs_frequency_separation",
+          "signature": "pub fn radar_vital_signs_frequency_separation(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_swerling1_snr_fluctuation",
+          "signature": "pub fn radar_swerling1_snr_fluctuation(mean_snr: f32, u_rand: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "radar_track_lifecycle_hysteresis_step",
+          "signature": "pub fn radar_track_lifecycle_hysteresis_step(",
           "outputs": 1
         }
       ]

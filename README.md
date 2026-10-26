@@ -83,6 +83,7 @@
 | [`radar_biomed_dsp`](src/radar_biomed_dsp.rs) | MIMO 正交 Hadamard CDMA 編碼、TDMA 天線排程、FMCW 距離解析度與拍頻測距、微都卜勒胸腔相位解纏繞、生醫呼吸帶通濾波、Q7/Q31 多位元量化 | 毫米波雷達生命徵象 (心跳/呼吸) 監測、FMCW 測距、MIMO 虛擬孔徑相控陣列、跨位元定點數 DSP |
 | [`radar_cfar_doppler`](src/radar_cfar_doppler.rs) | 1D CA-CFAR 恒虛警率目標檢測、都卜勒速度解算、微都卜勒呼吸胸腔微動位移、點雲距離分群、MIMO 虛擬孔徑合成 | 毫米波雷達 (77GHz/60GHz)、智慧醫療呼吸心跳非接觸監測、ADAS 自駕車避障、點雲聚類 |
 | [`radar_mimo_tracking`](src/radar_mimo_tracking.rs) | MIMO 虛擬天線陣列等效孔徑索引換算、TDMA 發射通道輪詢排程器、CDMA/PMCW 雷達 Barker 雙相編碼 (7/11/13)、脈衝壓縮匹配濾波步進、Capon/MVDR 自適應波束成形權重、GNN 歐氏距與馬氏距波門檢定、1D 卡爾曼濾波量測創新更新、航跡存活確認與信心衰減評分、雙 PRF 多普勒速度解模糊 | 毫米波雷達 MIMO 虛擬孔徑成像、雷達點雲多目標航跡關聯 (GNN/Kalman)、CDMA/PMCW 正交編碼解調、抗模糊測速 |
+| [`radar_clustering_dbscan_tracker`](src/radar_clustering_dbscan_tracker.rs) | 毫米波雷達 3D 點雲 DBSCAN 密度可達鄰域判定、核心點簇群 3D 質心與平均都卜勒速度估算、JPDA (聯合機率資料互聯) 關聯權重解算、IMM (交互多模型) 機率轉移步進、CTRV (恆轉彎率與速度) 車輛非線性運動預測、生醫毫米波微弱胸腔呼吸與心跳頻率分離、Swerling 1 RCS 起伏目標檢測 SNR、雷達航跡確認雙門檻 (M/N) 遲滯狀態機 | ADAS 車載毫米波雷達多目標追蹤、自動駕駛車輛 CTRV 運動預測、生醫非接觸生命體徵監測、雷達雜波多目標關聯 (JPDA/IMM) |
 | [`fin_apdu_track`](src/fin_apdu_track.rs) | ISO 7816-4 APDU 晶片卡命令封裝與回應解析、磁條 Track 2 卡號效期提取、LRC 校驗 | 金融刷卡機 POS、ATM 讀卡機、晶片卡/磁條卡雙介面支付 |
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |

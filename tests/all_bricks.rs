@@ -3889,6 +3889,65 @@ fn test_doc_office_drawing_shape_bricks() {
     assert!((sdy - 0.0).abs() < 1e-5);
 }
 
+#[test]
+fn test_radar_clustering_dbscan_tracker_bricks() {
+    use rust_bricks::radar_clustering_dbscan_tracker::*;
+
+    // 1. DBSCAN 鄰域密度判定
+    assert!(radar_dbscan_density_reachable(2.0, 4.0));
+    assert!(!radar_dbscan_density_reachable(5.0, 4.0));
+
+    // 2. 點雲 3D 質心與平均速度
+    let pts = [[1.0, 2.0, 3.0], [3.0, 4.0, 5.0], [10.0, 20.0, 30.0]];
+    let v = [10.0, 20.0, 100.0];
+    let (center, avg_v) = radar_cluster_centroid_and_radial_velocity(&pts, &v, &[0, 1]).unwrap();
+    assert_eq!(center, [2.0, 3.0, 4.0]);
+    assert_eq!(avg_v, 15.0);
+
+    // 3. JPDA 關聯權重解算
+    let d_sq = [0.0, 2.0];
+    let mut weights = [0.0; 2];
+    assert!(radar_jpda_association_weights(&d_sq, 0.1, &mut weights));
+    assert!(weights[0] > weights[1]);
+
+    // 4. IMM 多模型機率轉移步進
+    let mut probs = [0.6, 0.2, 0.2];
+    let trans = [
+        [0.8, 0.1, 0.1],
+        [0.1, 0.8, 0.1],
+        [0.1, 0.1, 0.8],
+    ];
+    let lik = [1.0, 0.2, 0.2];
+    assert!(radar_imm_mode_probabilities_step(&mut probs, &trans, &lik));
+    assert!(probs[0] > 0.7);
+
+    // 5. CTRV 車輛運動預測 (直線 vs 轉彎)
+    let straight = radar_ctrv_motion_model_predict([0.0, 0.0, 20.0, 0.0, 0.0], 0.5);
+    assert_eq!(straight[0], 10.0);
+    assert_eq!(straight[1], 0.0);
+    let turning = radar_ctrv_motion_model_predict([0.0, 0.0, 10.0, 0.0, 0.1], 0.1);
+    assert!(turning[0] > 0.0);
+    assert!(turning[1] > 0.0);
+
+    // 6. 微弱呼吸與心跳頻率分離
+    let mut phases = vec![0.0f32; 128];
+    for (i, p) in phases.iter_mut().enumerate() {
+        let t = i as f32 / 20.0;
+        *p = (2.0 * 3.14159 * 0.3 * t).sin() + 0.2 * (2.0 * 3.14159 * 1.2 * t).sin();
+    }
+    let (f_breath, f_heart) = radar_vital_signs_frequency_separation(&phases, 20.0);
+    assert!((f_breath - 0.3).abs() < 0.15);
+    assert!((f_heart - 1.2).abs() < 0.25);
+
+    // 7. Swerling 1 RCS 起伏 SNR
+    let snr_inst = radar_swerling1_snr_fluctuation(10.0, 0.36787944);
+    assert!((snr_inst - 10.0).abs() < 0.01);
+
+    // 8. 航跡狀態遲滯狀態機
+    assert_eq!(radar_track_lifecycle_hysteresis_step(0, 3, 0, 3, 3), 1);
+    assert_eq!(radar_track_lifecycle_hysteresis_step(1, 0, 3, 3, 3), 2);
+}
+
 
 
 

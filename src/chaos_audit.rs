@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -968,6 +968,23 @@ fn audit_doc_office_drawing_shape() -> bool {
 }
 
 /// @outputs: 1
+fn audit_radar_clustering_dbscan_tracker() -> bool {
+    let mut ok = true;
+    ok &= !radar_clustering_dbscan_tracker::radar_dbscan_density_reachable(-1.0, 1.0);
+    ok &= radar_clustering_dbscan_tracker::radar_cluster_centroid_and_radial_velocity(&[], &[], &[]).is_none();
+    ok &= !radar_clustering_dbscan_tracker::radar_jpda_association_weights(&[], 0.1, &mut []);
+    let mut probs = [0.33, 0.33, 0.34];
+    let trans = [[0.8, 0.1, 0.1], [0.1, 0.8, 0.1], [0.1, 0.1, 0.8]];
+    ok &= radar_clustering_dbscan_tracker::radar_imm_mode_probabilities_step(&mut probs, &trans, &[1.0, 0.5, 0.2]);
+    let state = radar_clustering_dbscan_tracker::radar_ctrv_motion_model_predict([0.0; 5], -0.1);
+    ok &= state == [0.0; 5];
+    ok &= radar_clustering_dbscan_tracker::radar_vital_signs_frequency_separation(&[], 100.0) == (0.0, 0.0);
+    ok &= radar_clustering_dbscan_tracker::radar_swerling1_snr_fluctuation(-10.0, 0.5) == 0.0;
+    ok &= radar_clustering_dbscan_tracker::radar_track_lifecycle_hysteresis_step(0, 0, 10, 3, 5) == 2;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1043,6 +1060,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_rpa_desktop_macro_driver(), "【桌面RPA與虛擬輸入抽查失敗】存在坐標越界或鍵碼崩潰", total, passed, failures);
     check_audit_domain(audit_dsp_fft_multirate_2d(), "【二維FFT與多速率DSP抽查失敗】存在除零溢出或頻譜發散", total, passed, failures);
     check_audit_domain(audit_doc_office_drawing_shape(), "【文書向量圖形與排版抽查失敗】存在除零溢出或坐標發散", total, passed, failures);
+    check_audit_domain(audit_radar_clustering_dbscan_tracker(), "【雷達點雲聚類與追蹤抽查失敗】存在除零溢出或發散", total, passed, failures);
 }
 
 /// @outputs: 2

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 612
+total_functions: 620
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2641,6 +2641,45 @@ modules:
       - name: "radar_mimo_virtual_array_positions"
         signature: "pub fn radar_mimo_virtual_array_positions(tx_pos: &[f32], rx_pos: &[f32], out_virtual_pos: &mut [f32]) -> usize"
         outputs: 1
+  - module: "radar_clustering_dbscan_tracker"
+    file: "src/radar_clustering_dbscan_tracker.rs"
+    functions_count: 8
+    architecture_map:
+    functions:
+      - name: "radar_dbscan_density_reachable"
+        signature: "pub fn radar_dbscan_density_reachable(dist_sq: f32, eps_sq: f32) -> bool"
+        outputs: 1
+        domains:
+          dist_sq: "[0.0, 1e8], eps_sq [1e-6, 1e8]"
+      - name: "radar_cluster_centroid_and_radial_velocity"
+        signature: "pub fn radar_cluster_centroid_and_radial_velocity("
+        outputs: 1
+      - name: "radar_jpda_association_weights"
+        signature: "pub fn radar_jpda_association_weights("
+        outputs: 1
+      - name: "radar_imm_mode_probabilities_step"
+        signature: "pub fn radar_imm_mode_probabilities_step("
+        outputs: 1
+      - name: "radar_ctrv_motion_model_predict"
+        signature: "pub fn radar_ctrv_motion_model_predict(state: [f32; 5], dt: f32) -> [f32; 5]"
+        outputs: 1
+        domains:
+          dt: "[1e-4, 10.0]"
+      - name: "radar_vital_signs_frequency_separation"
+        signature: "pub fn radar_vital_signs_frequency_separation("
+        outputs: 1
+        domains:
+          fs: "[1.0, 1000.0]"
+      - name: "radar_swerling1_snr_fluctuation"
+        signature: "pub fn radar_swerling1_snr_fluctuation(mean_snr: f32, u_rand: f32) -> f32"
+        outputs: 1
+        domains:
+          mean_snr: "[0.0, 1e6], u_rand [1e-7, 1.0]"
+      - name: "radar_track_lifecycle_hysteresis_step"
+        signature: "pub fn radar_track_lifecycle_hysteresis_step("
+        outputs: 1
+        domains:
+          current_state: "[0, 2], hit_count [0, 100], miss_count [0, 100]"
   - module: "radar_mimo_tracking"
     file: "src/radar_mimo_tracking.rs"
     functions_count: 10
