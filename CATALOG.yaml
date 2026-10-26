@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 436
+total_functions: 446
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1765,6 +1765,71 @@ modules:
         domains:
           fx_start: "[0.0001..1.0e6]"
           fx_end: "[0.0001..1.0e6]"
+  - module: "quant_orderbook_l2"
+    file: "src/quant_orderbook_l2.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "quant_l2_bbo_mid_and_spread"
+        signature: "pub fn quant_l2_bbo_mid_and_spread(best_bid: f64, best_ask: f64) -> Option<(f64, f64, f64)>"
+        outputs: 3
+        domains:
+          best_bid: "[0.0001, 1e9]"
+          best_ask: "[0.0001, 1e9]"
+      - name: "quant_l2_order_book_imbalance_obi"
+        signature: "pub fn quant_l2_order_book_imbalance_obi(bid_qty: f64, ask_qty: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          bid_qty: "[0.0, 1e12]"
+          ask_qty: "[0.0, 1e12]"
+      - name: "quant_l2_weighted_micro_price"
+        signature: "pub fn quant_l2_weighted_micro_price("
+        outputs: 1
+        domains:
+          best_bid: "[0.0001, 1e9]"
+          best_ask: "[0.0001, 1e9]"
+          bid_qty: "[0.0, 1e12]"
+          ask_qty: "[0.0, 1e12]"
+      - name: "quant_l2_multi_level_depth_weighted_mid"
+        signature: "pub fn quant_l2_multi_level_depth_weighted_mid("
+        outputs: 1
+      - name: "quant_effective_spread"
+        signature: "pub fn quant_effective_spread(trade_price: f64, mid_price: f64) -> f64"
+        outputs: 1
+        domains:
+          trade_price: "[0.0001, 1e9]"
+          mid_price: "[0.0001, 1e9]"
+      - name: "quant_realized_spread"
+        signature: "pub fn quant_realized_spread("
+        outputs: 1
+        domains:
+          trade_price: "[0.0001, 1e9]"
+          future_mid_price: "[0.0001, 1e9]"
+      - name: "quant_kyle_lambda_price_impact"
+        signature: "pub fn quant_kyle_lambda_price_impact(delta_price: f64, order_flow: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          delta_price: "[-1e6, 1e6]"
+          order_flow: "[-1e12, 1e12]"
+      - name: "quant_amihud_illiquidity_ratio"
+        signature: "pub fn quant_amihud_illiquidity_ratio(abs_return: f64, dollar_volume: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          abs_return: "[0.0, 100.0]"
+          dollar_volume: "[0.0, 1e15]"
+      - name: "quant_vpin_bucket_toxicity_step"
+        signature: "pub fn quant_vpin_bucket_toxicity_step("
+        outputs: 1
+        domains:
+          buy_volume: "[0.0, 1e12]"
+          sell_volume: "[0.0, 1e12]"
+          bucket_size: "[1.0, 1e12]"
+      - name: "quant_twap_step"
+        signature: "pub fn quant_twap_step(cumulative_price_time: f64, elapsed_time_s: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          cumulative_price_time: "[0.0, 1e15]"
+          elapsed_time_s: "[0.001, 1e8]"
   - module: "radar_aoa_mti"
     file: "src/radar_aoa_mti.rs"
     functions_count: 10

@@ -9,7 +9,7 @@ use crate::{
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
-    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
+    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
@@ -717,6 +717,24 @@ fn audit_gnss_nmea_geodesy() -> bool {
 }
 
 /// @outputs: 1
+fn audit_quant_orderbook_l2() -> bool {
+    let mut ok = true;
+    // 買賣價倒置 (bid > ask)
+    ok &= quant_orderbook_l2::quant_l2_bbo_mid_and_spread(105.0, 100.0).is_none();
+    // 零深度 OBI
+    ok &= quant_orderbook_l2::quant_l2_order_book_imbalance_obi(0.0, 0.0).is_none();
+    // 空訂單簿多檔加權
+    ok &= quant_orderbook_l2::quant_l2_multi_level_depth_weighted_mid(&[], &[], 5).is_none();
+    // 零訂單流 Kyle's Lambda
+    ok &= quant_orderbook_l2::quant_kyle_lambda_price_impact(1.0, 0.0).is_none();
+    // 零成交額 Amihud
+    ok &= quant_orderbook_l2::quant_amihud_illiquidity_ratio(0.05, 0.0).is_none();
+    // 零容量 VPIN
+    ok &= quant_orderbook_l2::quant_vpin_bucket_toxicity_step(10.0, 5.0, 0.0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -724,6 +742,57 @@ fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut 
     } else {
         failures.push(fail_msg.to_string());
     }
+}
+
+/// @outputs: 1
+fn run_chaos_audit_batch_a(total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
+    check_audit_domain(audit_math_and_geometry(), "【數值幾何黑箱抽查失敗】存在未防護之邊界發散", total, passed, failures);
+    check_audit_domain(audit_audio_and_sensors(), "【音訊感測器黑箱抽查失敗】存在畸形輸入崩潰", total, passed, failures);
+    check_audit_domain(audit_thermal_and_dsp(), "【熱成像DSP黑箱抽查失敗】存在溢位或倒置崩潰", total, passed, failures);
+    check_audit_domain(audit_security_and_firmware(), "【金融韌體黑箱抽查失敗】存在安全性或長度溢出", total, passed, failures);
+    check_audit_domain(audit_ble_and_crypto(), "【藍芽密碼黑箱抽查失敗】存在Padding或截斷漏洞", total, passed, failures);
+    check_audit_domain(audit_motor_env_and_dukpt(), "【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_comm_and_clock(), "【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰", total, passed, failures);
+    check_audit_domain(audit_ethernet_and_apdu(), "【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞", total, passed, failures);
+    check_audit_domain(audit_power_and_baro(), "【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰", total, passed, failures);
+    check_audit_domain(audit_lin_and_raycast_3d(), "【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰", total, passed, failures);
+    check_audit_domain(audit_tsn_and_macsec(), "【TSN與MACsec黑箱抽查失敗】存在時間倒流或重放漏洞", total, passed, failures);
+    check_audit_domain(audit_agent_and_system(), "【代理馬具終端抽查失敗】存在路徑穿越或退格下溢", total, passed, failures);
+    check_audit_domain(audit_ai_tensor_train(), "【AI訓練張量算子抽查失敗】存在溢出除零或NaN穿透", total, passed, failures);
+    check_audit_domain(audit_instrument_scpi_vna(), "【儀器控制SCPI與VNA抽查失敗】存在除零或阻抗奇異點", total, passed, failures);
+    check_audit_domain(audit_pcb_cad_fem(), "【PCB與電磁FDTD抽查失敗】存在CFL除零或無效介電常數", total, passed, failures);
+    check_audit_domain(audit_motion_render_timeline(), "【影音動態Remotion時序抽查失敗】存在FPS除零或牛頓法發散", total, passed, failures);
+    check_audit_domain(audit_office_calc_layout(), "【辦公試算表與排版抽查失敗】存在PMT除零或溢出折行崩潰", total, passed, failures);
+    check_audit_domain(audit_rpa_screen_control(), "【RPA按鍵螢幕控制抽查失敗】存在螢幕色彩或GPIB握手崩潰", total, passed, failures);
+    check_audit_domain(audit_radar_cfar_doppler(), "【雷達CFAR與都卜勒抽查失敗】存在頻率除零或點雲邊界崩潰", total, passed, failures);
+    check_audit_domain(audit_dsp_fft_radix2(), "【快速傅立葉FFT抽查失敗】存在非2的冪次方或溢出崩潰", total, passed, failures);
+    check_audit_domain(audit_decision_mcts(), "【MCTS蒙地卡羅決策抽查失敗】存在無效路徑或零拜訪崩潰", total, passed, failures);
+    check_audit_domain(audit_curve_fit_trend(), "【曲線擬合與趨勢分析抽查失敗】存在除零或核半徑崩潰", total, passed, failures);
+}
+
+/// @outputs: 1
+fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
+    check_audit_domain(audit_ai_autograd_train(), "【自動求導與神經訓練抽查失敗】存在除零溢出或NaN穿透", total, passed, failures);
+    check_audit_domain(audit_comm_phy_bus(), "【實體層總線MIPI與RGMII抽查失敗】存在除零溢出或無效速率", total, passed, failures);
+    check_audit_domain(audit_radar_biomed_dsp(), "【雷達生醫與FMCW測距抽查失敗】存在除零溢出或無效頻寬", total, passed, failures);
+    check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", total, passed, failures);
+    check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", total, passed, failures);
+    check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", total, passed, failures);
+    check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", total, passed, failures);
+    check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", total, passed, failures);
+    check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", total, passed, failures);
+    check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", total, passed, failures);
+    check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", total, passed, failures);
+    check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", total, passed, failures);
+    check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", total, passed, failures);
+    check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_crypto_modern_wire(), "【現代高階線路加密抽查失敗】存在置換越界或GF256崩潰", total, passed, failures);
+    check_audit_domain(audit_vision_optical_flow_homography(), "【視覺光流與透視單應抽查失敗】存在奇異矩陣或越界採樣崩潰", total, passed, failures);
+    check_audit_domain(audit_gnss_nmea_geodesy(), "【GNSS導航與大地測量抽查失敗】存在坐標奇異點或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_quant_orderbook_l2(), "【量化L2訂單簿與微觀結構抽查失敗】存在除零溢出或無效買賣價", total, passed, failures);
 }
 
 /// @outputs: 2
@@ -736,48 +805,8 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     let mut total = 0usize;
     let mut passed = 0usize;
 
-    check_audit_domain(audit_math_and_geometry(), "【數值幾何黑箱抽查失敗】存在未防護之邊界發散", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_audio_and_sensors(), "【音訊感測器黑箱抽查失敗】存在畸形輸入崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_thermal_and_dsp(), "【熱成像DSP黑箱抽查失敗】存在溢位或倒置崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_security_and_firmware(), "【金融韌體黑箱抽查失敗】存在安全性或長度溢出", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_ble_and_crypto(), "【藍芽密碼黑箱抽查失敗】存在Padding或截斷漏洞", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_motor_env_and_dukpt(), "【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_comm_and_clock(), "【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_ethernet_and_apdu(), "【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_power_and_baro(), "【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_lin_and_raycast_3d(), "【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_tsn_and_macsec(), "【TSN與MACsec黑箱抽查失敗】存在時間倒流或重放漏洞", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_agent_and_system(), "【代理馬具終端抽查失敗】存在路徑穿越或退格下溢", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_ai_tensor_train(), "【AI訓練張量算子抽查失敗】存在溢出除零或NaN穿透", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_instrument_scpi_vna(), "【儀器控制SCPI與VNA抽查失敗】存在除零或阻抗奇異點", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_pcb_cad_fem(), "【PCB與電磁FDTD抽查失敗】存在CFL除零或無效介電常數", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_motion_render_timeline(), "【影音動態Remotion時序抽查失敗】存在FPS除零或牛頓法發散", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_office_calc_layout(), "【辦公試算表與排版抽查失敗】存在PMT除零或溢出折行崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_rpa_screen_control(), "【RPA按鍵螢幕控制抽查失敗】存在螢幕色彩或GPIB握手崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_radar_cfar_doppler(), "【雷達CFAR與都卜勒抽查失敗】存在頻率除零或點雲邊界崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_dsp_fft_radix2(), "【快速傅立葉FFT抽查失敗】存在非2的冪次方或溢出崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_decision_mcts(), "【MCTS蒙地卡羅決策抽查失敗】存在無效路徑或零拜訪崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_curve_fit_trend(), "【曲線擬合與趨勢分析抽查失敗】存在除零或核半徑崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_ai_autograd_train(), "【自動求導與神經訓練抽查失敗】存在除零溢出或NaN穿透", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_comm_phy_bus(), "【實體層總線MIPI與RGMII抽查失敗】存在除零溢出或無效速率", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_radar_biomed_dsp(), "【雷達生醫與FMCW測距抽查失敗】存在除零溢出或無效頻寬", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_robotics_motion_profile(), "【機器人運動學與馬達輪廓抽查失敗】存在奇異點發散或除零崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_crypto_modern_wire(), "【現代高階線路加密抽查失敗】存在置換越界或GF256崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_vision_optical_flow_homography(), "【視覺光流與透視單應抽查失敗】存在奇異矩陣或越界採樣崩潰", &mut total, &mut passed, &mut failures);
-    check_audit_domain(audit_gnss_nmea_geodesy(), "【GNSS導航與大地測量抽查失敗】存在坐標奇異點或除零崩潰", &mut total, &mut passed, &mut failures);
+    run_chaos_audit_batch_a(&mut total, &mut passed, &mut failures);
+    run_chaos_audit_batch_b(&mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

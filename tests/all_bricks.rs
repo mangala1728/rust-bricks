@@ -2878,4 +2878,68 @@ fn test_gnss_nmea_geodesy_bricks() {
     assert!(!no_slip); // 實際差 0.1，預期 -(-0.1)*1 = 0.1 -> 無周跳
 }
 
+#[test]
+fn test_quant_orderbook_l2_bricks() {
+    use rust_bricks::quant_orderbook_l2::*;
+
+    // 1. 最優買賣報價 BBO、中間價與價差
+    let bbo = quant_l2_bbo_mid_and_spread(50.0, 52.0);
+    assert!(bbo.is_some());
+    let (mid, abs_sp, bps) = bbo.unwrap();
+    assert!((mid - 51.0).abs() < 1e-4);
+    assert!((abs_sp - 2.0).abs() < 1e-4);
+    assert!((bps - (2.0 / 51.0 * 10000.0)).abs() < 1e-2);
+
+    // 2. 訂單簿微觀不平衡度 (OBI)
+    let obi = quant_l2_order_book_imbalance_obi(80.0, 20.0);
+    assert!(obi.is_some());
+    assert!((obi.unwrap() - 0.6).abs() < 1e-4);
+
+    // 3. 交易量加權微觀價格 (Stoikov Micro-Price)
+    // 買量 300, 賣量 100, 買價 100, 賣價 102
+    // micro = (300*102 + 100*100) / 400 = (30600 + 10000) / 400 = 40600 / 400 = 101.5
+    let micro = quant_l2_weighted_micro_price(100.0, 102.0, 300.0, 100.0);
+    assert!(micro.is_some());
+    assert!((micro.unwrap() - 101.5).abs() < 1e-4);
+
+    // 4. 多檔深度加權中間價
+    let bids = [(100.0, 10.0), (99.0, 20.0)];
+    let asks = [(101.0, 10.0), (102.0, 20.0)];
+    let depth_mid = quant_l2_multi_level_depth_weighted_mid(&bids, &asks, 2);
+    assert!(depth_mid.is_some());
+    // avg_bid = (1000 + 1980)/30 = 99.3333
+    // avg_ask = (1010 + 2040)/30 = 101.6667
+    // mid = (99.3333 + 101.6667)/2 = 100.5
+    assert!((depth_mid.unwrap() - 100.5).abs() < 1e-3);
+
+    // 5. 有效價差 (Effective Spread)
+    let eff_sp = quant_effective_spread(101.5, 101.0);
+    assert!((eff_sp - 1.0).abs() < 1e-4);
+
+    // 6. 實現價差 (Realized Spread: 買方發起, 交易價 102, 未來中間價 101)
+    let r_sp = quant_realized_spread(102.0, 101.0, true);
+    assert!((r_sp - 2.0).abs() < 1e-4);
+
+    // 7. Kyle's Lambda 價格衝擊
+    let lambda = quant_kyle_lambda_price_impact(0.5, 1000.0);
+    assert!(lambda.is_some());
+    assert!((lambda.unwrap() - 0.0005).abs() < 1e-6);
+
+    // 8. Amihud 非流動性比率
+    let amihud = quant_amihud_illiquidity_ratio(0.02, 1_000_000.0);
+    assert!(amihud.is_some());
+    assert!((amihud.unwrap() - 2e-8).abs() < 1e-12);
+
+    // 9. VPIN 毒性訂單流步進
+    let vpin_step = quant_vpin_bucket_toxicity_step(600.0, 400.0, 1000.0);
+    assert!(vpin_step.is_some());
+    assert!((vpin_step.unwrap() - 0.2).abs() < 1e-4);
+
+    // 10. TWAP 時間加權平均價
+    let twap = quant_twap_step(36000.0, 360.0);
+    assert!(twap.is_some());
+    assert!((twap.unwrap() - 100.0).abs() < 1e-4);
+}
+
+
 

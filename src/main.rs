@@ -9,7 +9,7 @@ use rust_bricks::{
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
-    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
+    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
@@ -473,6 +473,17 @@ fn verify_gnss_nmea_geodesy() -> bool {
 }
 
 /// @outputs: 1
+fn verify_quant_orderbook_l2() -> bool {
+    let bbo = quant_orderbook_l2::quant_l2_bbo_mid_and_spread(100.0, 102.0);
+    let ok_bbo = matches!(bbo, Some((mid, spread, bps)) if (mid - 101.0).abs() < 1e-4 && (spread - 2.0).abs() < 1e-4 && bps > 0.0);
+    let obi = quant_orderbook_l2::quant_l2_order_book_imbalance_obi(300.0, 100.0);
+    let ok_obi = matches!(obi, Some(v) if (v - 0.5).abs() < 1e-4);
+    let micro = quant_orderbook_l2::quant_l2_weighted_micro_price(100.0, 102.0, 300.0, 100.0);
+    let ok_micro = matches!(micro, Some(p) if (p - 101.5).abs() < 1e-4);
+    ok_bbo && ok_obi && ok_micro
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -515,6 +526,7 @@ fn verify_all_subsystems() -> bool {
         && verify_crypto_modern_wire()
         && verify_vision_optical_flow_homography()
         && verify_gnss_nmea_geodesy()
+        && verify_quant_orderbook_l2()
 }
 
 /// @outputs: 1

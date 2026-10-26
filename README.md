@@ -83,6 +83,7 @@
 | [`spc_six_sigma_msa`](src/spc_six_sigma_msa.rs) | 六標準差製程能力 (Cp/Cpk)、常態分佈累積概率 (Phi/erf)、規格內良率與 DPPM、雙邊截斷高斯分佈 (Truncated Normal) 統計值與 PDF、AIAG 車規 MSA 量測系統分析 (Gage R&R EV/AV, %GRR, P/T Ratio, ndc 區分度) | 半導體/電子工廠 SPC 品質管制、車用 IATF 16949 / AIAG MSA 量產放行、精密公差不良率精算 |
 | [`spc_msa_advanced`](src/spc_msa_advanced.rs) | 長期性能指標 (Pp/Ppk)、樣本偏度與超額峰度、Box-Cox 冪變換、Shewhart X-bar/R 管制界限、Durbin-Watson 自相關、Weibull 可靠度、Anderson-Darling A² 常態檢定、卡方累積概率近似與 %PV 變異佔比 | 車規半導體良率分析、非高斯長尾製程正態轉換、SPC 管制圖即時監控、產品可靠度壽命預估 |
 | [`quant_finance_market`](src/quant_finance_market.rs) | 技術面 EMA 步進/RSI 強弱/布林通道三軌/MACD、基本面 PE/PB/ROE/FCF Yield、籌碼面 VWAP/大單淨流入率、指數期貨基差 (Contango/Backwardation)/年化持有成本殖利率、匯率調整報酬率 | 量化高頻交易、股市籌碼與基本面精算、期現套利 (Cash & Carry)、跨市場匯率對沖 |
+| [`quant_orderbook_l2`](src/quant_orderbook_l2.rs) | L2 最優買賣報價 (BBO) 中間價與基點價差、盤口訂單微觀不平衡度 (OBI)、交易量加權微觀價格 (Stoikov Micro-Price)、多檔深度加權中間價、有效價差、實現價差 (Realized Spread)、Kyle's Lambda 價格衝擊係數、Amihud 非流動性比率、VPIN 毒性訂單流指標步進、TWAP 時間加權平均價 | 高頻做市商造市報價、訂單流毒性預警、大單演算法拆單 (TWAP/VWAP)、市場衝擊成本估算 |
 | [`rpa_screen_control`](src/rpa_screen_control.rs) | 螢幕 RGB 感知色彩距離 (Redmean)、模糊色塊找色 (Find Color Patch)、擬人滑鼠移動軌跡、雙擊狀態機、GPIB IEEE 488.1 3線握手、RS485 傳輸時延 | 土法自動化 (按鍵精靈 / PyAutoGUI 替代)、工控儀表 GPIB 握手、RS485 半雙工方向切換 |
 | [`sensor_baro_als`](src/sensor_baro_als.rs) | 巴羅米特氣壓公式國際標準海拔高度解算、OPT3001/BH1750 環境光感測器 Lux 換算 | 智慧手錶/手環爬樓梯氣壓高度計、螢幕自動亮度調節、氣象站 |
 | [`sensor_power_meter`](src/sensor_power_meter.rs) | 歐姆定律分流電流計算、庫侖計電量時間積分 (mAh)、單節鋰電池 OCV 開路電壓轉 SOC% | 智慧電池管理系統 (BMS)、可穿戴設備電量百分比顯示、功率計 |

@@ -56,6 +56,7 @@ pub mod packet_checksum;
 pub mod pcb_cad_fem;
 pub mod physics_raycast_3d;
 pub mod quant_finance_market;
+pub mod quant_orderbook_l2;
 pub mod radar_aoa_mti;
 pub mod radar_biomed_dsp;
 pub mod radar_cfar_doppler;
