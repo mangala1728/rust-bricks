@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 576
+total_functions: 585
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -83,6 +83,54 @@ modules:
       - name: "log_sum_exp_f32"
         signature: "pub fn log_sum_exp_f32(logits: &[f32]) -> Option<f32>"
         outputs: 1
+  - module: "ai_rl_policy_gradient"
+    file: "src/ai_rl_policy_gradient.rs"
+    functions_count: 9
+    architecture_map:
+    functions:
+      - name: "rl_ppo_clipped_surrogate_loss"
+        signature: "pub fn rl_ppo_clipped_surrogate_loss("
+        outputs: 1
+        domains:
+          log_prob: "[-1e3, 1e3], old_log_prob [-1e3, 1e3], advantage [-1e6, 1e6], epsilon [0.0, 1.0]"
+      - name: "rl_gae_advantage_step"
+        signature: "pub fn rl_gae_advantage_step("
+        outputs: 1
+        domains:
+          r_t: "[-1e6, 1e6], v_current [-1e6, 1e6], v_next [-1e6, 1e6], gamma [0.0, 1.0], lambda [0.0, 1.0]"
+      - name: "rl_gaussian_policy_log_prob"
+        signature: "pub fn rl_gaussian_policy_log_prob(action: f64, mean: f64, std: f64) -> f64"
+        outputs: 1
+        domains:
+          action: "[-1e6, 1e6], mean [-1e6, 1e6], std [1e-6, 1e6]"
+      - name: "rl_discrete_policy_entropy"
+        signature: "pub fn rl_discrete_policy_entropy(probs: &[f64]) -> f64"
+        outputs: 1
+      - name: "rl_gumbel_sample_perturb_score"
+        signature: "pub fn rl_gumbel_sample_perturb_score(logit: f64, uniform_u: f64) -> f64"
+        outputs: 1
+        domains:
+          logit: "[-1e3, 1e3], uniform_u [1e-7, 0.9999999]"
+      - name: "rl_discounted_return_step"
+        signature: "pub fn rl_discounted_return_step("
+        outputs: 1
+        domains:
+          reward: "[-1e6, 1e6], next_return [-1e6, 1e6], gamma [0.0, 1.0]"
+      - name: "rl_polyak_target_soft_update"
+        signature: "pub fn rl_polyak_target_soft_update(source: f64, target: f64, tau: f64) -> f64"
+        outputs: 1
+        domains:
+          source: "[-1e9, 1e9], target [-1e9, 1e9], tau [0.0, 1.0]"
+      - name: "rl_td0_value_update_step"
+        signature: "pub fn rl_td0_value_update_step("
+        outputs: 1
+        domains:
+          v_s: "[-1e6, 1e6], reward [-1e6, 1e6], v_next [-1e6, 1e6], alpha [0.0, 1.0], gamma [0.0, 1.0]"
+      - name: "rl_value_huber_loss"
+        signature: "pub fn rl_value_huber_loss(v_pred: f64, v_target: f64, delta: f64) -> f64"
+        outputs: 1
+        domains:
+          v_pred: "[-1e6, 1e6], v_target [-1e6, 1e6], delta [1e-6, 100.0]"
   - module: "ai_tensor_gemm"
     file: "src/ai_tensor_gemm.rs"
     functions_count: 10

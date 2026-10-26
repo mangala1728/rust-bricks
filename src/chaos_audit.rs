@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -904,6 +904,20 @@ fn audit_fieldbus_motion_cia402() -> bool {
 }
 
 /// @outputs: 1
+fn audit_ai_rl_policy_gradient() -> bool {
+    let mut ok = true;
+    ok &= ai_rl_policy_gradient::rl_ppo_clipped_surrogate_loss(f64::NAN, 0.0, 1.0, 0.2) == 0.0;
+    ok &= ai_rl_policy_gradient::rl_gae_advantage_step(0.0, 0.0, 0.0, false, 0.0, -1.0, 0.95) == 0.0; // 負折扣率
+    ok &= ai_rl_policy_gradient::rl_gaussian_policy_log_prob(0.0, 0.0, -1.0) == -1e9; // 負標準差
+    ok &= ai_rl_policy_gradient::rl_discrete_policy_entropy(&[]) == 0.0;
+    ok &= ai_rl_policy_gradient::rl_gumbel_sample_perturb_score(0.0, -0.1) == -1e9; // 越界隨機數
+    ok &= ai_rl_policy_gradient::rl_discounted_return_step(10.0, 100.0, false, -0.5) == 0.0;
+    ok &= ai_rl_policy_gradient::rl_polyak_target_soft_update(1.0, 2.0, -0.1) == 2.0; // 越界tau
+    ok &= ai_rl_policy_gradient::rl_value_huber_loss(10.0, 0.0, -1.0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -975,6 +989,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_codec_lossless_compression(), "【無損數據壓縮與線路編碼抽查失敗】存在溢出或越界解碼崩潰", total, passed, failures);
     check_audit_domain(audit_numerical_optimization_gradient(), "【數值最佳化與梯度求解抽查失敗】存在奇異發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_fieldbus_motion_cia402(), "【工業驅動器CiA402運動協議抽查失敗】存在狀態機或換算崩潰", total, passed, failures);
+    check_audit_domain(audit_ai_rl_policy_gradient(), "【強化學習與策略梯度抽查失敗】存在除零溢出或NaN發散", total, passed, failures);
 }
 
 /// @outputs: 2

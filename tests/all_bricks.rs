@@ -3689,6 +3689,49 @@ fn test_fieldbus_motion_cia402_bricks() {
     assert!(cia402_following_error_detect(1025, 1000, 10));  // 差值 25 > 10 (超限報警)
 }
 
+#[test]
+fn test_ai_rl_policy_gradient_bricks() {
+    use rust_bricks::ai_rl_policy_gradient::*;
+
+    // 1. PPO 截斷代理損失步進
+    let loss_pos = rl_ppo_clipped_surrogate_loss(0.5, 0.0, 2.0, 0.2);
+    assert!((loss_pos - 2.4).abs() < 1e-4);
+
+    // 2. GAE 廣義優勢估計遞迴
+    let gae = rl_gae_advantage_step(1.0, 5.0, 6.0, false, 1.0, 0.9, 0.95);
+    assert!((gae - 2.255).abs() < 1e-4);
+
+    // 3. 一維高斯策略對數似然
+    let log_p = rl_gaussian_policy_log_prob(0.0, 0.0, 1.0);
+    assert!((log_p - (-0.9189385332046727)).abs() < 1e-4);
+
+    // 4. 策略分佈香農熵
+    let ent = rl_discrete_policy_entropy(&[0.5, 0.5]);
+    assert!((ent - 0.6931471805599453).abs() < 1e-4);
+
+    // 5. Gumbel-Max 噪聲加權
+    let score = rl_gumbel_sample_perturb_score(2.0, 0.5);
+    assert!((score - 2.36651).abs() < 1e-3);
+
+    // 6. 折扣回報率反向累加
+    let g = rl_discounted_return_step(2.0, 10.0, false, 0.9);
+    assert_eq!(g, 11.0);
+
+    // 7. Polyak 軟更新
+    let theta_new = rl_polyak_target_soft_update(10.0, 0.0, 0.05);
+    assert_eq!(theta_new, 0.5);
+
+    // 8. TD(0) 狀態價值評估更新
+    let v_updated = rl_td0_value_update_step(5.0, 1.0, 6.0, false, 0.1, 0.9);
+    assert!((v_updated - 5.14).abs() < 1e-4);
+
+    // 9. 價值網路 Huber 損失
+    let huber_small = rl_value_huber_loss(5.2, 5.0, 1.0);
+    assert!((huber_small - 0.02).abs() < 1e-4);
+    let huber_large = rl_value_huber_loss(8.0, 5.0, 1.0);
+    assert_eq!(huber_large, 2.5);
+}
+
 
 
 
