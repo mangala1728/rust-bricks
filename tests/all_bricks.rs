@@ -1395,7 +1395,7 @@ fn test_instrument_scpi_vna_bricks() {
     assert!((min - 10.00001).abs() < 1e-7);
     assert!((max - 10.00004).abs() < 1e-7);
     assert!((mean - 10.000025).abs() < 1e-7);
-    assert!(std > 0.0);
+    assert!((std - 1.290994e-5).abs() < 1e-9);
 
     // 4. VNA S11 與 Smith 圓圖阻抗解算 (50 歐姆匹配點 Gamma=(0, 0) -> Z=(50, 0))
     let (gr, gi) = instrument_scpi_vna::vna_s11_to_complex(-100.0, 0.0);
@@ -1435,15 +1435,15 @@ fn test_pcb_cad_fem_bricks() {
     assert!(imp_opt.is_some());
     // @safety-proof: imp_opt 已驗證 is_some()
     let (z0, eps) = imp_opt.unwrap();
-    assert!(z0 > 45.0 && z0 < 55.0);
-    assert!(eps > 3.0 && eps < 4.0);
+    assert!((z0 - 50.8206).abs() < 1e-3);
+    assert!((eps - 3.3249).abs() < 1e-3);
 
     // 2. OpenEMS FDTD CFL 最大時間步長 (1mm 立方網格)
     let dt_opt = pcb_cad_fem::openems_fdtd_cfl_max_timestep_sec(0.001, 0.001, 0.001);
     assert!(dt_opt.is_some());
     // @safety-proof: dt_opt 已驗證 is_some()
     let dt = dt_opt.unwrap();
-    assert!(dt > 1.9e-12 && dt < 2.0e-12); // ~1.92 ps
+    assert!((dt - 1.925833e-12).abs() < 1e-15);
 
     // 3. Gerber 座標轉微米 (2.4 英吋格式，100000 = 10.0000 inch = 254,000 微米)
     let um_opt = pcb_cad_fem::gerber_coord_to_microns(b"100000", 4);
@@ -1453,7 +1453,7 @@ fn test_pcb_cad_fem_bricks() {
     let frac = pcb_cad_fem::pcb_rf_mitered_bend_fraction(1.0, 1.0);
     assert!(frac.is_some());
     // @safety-proof: frac 已驗證 is_some()
-    assert!(frac.unwrap() > 0.5 && frac.unwrap() < 0.9);
+    assert!((frac.unwrap() - 0.688506).abs() < 1e-4);
 
     // 5. 2D 多邊形鞋帶公式面積 (4x4 矩形)
     let poly = [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)];

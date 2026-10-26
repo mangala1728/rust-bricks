@@ -88,6 +88,6 @@ pub fn ntp_clock_offset_and_delay(t0_ms: i64, t1_ms: i64, t2_ms: i64, t3_ms: i64
     // Delay delta = (t3 - t0) - (t2 - t1)
     // Offset theta = ((t1 - t0) + (t2 - t3)) / 2
     let round_trip = (t3_ms.saturating_sub(t0_ms)).saturating_sub(t2_ms.saturating_sub(t1_ms));
-    let offset = ((t1_ms.saturating_sub(t0_ms)) + (t2_ms.saturating_sub(t3_ms))) / 2;
+    let offset = (t1_ms.saturating_sub(t0_ms)).saturating_add(t2_ms.saturating_sub(t3_ms)) / 2;
     (offset, round_trip.max(0))
 }
