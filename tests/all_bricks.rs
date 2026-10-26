@@ -1839,3 +1839,48 @@ fn test_comm_phy_bus_bricks() {
     assert_eq!(bytes_n, 8);
     assert_eq!(unpacked_bytes, raw_bytes);
 }
+
+#[test]
+fn test_radar_biomed_dsp_bricks() {
+    use rust_bricks::radar_biomed_dsp;
+
+    // 1. MIMO 正交 Hadamard CDMA 編碼
+    let h0 = radar_biomed_dsp::radar_hadamard_cdma_code(0, 4).unwrap();
+    let h1 = radar_biomed_dsp::radar_hadamard_cdma_code(1, 4).unwrap();
+    assert_eq!(h0, 1);
+    assert_eq!(h1, 1);
+
+    // 2. TDMA 發射天線排程
+    assert!(radar_biomed_dsp::radar_tdma_tx_burst_active(0, 3, 0));
+    assert!(!radar_biomed_dsp::radar_tdma_tx_burst_active(1, 3, 0));
+    assert!(radar_biomed_dsp::radar_tdma_tx_burst_active(1, 3, 1));
+
+    // 3. FMCW 距離解析度 (帶寬 1 GHz -> ~0.15 m)
+    let res = radar_biomed_dsp::radar_fmcw_range_resolution_meters(1.0e9).unwrap();
+    assert!((res - 0.149896).abs() < 1e-4);
+
+    // 4. FMCW 拍頻測距 (fb = 100 kHz, Tc = 1 ms, B = 1 GHz -> R = 15 m)
+    let r = radar_biomed_dsp::radar_fmcw_beat_frequency_to_range(100.0e3, 1.0e-3, 1.0e9).unwrap();
+    assert!((r - 14.9896).abs() < 1e-3);
+
+    // 5. 微都卜勒人體胸腔微動相位解纏繞 (Phase Unwrap)
+    let unwrapped = radar_biomed_dsp::radar_phase_unwrap_step(0.5, 0.4);
+    assert!((unwrapped - 0.5).abs() < 1e-4);
+    let unwrapped_jump = radar_biomed_dsp::radar_phase_unwrap_step(-3.0, 3.0);
+    assert!((unwrapped_jump - (3.0 + 2.0 * std::f32::consts::PI - 6.0)).abs() < 0.5);
+
+    // 6. 生醫呼吸信號帶通濾波
+    let mut state = [0.0f32; 2];
+    let resp = radar_biomed_dsp::radar_respiration_bandpass_step(1.0, &mut state, 0.9, 0.1);
+    assert!(resp > 0.0 && resp < 1.0);
+
+    // 7. 8-bit Q7 與 32-bit Q31 量化與反量化
+    let q7_pos = radar_biomed_dsp::dsp_quantize_f32_to_q7(1.0);
+    assert_eq!(q7_pos, 127);
+    let f_pos = radar_biomed_dsp::dsp_dequantize_q7_to_f32(q7_pos);
+    assert!((f_pos - 1.0).abs() < 1e-2);
+
+    let q31_half = radar_biomed_dsp::dsp_quantize_f64_to_q31(0.5);
+    let f64_half = radar_biomed_dsp::dsp_dequantize_q31_to_f64(q31_half);
+    assert!((f64_half - 0.5).abs() < 1e-6);
+}

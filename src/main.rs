@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
-    radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_biomed_dsp, radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
 };
@@ -270,6 +270,17 @@ fn verify_comm_phy_bus() -> bool {
 }
 
 /// @outputs: 1
+fn verify_radar_biomed_dsp() -> bool {
+    let res = radar_biomed_dsp::radar_fmcw_range_resolution_meters(1.0e9);
+    let ok_res = matches!(res, Some(r) if (r - 0.149896).abs() < 1e-4);
+    let unwrap = radar_biomed_dsp::radar_phase_unwrap_step(0.1, 0.0);
+    let ok_unwrap = (unwrap - 0.1).abs() < 1e-4;
+    let q7 = radar_biomed_dsp::dsp_quantize_f32_to_q7(1.0);
+    let ok_q7 = q7 == 127;
+    ok_res && ok_unwrap && ok_q7
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -294,6 +305,7 @@ fn verify_all_subsystems() -> bool {
         && verify_curve_fit_trend()
         && verify_ai_autograd_train()
         && verify_comm_phy_bus()
+        && verify_radar_biomed_dsp()
 }
 
 /// @outputs: 1

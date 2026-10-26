@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 256,
+  "total_functions": 266,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1217,6 +1217,63 @@
         {
           "name": "point_plane_distance_signed",
           "signature": "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "radar_biomed_dsp",
+      "file": "src/radar_biomed_dsp.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "radar_hadamard_cdma_code",
+          "signature": "pub fn radar_hadamard_cdma_code(tx_index: usize, code_len: usize) -> Option<i8>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_tdma_tx_burst_active",
+          "signature": "pub fn radar_tdma_tx_burst_active(tx_id: usize, total_tx: usize, chirp_seq: usize) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "radar_fmcw_range_resolution_meters",
+          "signature": "pub fn radar_fmcw_range_resolution_meters(bandwidth_hz: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "radar_fmcw_beat_frequency_to_range",
+          "signature": "pub fn radar_fmcw_beat_frequency_to_range(",
+          "outputs": 1
+        },
+        {
+          "name": "radar_phase_unwrap_step",
+          "signature": "pub fn radar_phase_unwrap_step(current_phase_rad: f32, prev_phase_rad: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "radar_respiration_bandpass_step",
+          "signature": "pub fn radar_respiration_bandpass_step(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_quantize_f32_to_q7",
+          "signature": "pub fn dsp_quantize_f32_to_q7(sample: f32) -> i8",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_dequantize_q7_to_f32",
+          "signature": "pub fn dsp_dequantize_q7_to_f32(sample: i8) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_quantize_f64_to_q31",
+          "signature": "pub fn dsp_quantize_f64_to_q31(sample: f64) -> i32",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_dequantize_q31_to_f64",
+          "signature": "pub fn dsp_dequantize_q31_to_f64(sample: i32) -> f64",
           "outputs": 1
         }
       ]
