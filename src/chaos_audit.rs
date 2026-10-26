@@ -12,7 +12,7 @@ use crate::{
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
-    vision_morphology_fast,
+    vision_morphology_fast, vision_optical_flow_homography,
 };
 
 pub struct AuditSummary {
@@ -684,6 +684,23 @@ fn audit_crypto_modern_wire() -> bool {
 }
 
 /// @outputs: 1
+fn audit_vision_optical_flow_homography() -> bool {
+    let mut ok = true;
+    let (ix2, iy2, ixiy) = vision_optical_flow_homography::vision_harris_structure_tensor_step(10, -5);
+    ok &= ix2 == 100 && iy2 == 25 && ixiy == -50;
+    // 奇異點/不可逆光流方程
+    ok &= vision_optical_flow_homography::vision_lucas_kanade_2x2_solve(0.0, 0.0, 0.0, 1.0, 1.0).is_none();
+    // 退化單應矩陣 (w' = 0)
+    let h_deg = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0];
+    ok &= vision_optical_flow_homography::vision_homography_project_point_2d(&h_deg, 1.0, 1.0).is_none();
+    // 雙線性採樣越界
+    ok &= vision_optical_flow_homography::vision_bilinear_sample_u8(&[10, 20, 30, 40], 2, 2, -1.0, 0.5).is_none();
+    // 直線擬合點數過少
+    ok &= vision_optical_flow_homography::vision_least_squares_line_2d(&[[1.0, 2.0]]).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -743,6 +760,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_crypto_modern_wire(), "【現代高階線路加密抽查失敗】存在置換越界或GF256崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_vision_optical_flow_homography(), "【視覺光流與透視單應抽查失敗】存在奇異矩陣或越界採樣崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

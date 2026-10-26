@@ -12,7 +12,7 @@ use rust_bricks::{
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
-    touch_control, vision_feature, vision_morphology_fast, vision_yuv,
+    touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -449,6 +449,18 @@ fn verify_crypto_modern_wire() -> bool {
 }
 
 /// @outputs: 1
+fn verify_vision_optical_flow_homography() -> bool {
+    let (ix2, iy2, ixiy) = vision_optical_flow_homography::vision_harris_structure_tensor_step(3, 4);
+    let ok_tensor = ix2 == 9 && iy2 == 16 && ixiy == 12;
+    let lk = vision_optical_flow_homography::vision_lucas_kanade_2x2_solve(2.0, 2.0, 0.0, 4.0, 6.0);
+    let ok_lk = matches!(lk, Some((u, v)) if (u - (-2.0)).abs() < 1e-4 && (v - (-3.0)).abs() < 1e-4);
+    let h_eye = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+    let proj = vision_optical_flow_homography::vision_homography_project_point_2d(&h_eye, 5.0, 7.0);
+    let ok_proj = matches!(proj, Some((x, y)) if (x - 5.0).abs() < 1e-4 && (y - 7.0).abs() < 1e-4);
+    ok_tensor && ok_lk && ok_proj
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -489,6 +501,7 @@ fn verify_all_subsystems() -> bool {
         && verify_fieldbus_industrial_eth()
         && verify_robotics_6dof_slerp()
         && verify_crypto_modern_wire()
+        && verify_vision_optical_flow_homography()
 }
 
 /// @outputs: 1

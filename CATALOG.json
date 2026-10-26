@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 416,
+  "total_functions": 426,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2539,6 +2539,63 @@
         {
           "name": "vision_color_hsv_in_range",
           "signature": "pub fn vision_color_hsv_in_range(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "vision_optical_flow_homography",
+      "file": "src/vision_optical_flow_homography.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "vision_harris_structure_tensor_step",
+          "signature": "pub fn vision_harris_structure_tensor_step(ix: i16, iy: i16) -> (i32, i32, i32)",
+          "outputs": 3
+        },
+        {
+          "name": "vision_lucas_kanade_2x2_solve",
+          "signature": "pub fn vision_lucas_kanade_2x2_solve(",
+          "outputs": 1
+        },
+        {
+          "name": "vision_homography_project_point_2d",
+          "signature": "pub fn vision_homography_project_point_2d(h: &[f32; 9], x: f32, y: f32) -> Option<(f32, f32)>",
+          "outputs": 1
+        },
+        {
+          "name": "vision_affine_transform_point_2d",
+          "signature": "pub fn vision_affine_transform_point_2d(a: &[f32; 6], x: f32, y: f32) -> (f32, f32)",
+          "outputs": 2
+        },
+        {
+          "name": "vision_bilinear_sample_u8",
+          "signature": "pub fn vision_bilinear_sample_u8(img: &[u8], width: usize, height: usize, x: f32, y: f32) -> Option<u8>",
+          "outputs": 1
+        },
+        {
+          "name": "vision_homography_3x3_inverse",
+          "signature": "pub fn vision_homography_3x3_inverse(h: &[f32; 9], out_inv: &mut [f32; 9]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "vision_ransac_homography_inlier_step",
+          "signature": "pub fn vision_ransac_homography_inlier_step(",
+          "outputs": 1
+        },
+        {
+          "name": "vision_se2_rigid_transform_point_2d",
+          "signature": "pub fn vision_se2_rigid_transform_point_2d(",
+          "outputs": 2
+        },
+        {
+          "name": "vision_graham_scan_cross_product",
+          "signature": "pub fn vision_graham_scan_cross_product(p1: [f32; 2], p2: [f32; 2], p3: [f32; 2]) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "vision_least_squares_line_2d",
+          "signature": "pub fn vision_least_squares_line_2d(points: &[[f32; 2]]) -> Option<(f32, f32)>",
           "outputs": 1
         }
       ]

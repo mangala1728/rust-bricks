@@ -2722,3 +2722,86 @@ fn test_crypto_modern_wire_bricks() {
     let code = crypto_modern_wire::hotp_truncate_code(&hmac_mock);
     assert!(code < 1_000_000);
 }
+
+#[test]
+fn test_vision_optical_flow_homography_bricks() {
+    use rust_bricks::vision_optical_flow_homography::*;
+
+    // 1. Harris 梯度結構張量
+    let (ix2, iy2, ixiy) = vision_harris_structure_tensor_step(20, -10);
+    assert_eq!(ix2, 400);
+    assert_eq!(iy2, 100);
+    assert_eq!(ixiy, -200);
+
+    // 2. Lucas-Kanade 稀疏光流 2x2 求解
+    // [ 4  0 ] [ u ] = - [ -8 ] => u = 2
+    // [ 0  4 ] [ v ]   - [ 12 ] => v = -3
+    let sol = vision_lucas_kanade_2x2_solve(4.0, 4.0, 0.0, -8.0, 12.0);
+    assert!(sol.is_some());
+    let (u, v) = sol.unwrap();
+    assert!((u - 2.0).abs() < 1e-5);
+    assert!((v - (-3.0)).abs() < 1e-5);
+
+    // 3. 3x3 單應矩陣齊次射影轉換
+    // 平移 x+10, y+20
+    let h_trans = [
+        1.0, 0.0, 10.0,
+        0.0, 1.0, 20.0,
+        0.0, 0.0, 1.0,
+    ];
+    let pt_proj = vision_homography_project_point_2d(&h_trans, 5.0, 15.0);
+    assert!(pt_proj.is_some());
+    let (px, py) = pt_proj.unwrap();
+    assert!((px - 15.0).abs() < 1e-4);
+    assert!((py - 35.0).abs() < 1e-4);
+
+    // 4. 2D 仿射變換
+    let affine_scale = [2.0, 0.0, 5.0, 0.0, 3.0, -2.0];
+    let (ax, ay) = vision_affine_transform_point_2d(&affine_scale, 10.0, 4.0);
+    assert!((ax - 25.0).abs() < 1e-4);
+    assert!((ay - 10.0).abs() < 1e-4);
+
+    // 5. 雙線性插值次像素採樣
+    let img = [10u8, 20, 30, 40]; // 2x2
+    let s_mid = vision_bilinear_sample_u8(&img, 2, 2, 0.5, 0.5);
+    assert!(s_mid.is_some());
+    assert_eq!(s_mid.unwrap(), 25); // (10+20+30+40)/4 = 25
+
+    // 6. 3x3 單應矩陣求逆
+    let mut h_inv = [0.0f32; 9];
+    let inv_ok = vision_homography_3x3_inverse(&h_trans, &mut h_inv);
+    assert!(inv_ok);
+    let pt_back = vision_homography_project_point_2d(&h_inv, 15.0, 35.0);
+    assert!(pt_back.is_some());
+    let (bx, by) = pt_back.unwrap();
+    assert!((bx - 5.0).abs() < 1e-4);
+    assert!((by - 15.0).abs() < 1e-4);
+
+    // 7. RANSAC 單應內點判定
+    let inlier = vision_ransac_homography_inlier_step([5.0, 15.0], [15.1, 34.9], &h_trans, 0.5);
+    assert!(inlier);
+    let outlier = vision_ransac_homography_inlier_step([5.0, 15.0], [20.0, 40.0], &h_trans, 0.5);
+    assert!(!outlier);
+
+    // 8. SE(2) 平面剛體運動變換 (旋轉 0, 平移 (2, 3))
+    let (rx, ry) = vision_se2_rigid_transform_point_2d(2.0, 3.0, 0.0, 1.0, 1.0);
+    assert!((rx - 3.0).abs() < 1e-3);
+    assert!((ry - 4.0).abs() < 1e-3);
+
+    // 9. Graham Scan 外積轉向判定
+    // (0,0) -> (1,0) -> (1,1) 為逆時針轉向 (> 0)
+    let cp_left = vision_graham_scan_cross_product([0.0, 0.0], [1.0, 0.0], [1.0, 1.0]);
+    assert!(cp_left > 0.0);
+    // (0,0) -> (1,0) -> (1,-1) 為順時針轉向 (< 0)
+    let cp_right = vision_graham_scan_cross_product([0.0, 0.0], [1.0, 0.0], [1.0, -1.0]);
+    assert!(cp_right < 0.0);
+
+    // 10. 2D 最小二乘直線擬合 (y = 2x + 1)
+    let pts = [[0.0, 1.0], [1.0, 3.0], [2.0, 5.0], [3.0, 7.0]];
+    let line = vision_least_squares_line_2d(&pts);
+    assert!(line.is_some());
+    let (m, c) = line.unwrap();
+    assert!((m - 2.0).abs() < 1e-4);
+    assert!((c - 1.0).abs() < 1e-4);
+}
+

@@ -53,6 +53,7 @@
 | [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
 | [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
 | [`vision_morphology_fast`](src/vision_morphology_fast.rs) | 3x3 二值形態學膨脹/侵蝕、形態學梯度邊緣提取、FAST-9 圓環特徵角點判定、霍夫直線累積索引換算、投影積分直方圖、IoU 邊界框交併比、NCC 標準化互相關樣板匹配、RGB 轉 HSV 色彩空間與環形色相遮罩 | 邊緣視覺特徵提取、目標定位與 NMS 非極大值抑制、OCR 文本行切割、即時樣板比對、HSV 顏色分割 |
+| [`vision_optical_flow_homography`](src/vision_optical_flow_homography.rs) | Harris 局部梯度結構張量步進、Lucas-Kanade 2x2 稀疏光流克萊姆法則求解、3x3 單應矩陣 (Homography) 齊次射影轉換、2D 仿射變換前向映射、次像素雙線性插值採樣、3x3 伴隨矩陣求逆、RANSAC 單應內點判定、SE(2) 平面剛體運動變換、Graham Scan 凸包外積轉向判定、2D 點集最小二乘直線擬合 | 影像特徵追蹤、透視投影畸變校正、全景拼接、相機位姿估計、機器視覺引導定位 |
 | [`bezier_curve`](src/bezier_curve.rs) | 三次貝茲曲線座標內插、切線速度向量、曲線曲率幾何計算 | 網頁 Wasm 動態圖表、AI 簡報路徑平滑動畫、粒子幾何軌跡 |
 | [`motion_dead_reckon`](src/motion_dead_reckon.rs) | 手機慣性導航零速更新 (ZUPT)、一維航位推算積分、觸覺震動馬達多模式時序生成 | 手機遊戲體感位移、步態/停頓消除漂移、馬達短震/警示反饋 |
 | [`motion_render_timeline`](src/motion_render_timeline.rs) | Remotion 影格與時間戳雙向精確整數換算、SMPTE 時間碼格式化、CSS Cubic-Bezier 曲線牛頓法求值、SVG 描邊動畫、FFMPEG 剪輯時間字串 | React Remotion 視訊動態渲染、Headless 瀏覽器/Wasm 動態動畫、FFMPEG 影音剪輯管線 |

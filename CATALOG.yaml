@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 416
+total_functions: 426
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2487,6 +2487,67 @@ modules:
           h: "[0, 360]"
           h_min: "[0, 360]"
           h_max: "[0, 360]"
+  - module: "vision_optical_flow_homography"
+    file: "src/vision_optical_flow_homography.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "vision_harris_structure_tensor_step"
+        signature: "pub fn vision_harris_structure_tensor_step(ix: i16, iy: i16) -> (i32, i32, i32)"
+        outputs: 3
+        domains:
+          ix: "[-32768, 32767]"
+          iy: "[-32768, 32767]"
+      - name: "vision_lucas_kanade_2x2_solve"
+        signature: "pub fn vision_lucas_kanade_2x2_solve("
+        outputs: 1
+        domains:
+          sum_ix2: "[0.0, 1e12]"
+          sum_iy2: "[0.0, 1e12]"
+          sum_ixiy: "[-1e12, 1e12]"
+          sum_ixt: "[-1e12, 1e12]"
+          sum_iyt: "[-1e12, 1e12]"
+      - name: "vision_homography_project_point_2d"
+        signature: "pub fn vision_homography_project_point_2d(h: &[f32; 9], x: f32, y: f32) -> Option<(f32, f32)>"
+        outputs: 1
+        domains:
+          x: "[-1e6, 1e6]"
+          y: "[-1e6, 1e6]"
+      - name: "vision_affine_transform_point_2d"
+        signature: "pub fn vision_affine_transform_point_2d(a: &[f32; 6], x: f32, y: f32) -> (f32, f32)"
+        outputs: 2
+        domains:
+          x: "[-1e6, 1e6]"
+          y: "[-1e6, 1e6]"
+      - name: "vision_bilinear_sample_u8"
+        signature: "pub fn vision_bilinear_sample_u8(img: &[u8], width: usize, height: usize, x: f32, y: f32) -> Option<u8>"
+        outputs: 1
+        domains:
+          x: "[0.0, 65535.0]"
+          y: "[0.0, 65535.0]"
+      - name: "vision_homography_3x3_inverse"
+        signature: "pub fn vision_homography_3x3_inverse(h: &[f32; 9], out_inv: &mut [f32; 9]) -> bool"
+        outputs: 1
+      - name: "vision_ransac_homography_inlier_step"
+        signature: "pub fn vision_ransac_homography_inlier_step("
+        outputs: 1
+        domains:
+          threshold: "[0.0, 1e6]"
+      - name: "vision_se2_rigid_transform_point_2d"
+        signature: "pub fn vision_se2_rigid_transform_point_2d("
+        outputs: 2
+        domains:
+          tx: "[-1e6, 1e6]"
+          ty: "[-1e6, 1e6]"
+          theta_rad: "[-1000.0, 1000.0]"
+          x: "[-1e6, 1e6]"
+          y: "[-1e6, 1e6]"
+      - name: "vision_graham_scan_cross_product"
+        signature: "pub fn vision_graham_scan_cross_product(p1: [f32; 2], p2: [f32; 2], p3: [f32; 2]) -> f32"
+        outputs: 1
+      - name: "vision_least_squares_line_2d"
+        signature: "pub fn vision_least_squares_line_2d(points: &[[f32; 2]]) -> Option<(f32, f32)>"
+        outputs: 1
   - module: "vision_yuv"
     file: "src/vision_yuv.rs"
     functions_count: 3
