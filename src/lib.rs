@@ -65,6 +65,7 @@ pub mod sensor_hardware;
 pub mod sensor_motion;
 pub mod sensor_power_meter;
 pub mod spatial_physics;
+pub mod spc_msa_advanced;
 pub mod spc_six_sigma_msa;
 pub mod sys_path;
 pub mod text_cleaner;

@@ -11,7 +11,7 @@ use rust_bricks::{
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_yuv,
 };
 use std::env;
@@ -406,6 +406,15 @@ fn verify_instrument_lxi_hislip() -> bool {
 }
 
 /// @outputs: 1
+fn verify_spc_msa_advanced() -> bool {
+    let pp = spc_msa_advanced::spc_pp_ppk_performance(10.0, 1.0, 13.0, 7.0);
+    let ok_pp = matches!(pp, Some((p, pk)) if (p - 1.0).abs() < 1e-3 && (pk - 1.0).abs() < 1e-3);
+    let r = spc_msa_advanced::spc_weibull_reliability_step(100.0, 100.0, 1.0);
+    let ok_r = matches!(r, Some(v) if (v - 0.3678).abs() < 1e-2);
+    ok_pp && ok_r
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -442,6 +451,7 @@ fn verify_all_subsystems() -> bool {
         && verify_vision_morphology_fast()
         && verify_audio_mfcc_pitch()
         && verify_instrument_lxi_hislip()
+        && verify_spc_msa_advanced()
 }
 
 /// @outputs: 1

@@ -11,7 +11,7 @@ use crate::{
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast,
 };
 
@@ -613,6 +613,24 @@ fn audit_instrument_lxi_hislip() -> bool {
 }
 
 /// @outputs: 1
+fn audit_spc_msa_advanced() -> bool {
+    let mut ok = true;
+    ok &= spc_msa_advanced::spc_pp_ppk_performance(10.0, 0.0, 15.0, 5.0).is_none(); // 標準差為0
+    ok &= spc_msa_advanced::spc_skewness_kurtosis(&[1.0, 2.0]).is_none(); // 樣本數不足 4
+    ok &= spc_msa_advanced::spc_box_cox_transform_step(-1.0, 0.5).is_none(); // x <= 0
+    let (ucl, cl, lcl) = spc_msa_advanced::spc_shewhart_xbar_limits(f64::NAN, 1.0, 1.0);
+    ok &= ucl == 0.0 && cl == 0.0 && lcl == 0.0;
+    let (r_ucl, r_cl, r_lcl) = spc_msa_advanced::spc_shewhart_r_limits(1.0, 2.0, 1.0); // D4 < D3
+    ok &= r_ucl == 0.0 && r_cl == 0.0 && r_lcl == 0.0;
+    ok &= spc_msa_advanced::spc_durbin_watson_autocorr(&[]).is_none();
+    ok &= spc_msa_advanced::spc_weibull_reliability_step(-1.0, 100.0, 1.5).is_none(); // t < 0
+    ok &= spc_msa_advanced::spc_anderson_darling_a2_step(&[]).is_none();
+    ok &= spc_msa_advanced::spc_chi_square_cdf_approx(-1.0, 5).is_none(); // chi2 < 0
+    ok &= spc_msa_advanced::spc_msa_part_to_part_variation(20.0, 10.0).is_none(); // PV > TV
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -668,6 +686,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_audio_mfcc_pitch(), "【音訊MFCC與基頻特徵抽查失敗】存在溢出或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

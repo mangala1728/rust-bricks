@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 377,
+  "total_functions": 387,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2050,6 +2050,63 @@
         {
           "name": "spring_damper_step",
           "signature": "pub fn spring_damper_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "spc_msa_advanced",
+      "file": "src/spc_msa_advanced.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "spc_pp_ppk_performance",
+          "signature": "pub fn spc_pp_ppk_performance(mean: f64, overall_std: f64, usl: f64, lsl: f64) -> Option<(f64, f64)>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_skewness_kurtosis",
+          "signature": "pub fn spc_skewness_kurtosis(samples: &[f64]) -> Option<(f64, f64)>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_box_cox_transform_step",
+          "signature": "pub fn spc_box_cox_transform_step(x: f64, lambda: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_shewhart_xbar_limits",
+          "signature": "pub fn spc_shewhart_xbar_limits(grand_mean: f64, avg_range: f64, a2_factor: f64) -> (f64, f64, f64)",
+          "outputs": 1
+        },
+        {
+          "name": "spc_shewhart_r_limits",
+          "signature": "pub fn spc_shewhart_r_limits(avg_range: f64, d3_factor: f64, d4_factor: f64) -> (f64, f64, f64)",
+          "outputs": 1
+        },
+        {
+          "name": "spc_durbin_watson_autocorr",
+          "signature": "pub fn spc_durbin_watson_autocorr(residuals: &[f64]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_weibull_reliability_step",
+          "signature": "pub fn spc_weibull_reliability_step(t: f64, eta_scale: f64, beta_shape: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_anderson_darling_a2_step",
+          "signature": "pub fn spc_anderson_darling_a2_step(norm_cdf_vals_sorted: &[f64]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_chi_square_cdf_approx",
+          "signature": "pub fn spc_chi_square_cdf_approx(chi2: f64, df: u32) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_msa_part_to_part_variation",
+          "signature": "pub fn spc_msa_part_to_part_variation(pv_std: f64, total_variation_std: f64) -> Option<f64>",
           "outputs": 1
         }
       ]

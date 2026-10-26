@@ -2498,3 +2498,55 @@ fn test_instrument_lxi_hislip_bricks() {
     assert!(mdns_len > 0);
     assert_eq!(std::str::from_utf8(&mdns_buf[..mdns_len]).unwrap(), "Keysight_34461A-MY53001234._lxi._tcp.local");
 }
+
+#[test]
+fn test_spc_msa_advanced_bricks() {
+    use rust_bricks::spc_msa_advanced;
+
+    // 1. Pp 與 Ppk 計算 (平均值 10.0, 總體標準差 1.0, 規格 7.0..13.0 -> Pp=1.0, Ppk=1.0)
+    let (pp, ppk) = spc_msa_advanced::spc_pp_ppk_performance(10.0, 1.0, 13.0, 7.0).unwrap();
+    assert!((pp - 1.0).abs() < 1e-4);
+    assert!((ppk - 1.0).abs() < 1e-4);
+
+    // 2. 偏度與超額峰度 (對稱分佈偏度 ~ 0)
+    let sym_data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
+    let (skew, _) = spc_msa_advanced::spc_skewness_kurtosis(&sym_data).unwrap();
+    assert!(skew.abs() < 1e-3);
+
+    // 3. Box-Cox 變換 (lambda = 0 -> ln(x))
+    let bc_ln = spc_msa_advanced::spc_box_cox_transform_step(2.718281828, 0.0).unwrap();
+    assert!((bc_ln - 1.0).abs() < 1e-3);
+
+    // 4. Shewhart X-bar 與 R 管制界限
+    let (ucl, cl, lcl) = spc_msa_advanced::spc_shewhart_xbar_limits(100.0, 10.0, 0.577);
+    assert!((ucl - 105.77).abs() < 1e-3);
+    assert_eq!(cl, 100.0);
+    assert!((lcl - 94.23).abs() < 1e-3);
+
+    let (r_ucl, r_cl, r_lcl) = spc_msa_advanced::spc_shewhart_r_limits(10.0, 0.0, 2.114);
+    assert!((r_ucl - 21.14).abs() < 1e-3);
+    assert_eq!(r_cl, 10.0);
+    assert_eq!(r_lcl, 0.0);
+
+    // 5. Durbin-Watson 自相關 (無自相關時 d ~ 2)
+    let res = [1.0, -1.0, 1.0, -1.0, 1.0, -1.0];
+    let d = spc_msa_advanced::spc_durbin_watson_autocorr(&res).unwrap();
+    assert!(d > 1.0);
+
+    // 6. 韋伯可靠度 (t = eta -> R = exp(-1) ~ 0.3679)
+    let r_weibull = spc_msa_advanced::spc_weibull_reliability_step(100.0, 100.0, 1.0).unwrap();
+    assert!((r_weibull - 0.367879).abs() < 1e-3);
+
+    // 7. Anderson-Darling A²
+    let cdf_vals = [0.1, 0.3, 0.5, 0.7, 0.9];
+    let a2 = spc_msa_advanced::spc_anderson_darling_a2_step(&cdf_vals).unwrap();
+    assert!(a2 >= 0.0);
+
+    // 8. 卡方累積概率近似 (df=10, chi2=10 期望值附近 -> p ~ 0.5)
+    let chi_p = spc_msa_advanced::spc_chi_square_cdf_approx(10.0, 10).unwrap();
+    assert!((chi_p - 0.56).abs() < 0.1);
+
+    // 9. AIAG %PV 變異佔比 (PV=8.0, TV=10.0 -> 80%)
+    let pct_pv = spc_msa_advanced::spc_msa_part_to_part_variation(8.0, 10.0).unwrap();
+    assert_eq!(pct_pv, 80.0);
+}
