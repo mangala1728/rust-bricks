@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 630,
+  "total_functions": 640,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2492,6 +2492,63 @@
           "name": "polygon_shoelace_area_2d",
           "signature": "pub fn polygon_shoelace_area_2d(vertices: &[(f64, f64)]) -> Option<f64>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "physics_gjk_epa_contact",
+      "file": "src/physics_gjk_epa_contact.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "gjk_support_sphere",
+          "signature": "pub fn gjk_support_sphere(center: [f32; 3], radius: f32, direction: [f32; 3]) -> Option<[f32; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "gjk_support_box",
+          "signature": "pub fn gjk_support_box(half_extents: [f32; 3], direction: [f32; 3]) -> Option<[f32; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "gjk_minkowski_support_point",
+          "signature": "pub fn gjk_minkowski_support_point(sup_a: [f32; 3], sup_b: [f32; 3]) -> [f32; 3]",
+          "outputs": 1
+        },
+        {
+          "name": "gjk_simplex_line_step",
+          "signature": "pub fn gjk_simplex_line_step(a: [f32; 3], b: [f32; 3]) -> ([f32; 3], usize)",
+          "outputs": 1
+        },
+        {
+          "name": "gjk_simplex_triangle_normal",
+          "signature": "pub fn gjk_simplex_triangle_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> Option<[f32; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "epa_triangle_normal_and_distance",
+          "signature": "pub fn epa_triangle_normal_and_distance(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> Option<([f32; 3], f32)>",
+          "outputs": 1
+        },
+        {
+          "name": "physics_contact_relative_velocity",
+          "signature": "pub fn physics_contact_relative_velocity(",
+          "outputs": 1
+        },
+        {
+          "name": "physics_contact_normal_impulse",
+          "signature": "pub fn physics_contact_normal_impulse(",
+          "outputs": 1
+        },
+        {
+          "name": "physics_coulomb_friction_clamp",
+          "signature": "pub fn physics_coulomb_friction_clamp(",
+          "outputs": 1
+        },
+        {
+          "name": "physics_rigid_body_angular_impulse",
+          "signature": "pub fn physics_rigid_body_angular_impulse(",
+          "outputs": 1
         }
       ]
     },

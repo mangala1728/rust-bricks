@@ -4005,6 +4005,63 @@ fn test_fieldbus_building_automation_bricks() {
     assert_eq!(smart_meter_pulse_to_kwh(100, 0), None);
 }
 
+#[test]
+fn test_physics_gjk_epa_contact_bricks() {
+    use rust_bricks::physics_gjk_epa_contact::*;
+
+    // 1. 球體 GJK 支撐映射
+    let p_sph = gjk_support_sphere([1.0, 1.0, 1.0], 2.0, [0.0, 3.0, 0.0]);
+    assert_eq!(p_sph, Some([1.0, 3.0, 1.0]));
+
+    // 2. 方塊 GJK 支撐映射 (極端頂點)
+    let p_box = gjk_support_box([1.0, 2.0, 3.0], [1.0, -1.0, 1.0]);
+    assert_eq!(p_box, Some([1.0, -2.0, 3.0]));
+
+    // 3. 閔可夫斯基差集支撐點
+    let m = gjk_minkowski_support_point([5.0, 2.0, 1.0], [2.0, 1.0, 0.0]);
+    assert_eq!(m, [3.0, 1.0, 1.0]);
+
+    // 4. 線段單純形向原點投影
+    let (d, n) = gjk_simplex_line_step([-2.0, 0.0, 0.0], [2.0, 0.0, 0.0]);
+    assert_eq!(n, 2);
+    assert_eq!(d[0], 0.0);
+
+    // 5. 三角形法向量朝向原點
+    let tri_n = gjk_simplex_triangle_normal([1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [0.0, 0.0, 1.0]);
+    assert!(tri_n.is_some());
+    // @safety-proof: tri_n 已驗證 is_some()
+    let tn = tri_n.unwrap();
+    assert!(tn[2] < 0.0);
+
+    // 6. EPA 三角形外法向與距離
+    let epa_opt = epa_triangle_normal_and_distance([0.0, 0.0, 2.0], [1.0, 0.0, 2.0], [0.0, 1.0, 2.0]);
+    assert!(epa_opt.is_some());
+    // @safety-proof: epa_opt 已驗證 is_some()
+    let (en, ed) = epa_opt.unwrap();
+    assert!((en[2].abs() - 1.0).abs() < 1e-4);
+    assert!((ed.abs() - 2.0).abs() < 1e-4);
+
+    // 7. 接觸點相對速度
+    let vr = physics_contact_relative_velocity(
+        [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+    );
+    assert_eq!(vr, [0.0, 0.0, 0.0]);
+
+    // 8. 法向碰撞衝量 (恢復係數 1.0 彈性碰撞)
+    let j = physics_contact_normal_impulse(-5.0, 0.5, 1.0, 0.0, 0.0);
+    assert_eq!(j, 20.0);
+
+    // 9. 庫侖摩擦夾止
+    let clamped = physics_coulomb_friction_clamp(10.0, 0.3, 5.0);
+    assert_eq!(clamped, 3.0);
+
+    // 10. 剛體角衝量增量
+    let dw = physics_rigid_body_angular_impulse([0.0, 10.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 2.0]);
+    assert_eq!(dw, [0.0, 0.0, 20.0]);
+}
+
+
 
 
 

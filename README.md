@@ -79,6 +79,7 @@
 | [`comm_controller`](src/comm_controller.rs) | I2C 7-bit 讀寫訊框、SPI Mode 0..3 映射、5 線 SPI D/C 螢幕命令訊框、QSPI 0xEB 快速讀取、UART 波特率定點除數、DMA 跨架構記憶體對齊 | OLED/TFT 螢幕驅動、QSPI Flash 晶片、串口通信、8/16/32/64-bit CPU DMA 對齊 |
 | [`comm_phy_bus`](src/comm_phy_bus.rs) | MIPI CSI-2 短封包 (含 6-bit ECC)、長封包 CRC16、MIPI D-PHY LP 低功耗狀態解碼、DSPI 雙通道讀取、QPI 四線啟用、RGMII 延遲抽頭 (Skew Taps) 與速率控制字、SGMII 1.25Gbps 自協商廣告字、跨架構 8/32-bit FIFO 打包解包 | 相機影像感測器 (CSI-2)、千兆以太網 PHY 介面 (RGMII/SGMII)、雙/四線 SPI Flash、跨 CPU 字長記憶體對齊 |
 | [`clock_pll_rtc`](src/clock_pll_rtc.rs) | 晶振 PLL 鎖相迴路 (M, N, P) 最優倍頻分頻求解、RTC 32.768kHz 晶振拋物線溫漂補償、NTP 雙向網路時鐘對齊與延遲計算 | MCU 系統時鐘樹初始化、高精度 RTC 溫漂校準、物聯網網際網路系統時鐘同步 |
+| [`physics_gjk_epa_contact`](src/physics_gjk_epa_contact.rs) | 球體/長方體 GJK (Gilbert-Johnson-Keerthi) 支撐映射、閔可夫斯基差集支撐點、2點/3點單純形原點法向搜尋步進、EPA (Expanding Polytope Algorithm) 三角形外法向量與穿透距離、剛體接觸點相對表面速度、法向碰撞恢復衝量 (含 Baumgarte 穿透穩定化)、庫侖摩擦錐夾止、剛體角衝量增量 | 遊戲與機器人物理引擎、3D 凸多面體精確碰撞偵測 (GJK/EPA)、剛體接觸約束衝量求解 (Impulse Solver)、庫侖摩擦模擬 |
 | [`physics_raycast_3d`](src/physics_raycast_3d.rs) | Möller–Trumbore 3D 射線-三角形高速相交、向量鏡面反射、點面有號距離 | 3D VR/AR 頭顯空間選取、雷射筆射線拾取、遊戲光照彈射物理模擬 |
 | [`radar_aoa_mti`](src/radar_aoa_mti.rs) | MTI 雙脈衝/三脈衝延遲消除器、雙天線相位單脈衝測角 (AoA)、和差單脈衝比斜率、雷達盲速解算、Range-Doppler 網格轉實體座標、CSR 雜波訊噪比、FMCW 最大無模糊距離/速度、都卜勒頻心估算 | 雷達動目標顯示 (MTI)、毫米波雷達目標空間角度估計、地物雜波抑制、都卜勒頻譜中心校準 |
 | [`radar_biomed_dsp`](src/radar_biomed_dsp.rs) | MIMO 正交 Hadamard CDMA 編碼、TDMA 天線排程、FMCW 距離解析度與拍頻測距、微都卜勒胸腔相位解纏繞、生醫呼吸帶通濾波、Q7/Q31 多位元量化 | 毫米波雷達生命徵象 (心跳/呼吸) 監測、FMCW 測距、MIMO 虛擬孔徑相控陣列、跨位元定點數 DSP |

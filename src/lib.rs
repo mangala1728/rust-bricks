@@ -68,6 +68,7 @@ pub mod numerical_optimization_gradient;
 pub mod office_calc_layout;
 pub mod packet_checksum;
 pub mod pcb_cad_fem;
+pub mod physics_gjk_epa_contact;
 pub mod physics_raycast_3d;
 pub mod quant_finance_market;
 pub mod quant_orderbook_l2;

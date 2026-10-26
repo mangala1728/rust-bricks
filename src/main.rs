@@ -9,7 +9,7 @@ use rust_bricks::{
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
-    net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
@@ -711,6 +711,19 @@ fn verify_fieldbus_building_automation() -> bool {
 }
 
 /// @outputs: 1
+fn verify_physics_gjk_epa_contact() -> bool {
+    let p_sph = physics_gjk_epa_contact::gjk_support_sphere([0.0; 3], 2.0, [1.0, 0.0, 0.0]);
+    let ok_sph = matches!(p_sph, Some(p) if (p[0] - 2.0).abs() < 1e-4);
+    let p_box = physics_gjk_epa_contact::gjk_support_box([1.0, 2.0, 3.0], [0.5, -0.5, 0.1]);
+    let ok_box = matches!(p_box, Some(b) if b[0] == 1.0 && b[1] == -2.0 && b[2] == 3.0);
+    let epa = physics_gjk_epa_contact::epa_triangle_normal_and_distance([0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]);
+    let ok_epa = matches!(epa, Some((n, d)) if n[2].abs() > 0.9 && (d - 1.0).abs() < 1e-3);
+    let j = physics_gjk_epa_contact::physics_contact_normal_impulse(-2.0, 1.0, 0.5, 0.0, 0.0);
+    let ok_j = (j - 3.0).abs() < 1e-4;
+    ok_sph && ok_box && ok_epa && ok_j
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -777,6 +790,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_doc_office_drawing_shape()
         && verify_radar_clustering_dbscan_tracker()
         && verify_fieldbus_building_automation()
+        && verify_physics_gjk_epa_contact()
 }
 
 /// @outputs: 1

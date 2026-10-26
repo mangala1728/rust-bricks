@@ -9,7 +9,7 @@ use crate::{
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
-    net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
@@ -1005,6 +1005,26 @@ fn audit_fieldbus_building_automation() -> bool {
 }
 
 /// @outputs: 1
+fn audit_physics_gjk_epa_contact() -> bool {
+    let mut ok = true;
+    ok &= physics_gjk_epa_contact::gjk_support_sphere([0.0; 3], -1.0, [1.0, 0.0, 0.0]).is_none();
+    ok &= physics_gjk_epa_contact::gjk_support_sphere([0.0; 3], 1.0, [0.0; 3]) == Some([0.0; 3]);
+    ok &= physics_gjk_epa_contact::gjk_support_box([-1.0, 1.0, 1.0], [1.0, 0.0, 0.0]).is_none();
+    let m = physics_gjk_epa_contact::gjk_minkowski_support_point([f32::NAN, 0.0, 0.0], [0.0; 3]);
+    ok &= m == [0.0; 3];
+    let (_, n) = physics_gjk_epa_contact::gjk_simplex_line_step([0.0; 3], [0.0; 3]);
+    ok &= n == 1 || n == 2;
+    ok &= physics_gjk_epa_contact::gjk_simplex_triangle_normal([0.0; 3], [0.0; 3], [0.0; 3]).is_none();
+    ok &= physics_gjk_epa_contact::epa_triangle_normal_and_distance([0.0; 3], [0.0; 3], [0.0; 3]).is_none();
+    let vr = physics_gjk_epa_contact::physics_contact_relative_velocity([0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3], [0.0; 3]);
+    ok &= vr == [0.0; 3];
+    ok &= physics_gjk_epa_contact::physics_contact_normal_impulse(-5.0, 0.0, 0.5, 0.0, 0.2) == 0.0;
+    ok &= physics_gjk_epa_contact::physics_coulomb_friction_clamp(-1.0, 0.5, 10.0) == 0.0;
+    ok &= physics_gjk_epa_contact::physics_rigid_body_angular_impulse([0.0; 3], [0.0; 3], [-1.0, 1.0, 1.0]) == [0.0; 3];
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1082,6 +1102,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_doc_office_drawing_shape(), "【文書向量圖形與排版抽查失敗】存在除零溢出或坐標發散", total, passed, failures);
     check_audit_domain(audit_radar_clustering_dbscan_tracker(), "【雷達點雲聚類與追蹤抽查失敗】存在除零溢出或發散", total, passed, failures);
     check_audit_domain(audit_fieldbus_building_automation(), "【樓宇自動化與智慧電表協定抽查失敗】存在CRC溢出或無效常數", total, passed, failures);
+    check_audit_domain(audit_physics_gjk_epa_contact(), "【剛體動力學與GJK/EPA抽查失敗】存在除零溢出或法向發散", total, passed, failures);
 }
 
 /// @outputs: 2
