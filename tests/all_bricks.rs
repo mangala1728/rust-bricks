@@ -4262,6 +4262,64 @@ fn test_geo_spatial_projection_bricks() {
     assert!(area > 4.0e13);
 }
 
+#[test]
+fn test_audio_beamforming_doa_bricks() {
+    use rust_bricks::audio_beamforming_doa::*;
+
+    // 1. 空氣聲速 (20度常溫)
+    // @safety-proof: 20度合法
+    let c = acoustic_sound_speed_air(20.0).unwrap();
+    assert!((c - 343.2).abs() < 1.0);
+
+    // 2. 空間混疊極限頻率
+    // @safety-proof: 0.05m 與 340m/s 合法
+    let f_alias = mic_array_spatial_aliasing_limit_hz(0.05, 340.0).unwrap();
+    assert_eq!(f_alias, 3400.0);
+
+    // 3. 麥克風幾何導向延遲
+    // @safety-proof: 聲速 340m/s 合法
+    let tau = mic_array_steering_delay_sec(0.17, 0.0, 0.0, 340.0).unwrap();
+    assert!((tau - 0.0005).abs() < 1e-6);
+
+    // 4. 2階 Lagrange 分數時延
+    let lag = dsp_lagrange_fractional_delay_coeffs(0.5);
+    assert_eq!(lag[0], 0.375);
+    assert_eq!(lag[1], 0.75);
+    assert_eq!(lag[2], -0.125);
+
+    // 5. SRP-PHAT 相位正規化
+    let (re, im) = srp_phat_cross_phase_weight(3.0, 4.0);
+    assert!((re - 0.6).abs() < 1e-4);
+    assert!((im - 0.8).abs() < 1e-4);
+
+    // 6. ULA 導向相位
+    // @safety-proof: 間距 0.05, 波長 0.1 合法
+    let psi = ula_steering_vector_phase(1, 0.05, 0.1, 0.52359877).unwrap();
+    assert!((psi - (-1.5707963)).abs() < 1e-4);
+
+    // 7. MUSIC 虛擬譜峰值
+    // @safety-proof: 噪聲投影模長平方合法
+    let p_music = music_pseudospectrum_value(0.01).unwrap();
+    assert_eq!(p_music, 100.0);
+
+    // 8. DAS 波束成形單步
+    let samples = [1.0, 1.0];
+    let delays = [0.0, 0.0];
+    // @safety-proof: samples 與 delays 長度吻合且非空
+    let out = beamformer_delay_and_sum_step(&samples, &delays).unwrap();
+    assert!((out - 0.0).abs() < 1.0);
+
+    // 9. 指向性係數 DI
+    // @safety-proof: 功率合法
+    let di = directivity_index_db(100.0, 10.0).unwrap();
+    assert_eq!(di, 10.0);
+
+    // 10. GSC 阻斷相消
+    let diff = gsc_blocking_matrix_step(10.0, 8.0);
+    assert_eq!(diff, 2.0);
+}
+
+
 
 
 

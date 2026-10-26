@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_beamforming_doa, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -763,6 +763,19 @@ fn verify_geo_spatial_projection() -> bool {
 }
 
 /// @outputs: 1
+fn verify_audio_beamforming_doa() -> bool {
+    let c = audio_beamforming_doa::acoustic_sound_speed_air(20.0);
+    let ok_c = matches!(c, Some(v) if (v - 343.2).abs() < 1.0);
+    let f_al = audio_beamforming_doa::mic_array_spatial_aliasing_limit_hz(0.05, 343.0);
+    let ok_f = matches!(f_al, Some(f) if (f - 3430.0).abs() < 1.0);
+    let phat = audio_beamforming_doa::srp_phat_cross_phase_weight(3.0, 4.0);
+    let ok_phat = (phat.0 - 0.6).abs() < 1e-4 && (phat.1 - 0.8).abs() < 1e-4;
+    let di = audio_beamforming_doa::directivity_index_db(100.0, 10.0);
+    let ok_di = matches!(di, Some(d) if (d - 10.0).abs() < 1e-4);
+    ok_c && ok_f && ok_phat && ok_di
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -833,6 +846,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_codec_container_multimedia()
         && verify_control_systems_estimation()
         && verify_geo_spatial_projection()
+        && verify_audio_beamforming_doa()
 }
 
 /// @outputs: 1

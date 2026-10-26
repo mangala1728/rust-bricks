@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_beamforming_doa, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -1083,6 +1083,25 @@ fn audit_geo_spatial_projection() -> bool {
 }
 
 /// @outputs: 1
+fn audit_audio_beamforming_doa() -> bool {
+    let mut ok = true;
+    ok &= audio_beamforming_doa::acoustic_sound_speed_air(-60.0).is_none();
+    ok &= audio_beamforming_doa::acoustic_sound_speed_air(100.0).is_none();
+    ok &= audio_beamforming_doa::mic_array_spatial_aliasing_limit_hz(0.0, 340.0).is_none();
+    ok &= audio_beamforming_doa::mic_array_steering_delay_sec(0.0, 0.0, 0.0, 100.0).is_none();
+    let coeffs = audio_beamforming_doa::dsp_lagrange_fractional_delay_coeffs(f32::NAN);
+    ok &= coeffs == [0.0, 1.0, 0.0];
+    let phat = audio_beamforming_doa::srp_phat_cross_phase_weight(0.0, 0.0);
+    ok &= phat == (0.0, 0.0);
+    ok &= audio_beamforming_doa::ula_steering_vector_phase(0, 0.0, 1.0, 0.0).is_none();
+    ok &= audio_beamforming_doa::music_pseudospectrum_value(-1.0).is_none();
+    ok &= audio_beamforming_doa::beamformer_delay_and_sum_step(&[], &[]).is_none();
+    ok &= audio_beamforming_doa::directivity_index_db(-1.0, 1.0).is_none();
+    ok &= audio_beamforming_doa::gsc_blocking_matrix_step(10.0, 10.0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1164,6 +1183,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_codec_container_multimedia(), "【多媒體容器與封裝流抽查失敗】存在標頭溢出或VINT解析崩潰", total, passed, failures);
     check_audit_domain(audit_control_systems_estimation(), "【控制系統與卡爾曼平滑抽查失敗】存在Riccati發散或除零崩潰", total, passed, failures);
     check_audit_domain(audit_geo_spatial_projection(), "【地理空間與大地投影抽查失敗】存在奇異點發散或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_audio_beamforming_doa(), "【聲學陣列與波束成形抽查失敗】存在除零溢出或相位發散", total, passed, failures);
 }
 
 /// @outputs: 2

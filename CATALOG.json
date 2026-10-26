@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 670,
+  "total_functions": 680,
   "modules": [
     {
       "module": "agent_terminal",
@@ -351,6 +351,63 @@
           "name": "analyzer_can_bit_timing_sample_point",
           "signature": "pub fn analyzer_can_bit_timing_sample_point(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "audio_beamforming_doa",
+      "file": "src/audio_beamforming_doa.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "acoustic_sound_speed_air",
+          "signature": "pub fn acoustic_sound_speed_air(temp_celsius: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "mic_array_spatial_aliasing_limit_hz",
+          "signature": "pub fn mic_array_spatial_aliasing_limit_hz(mic_spacing_m: f32, sound_speed: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "mic_array_steering_delay_sec",
+          "signature": "pub fn mic_array_steering_delay_sec(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_lagrange_fractional_delay_coeffs",
+          "signature": "pub fn dsp_lagrange_fractional_delay_coeffs(fraction: f32) -> [f32; 3]",
+          "outputs": 1
+        },
+        {
+          "name": "srp_phat_cross_phase_weight",
+          "signature": "pub fn srp_phat_cross_phase_weight(re: f32, im: f32) -> (f32, f32)",
+          "outputs": 1
+        },
+        {
+          "name": "ula_steering_vector_phase",
+          "signature": "pub fn ula_steering_vector_phase(",
+          "outputs": 1
+        },
+        {
+          "name": "music_pseudospectrum_value",
+          "signature": "pub fn music_pseudospectrum_value(proj_noise_norm_sq: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "beamformer_delay_and_sum_step",
+          "signature": "pub fn beamformer_delay_and_sum_step(samples: &[f32], delays_fraction: &[f32]) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "directivity_index_db",
+          "signature": "pub fn directivity_index_db(main_lobe_power: f32, avg_diffuse_power: f32) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "gsc_blocking_matrix_step",
+          "signature": "pub fn gsc_blocking_matrix_step(x1: f32, x2: f32) -> f32",
+          "outputs": 1
         }
       ]
     },

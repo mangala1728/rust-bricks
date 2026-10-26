@@ -37,6 +37,7 @@
 | [`math_time`](src/math_time.rs) | 高精度數值夾止、滑動均線、儒略日曆法轉換、占星大限 (Dasha) 比例運算、XorShift64 | 股市量化、時間序列平滑、極速亂數生成 |
 | [`audio_vad`](src/audio_vad.rs) | PCM16 音訊取樣點能量 (RMS) 計算、靜音幀判定、CPS 字幕字速審查 | 語音活動檢測 (VAD)、即時翻譯 App、多模態字幕對齊 |
 | [`audio_dsp`](src/audio_dsp.rs) | 聲學功率、dBFS 能量、零交越率、Butterworth 高通濾波、語音預加重、軟削峰防破音 | 麥克風音訊前處理、即時降噪前置濾波、音訊串流 |
+| [`audio_beamforming_doa`](src/audio_beamforming_doa.rs) | 空氣聲速溫漂補償、陣列空間混疊極限頻率 (Spatial Nyquist)、麥克風幾何導向延遲解算 (TDOA)、2階 Lagrange 分數時延濾波係數、SRP-PHAT 相位變換正規化核、均勻線陣 (ULA) 空間導向向量相位、MUSIC 空間虛擬譜值、延遲求和 (DAS) 波束成形步進、陣列指向性係數 (DI in dB)、廣義副瓣消除器 (GSC) 一階阻斷矩陣 | 智慧音箱/會議麥克風陣列、聲源定位 (DOA)、語音增強與波束成形 (Beamforming)、消滅空間噪聲干擾 |
 | [`audio_mfcc_pitch`](src/audio_mfcc_pitch.rs) | Hz 與 Mel 刻度互轉、三角梅爾濾波器組權重、DCT-II 倒頻譜係數 (MFCC)、自相關基頻 (Pitch / F0) 估算、YIN 演算法平方差分與 CMND 歸一化、DRC 軟拐點動態壓縮、Q15 預加重、頻譜平坦度 (SFM) | 語音辨識聲學特徵提取 (ASR)、說話人識別、音高偵測、動態範圍壓縮增益控制、濁音/噪聲分類 |
 | [`audio_spectral_codec`](src/audio_spectral_codec.rs) | ITU-T G.711 A-law / u-law (mu-law) 8位元非線性音訊壓擴編解碼、IMA ADPCM 4位元自適應差分脈衝編碼步進、頻譜相減法降噪增益、維納濾波器增益計算、LPC 語音合成濾波器單步、Bark 臨界頻帶率換算、50% 重疊相加 (OLA) 漢寧窗合成步進 | 語音通訊編解碼 (VoIP/PSTN)、輕量嵌入式音訊壓縮 (IMA-ADPCM)、即時頻譜降噪、語音生成與聲學分析 |
 | [`audio_wav`](src/audio_wav.rs) | 零依賴 16-bit PCM WAV 檔頭解析與二進位編碼 | 音訊錄音檔存檔、跨平台 WAV 串流解析 |
