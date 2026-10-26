@@ -109,6 +109,7 @@
 | [`ai_tensor_gemm`](src/ai_tensor_gemm.rs) | 分塊矩陣乘法 (Tiled GEMM)、Conv2D 卷積前向步進、MaxPool2D 2x2 最大池化、Batch Normalization、Inverted Dropout、Embedding 查找、LeakyReLU、Smooth L1 Loss、餘弦相似度、One-Hot 編碼 | 深度學習神經網路推理與訓練底層算子、邊緣視覺卷積特徵提取、嵌入向量比對 |
 | [`ai_transformer_attention`](src/ai_transformer_attention.rs) | 縮放點積注意力 (Scaled Dot-Product Attention) 權重步進、因果自回歸下三角遮罩 (Causal Mask)、SwiGLU 門控前饋神經網路激活、RMSNorm 均方根歸一化與倒數標準差步進、LLM KV-Cache 環形時序切片寫入、Top-P (Nucleus) 核採樣累積截斷、Top-K 候選 Logits 遮罩、溫度係數 Softmax、標籤平滑交叉熵損失 | 大語言模型 (LLM Llama/Mistral/Gemma) 推理核心、自回歸文字生成解碼器、Transformer 注意力機制底層運算 |
 | [`dsp_fft_radix2`](src/dsp_fft_radix2.rs) | Cooley-Tukey 基-2 (Radix-2) 快速傅立葉轉換 (FFT/IFFT)、Q15 定點數蝶形運算、位元反轉置換 | 雷達頻譜分析、圖像去噪、音訊壓縮與濾波、無 FPU 單晶片信號處理 |
+| [`dsp_fft_multirate_2d`](src/dsp_fft_multirate_2d.rs) | Goertzel 演算法單點目標頻率能量 (DTMF 雙音多頻)、基-4 (Radix-4) 蝶形運算單元、Chirp Z-Transform (CZT) 藍寶石調頻核、2D 頻譜中心化 (-1)^(u+v)、2D 高斯低通與高通濾波核、希爾伯特解析信號瞬時相位與頻率解算 | 雷達都卜勒高解析度頻譜放大 (CZT)、2D 頻域影像去噪與微動特徵提取、調頻 (FM) 解調 |
 | [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
 | [`crypto_dukpt`](src/crypto_dukpt.rs) | ANSI X9.24 DUKPT 交易金鑰衍生、21-bit 交易計數器管理、PIN/Data 變體金鑰生成 | 金融刷卡機 POS、ATM 提款機每筆交易動態密鑰（防前向破解） |
 | [`motor_stepper`](src/motor_stepper.rs) | 步進馬達梯形加減速微秒延遲計算、正交 AB 編碼器 4x 倍頻狀態機、行程換算 | 3D 列印機、CNC 雕刻機、送錫機、工控滑台高精度運動控制 |

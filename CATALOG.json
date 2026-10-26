@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 594,
+  "total_functions": 602,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1328,6 +1328,53 @@
         {
           "name": "doc_hyphenation_break_cost",
           "signature": "pub fn doc_hyphenation_break_cost(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_fft_multirate_2d",
+      "file": "src/dsp_fft_multirate_2d.rs",
+      "functions_count": 8,
+      "functions": [
+        {
+          "name": "dsp_goertzel_single_bin_energy",
+          "signature": "pub fn dsp_goertzel_single_bin_energy(samples: &[f64], target_bin: usize, n: usize) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_radix4_butterfly_step",
+          "signature": "pub fn dsp_radix4_butterfly_step(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_czt_chirp_weight",
+          "signature": "pub fn dsp_czt_chirp_weight(k: usize, m: usize) -> (f64, f64)",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_2d_spectrum_center_shift_factor",
+          "signature": "pub fn dsp_2d_spectrum_center_shift_factor(u: usize, v: usize) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_2d_gaussian_lowpass_filter_kernel",
+          "signature": "pub fn dsp_2d_gaussian_lowpass_filter_kernel(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_2d_gaussian_highpass_filter_kernel",
+          "signature": "pub fn dsp_2d_gaussian_highpass_filter_kernel(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_analytic_signal_instantaneous_phase",
+          "signature": "pub fn dsp_analytic_signal_instantaneous_phase(i_sample: f64, q_sample: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_instantaneous_frequency_step",
+          "signature": "pub fn dsp_instantaneous_frequency_step(",
           "outputs": 1
         }
       ]

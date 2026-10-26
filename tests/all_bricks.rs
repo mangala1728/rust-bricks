@@ -3786,6 +3786,55 @@ fn test_rpa_desktop_macro_driver_bricks() {
     assert!(jittered >= 80 && jittered <= 120);
 }
 
+#[test]
+fn test_dsp_fft_multirate_2d_bricks() {
+    use rust_bricks::dsp_fft_multirate_2d::*;
+
+    // 1. Goertzel 演算法單點目標頻率能量
+    let samples = [1.0, 0.0, -1.0, 0.0];
+    let energy1 = dsp_goertzel_single_bin_energy(&samples, 1, 4);
+    let energy0 = dsp_goertzel_single_bin_energy(&samples, 0, 4);
+    assert!(energy1 > 3.0);
+    assert!(energy0 < 1e-4);
+
+    // 2. 基-4 (Radix-4) 蝶形運算
+    let a = (1.0, 0.0);
+    let b = (0.0, 0.0);
+    let c = (0.0, 0.0);
+    let d = (0.0, 0.0);
+    let tw = (1.0, 0.0);
+    let out = dsp_radix4_butterfly_step(a, b, c, d, tw, tw, tw);
+    assert_eq!(out[0], (1.0, 0.0));
+    assert_eq!(out[1], (1.0, 0.0));
+    assert_eq!(out[2], (1.0, 0.0));
+    assert_eq!(out[3], (1.0, 0.0));
+
+    // 3. CZT 權重核
+    let cz0 = dsp_czt_chirp_weight(0, 16);
+    assert!((cz0.0 - 1.0).abs() < 1e-5 && cz0.1.abs() < 1e-5);
+
+    // 4. 2D 頻譜中心化調變係數
+    assert_eq!(dsp_2d_spectrum_center_shift_factor(0, 0), 1.0);
+    assert_eq!(dsp_2d_spectrum_center_shift_factor(0, 1), -1.0);
+    assert_eq!(dsp_2d_spectrum_center_shift_factor(1, 1), 1.0);
+
+    // 5. 2D 高斯低通濾波核
+    let lp_center = dsp_2d_gaussian_lowpass_filter_kernel(16, 16, 32, 32, 10.0);
+    assert!((lp_center - 1.0).abs() < 1e-4);
+
+    // 6. 2D 高斯高通濾波核
+    let hp_center = dsp_2d_gaussian_highpass_filter_kernel(16, 16, 32, 32, 10.0);
+    assert!((hp_center - 0.0).abs() < 1e-4);
+
+    // 7. 瞬時相位解算
+    let phase = dsp_analytic_signal_instantaneous_phase(1.0, 1.0);
+    assert!((phase - 0.7853981633974483).abs() < 1e-4);
+
+    // 8. 瞬時頻率求解
+    let freq = dsp_instantaneous_frequency_step(3.141592653589793, 0.0, 2.0);
+    assert!((freq - 1.0).abs() < 1e-4);
+}
+
 
 
 
