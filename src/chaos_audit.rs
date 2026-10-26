@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -985,6 +985,26 @@ fn audit_radar_clustering_dbscan_tracker() -> bool {
 }
 
 /// @outputs: 1
+fn audit_fieldbus_building_automation() -> bool {
+    let mut ok = true;
+    ok &= fieldbus_building_automation::bacnet_mstp_crc8(&[]) == 0;
+    ok &= fieldbus_building_automation::bacnet_mstp_crc8(&[0u8; 70]) == 0;
+    ok &= fieldbus_building_automation::bacnet_mstp_crc16(&[0u8; 1025]) == 0xFFFF;
+    ok &= fieldbus_building_automation::mbus_frame_checksum(&[]).is_none();
+    ok &= fieldbus_building_automation::mbus_dif_data_len(0x04) == 4;
+    ok &= fieldbus_building_automation::mbus_dif_data_len(0x0F) == 0;
+    ok &= fieldbus_building_automation::dlms_hdlc_fcs16(&[0u8; 520]) == 0xFFFF;
+    ok &= !fieldbus_building_automation::dlms_obis_is_valid(&[0x10, 0, 0, 0, 0, 0]);
+    ok &= fieldbus_building_automation::dlms_obis_is_valid(&[0x01, 0, 1, 8, 0, 255]);
+    ok &= fieldbus_building_automation::dnp3_crc16(&[0u8; 300]) == 0;
+    ok &= fieldbus_building_automation::hart_lrc_checksum(&[0u8; 300]) == 0;
+    ok &= fieldbus_building_automation::knx_tp1_checksum(&[]) == 0xFF;
+    ok &= fieldbus_building_automation::smart_meter_pulse_to_kwh(1000, 0).is_none();
+    ok &= fieldbus_building_automation::smart_meter_pulse_to_kwh(1000, 1000) == Some(1.0);
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1061,6 +1081,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_dsp_fft_multirate_2d(), "【二維FFT與多速率DSP抽查失敗】存在除零溢出或頻譜發散", total, passed, failures);
     check_audit_domain(audit_doc_office_drawing_shape(), "【文書向量圖形與排版抽查失敗】存在除零溢出或坐標發散", total, passed, failures);
     check_audit_domain(audit_radar_clustering_dbscan_tracker(), "【雷達點雲聚類與追蹤抽查失敗】存在除零溢出或發散", total, passed, failures);
+    check_audit_domain(audit_fieldbus_building_automation(), "【樓宇自動化與智慧電表協定抽查失敗】存在CRC溢出或無效常數", total, passed, failures);
 }
 
 /// @outputs: 2

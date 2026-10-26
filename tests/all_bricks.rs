@@ -3948,6 +3948,64 @@ fn test_radar_clustering_dbscan_tracker_bricks() {
     assert_eq!(radar_track_lifecycle_hysteresis_step(1, 0, 3, 3, 3), 2);
 }
 
+#[test]
+fn test_fieldbus_building_automation_bricks() {
+    use rust_bricks::fieldbus_building_automation::*;
+
+    // 1. BACnet MS/TP CRC-8
+    let hdr = [0x55, 0xFF, 0x05, 0x10, 0x01, 0x00];
+    let crc8 = bacnet_mstp_crc8(&hdr);
+    assert_ne!(crc8, 0);
+
+    // 2. BACnet MS/TP CRC-16
+    let payload = b"BACnet-IP-Gateway-Data";
+    let crc16 = bacnet_mstp_crc16(payload);
+    assert_ne!(crc16, 0);
+
+    // 3. M-Bus 訊框累積校驗和
+    let mbus_raw = [0x68, 0x03, 0x03, 0x68, 0x08, 0x01, 0x72];
+    let chk = mbus_frame_checksum(&mbus_raw[4..]);
+    assert_eq!(chk, Some((0x08u32 + 0x01 + 0x72) as u8));
+
+    // 4. M-Bus DIF 資料長度解析
+    assert_eq!(mbus_dif_data_len(0x01), 1);
+    assert_eq!(mbus_dif_data_len(0x02), 2);
+    assert_eq!(mbus_dif_data_len(0x04), 4);
+    assert_eq!(mbus_dif_data_len(0x07), 8);
+
+    // 5. DLMS HDLC FCS-16
+    let fcs = dlms_hdlc_fcs16(b"\xA0\x0A\x00\x02\x00\x23\x21\x93");
+    assert_ne!(fcs, 0);
+
+    // 6. DLMS OBIS 代碼檢驗
+    assert!(dlms_obis_is_valid(&[1, 0, 1, 8, 0, 255])); // 電表正向有功電能
+    assert!(!dlms_obis_is_valid(&[250, 0, 0, 0, 0, 0]));
+
+    // 7. IEEE 1815 DNP3 CRC-16
+    let dnp_hdr = [0x05, 0x64, 0x05, 0xC0, 0x01, 0x00, 0x00, 0x04];
+    let dnp_crc = dnp3_crc16(&dnp_hdr);
+    assert_ne!(dnp_crc, 0);
+
+    // 8. HART LRC 異或校驗和
+    let hart_data = [0x82, 0x80, 0x00, 0x00];
+    assert_eq!(hart_lrc_checksum(&hart_data), 0x82 ^ 0x80 ^ 0x00 ^ 0x00);
+
+    // 9. KNX TP1 訊框同位反轉和
+    let knx_data = [0xBC, 0x11, 0x01, 0x00, 0x01, 0xE1, 0x00, 0x81];
+    let knx_chk = knx_tp1_checksum(&knx_data);
+    let mut manual_xor = 0u8;
+    for &b in &knx_data {
+        manual_xor ^= b;
+    }
+    assert_eq!(knx_chk, !manual_xor);
+
+    // 10. 智慧電表脈衝轉 kWh
+    let kwh_opt = smart_meter_pulse_to_kwh(4800, 1600);
+    assert_eq!(kwh_opt, Some(3.0));
+    assert_eq!(smart_meter_pulse_to_kwh(100, 0), None);
+}
+
+
 
 
 

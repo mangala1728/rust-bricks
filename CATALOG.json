@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 620,
+  "total_functions": 630,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1541,6 +1541,63 @@
           "name": "smoothstep_f32",
           "signature": "pub fn smoothstep_f32(edge0: f32, edge1: f32, x: f32) -> f32",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "fieldbus_building_automation",
+      "file": "src/fieldbus_building_automation.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "bacnet_mstp_crc8",
+          "signature": "pub fn bacnet_mstp_crc8(header_bytes: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "bacnet_mstp_crc16",
+          "signature": "pub fn bacnet_mstp_crc16(data: &[u8]) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "mbus_frame_checksum",
+          "signature": "pub fn mbus_frame_checksum(payload: &[u8]) -> Option<u8>",
+          "outputs": 1
+        },
+        {
+          "name": "mbus_dif_data_len",
+          "signature": "pub fn mbus_dif_data_len(dif: u8) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "dlms_hdlc_fcs16",
+          "signature": "pub fn dlms_hdlc_fcs16(bytes: &[u8]) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "dlms_obis_is_valid",
+          "signature": "pub fn dlms_obis_is_valid(obis: &[u8; 6]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "dnp3_crc16",
+          "signature": "pub fn dnp3_crc16(bytes: &[u8]) -> u16",
+          "outputs": 1
+        },
+        {
+          "name": "hart_lrc_checksum",
+          "signature": "pub fn hart_lrc_checksum(bytes: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "knx_tp1_checksum",
+          "signature": "pub fn knx_tp1_checksum(bytes: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "smart_meter_pulse_to_kwh",
+          "signature": "pub fn smart_meter_pulse_to_kwh(pulse_count: u32, pulses_per_kwh: u32) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },

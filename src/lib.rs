@@ -44,6 +44,7 @@ pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;
 pub mod env_sensor;
 pub mod fast_math;
+pub mod fieldbus_building_automation;
 pub mod fieldbus_industrial_eth;
 pub mod fieldbus_motion_cia402;
 pub mod fin_apdu_track;
