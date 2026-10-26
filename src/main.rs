@@ -242,6 +242,36 @@ fn run_patrol_cmd() {
 }
 
 /// @outputs: 1
+fn run_wish_cmd(args: &[String]) {
+    let sub = args.get(2).map(|s| s.as_str()).unwrap_or("list");
+    let wishes_dir = Path::new("wishes");
+    if sub == "new" {
+        let id = args.get(3).map(|s| s.as_str()).unwrap_or("WISH-NEW");
+        let title = args.get(4).map(|s| s.as_str()).unwrap_or("未命名需求");
+        let req = args.get(5).map(|s| s.as_str()).unwrap_or("用戶/代理");
+        match rust_bricks::wish_board::create_wish_template(wishes_dir, id, title, req) {
+            Ok(path) => println!("✨ [rust-bricks] 成功建立許願單模板：{}", path.display()),
+            Err(e) => eprintln!("❌ [rust-bricks] 建立許願單失敗: {}", e),
+        }
+        return;
+    }
+    println!("🌟 [rust-bricks] 掃描許願池留言板 (wishes/)...");
+    match rust_bricks::wish_board::list_wishes(wishes_dir, 100) {
+        Ok(wishes) => {
+            if wishes.is_empty() {
+                println!("✨ 許願池目前為空，歡迎外部專案 AI 代理或用戶許願！(指令: cargo run -- wish new <id> <title> <requester>)");
+            } else {
+                println!("📋 目前許願單清單（共 {} 項）：", wishes.len());
+                for w in wishes {
+                    println!("  [{}] {} — 申請者: {} (檔案: {})", w.status, w.title, w.requester, w.file_name);
+                }
+            }
+        }
+        Err(e) => eprintln!("❌ [rust-bricks] 讀取許願池失敗: {}", e),
+    }
+}
+
+/// @outputs: 1
 fn print_help() {
     println!("rust-bricks v0.1.0 — Pure Zero-Dependency Function Blocks (09 Contract)");
     println!("Usage:");
@@ -250,6 +280,7 @@ fn print_help() {
     println!("  cargo run -- guard             # Run capacity & contract guard hook (Pure Rust)");
     println!("  cargo run -- patrol            # Patrol external contrib branches & collisions");
     println!("  cargo run -- audit             # Run Zero-Trust Quality Director Chaos Audit");
+    println!("  cargo run -- wish [list|new]   # Wishlist board for AI agents & users");
     println!("  cargo run -- receipt <model>   # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt    # Verify Receipt against current Git Diff");
     println!("  cargo test                     # Run full unit test suite");
@@ -266,6 +297,7 @@ fn main() {
         "guard" => run_guard_cmd(),
         "patrol" => run_patrol_cmd(),
         "audit" | "chaos" => run_audit_cmd(),
+        "wish" | "wishes" => run_wish_cmd(&args),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

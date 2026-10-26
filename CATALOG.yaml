@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 100
+total_functions: 102
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -739,3 +739,23 @@ modules:
       - name: "calculate_luminance_histogram"
         signature: "pub fn calculate_luminance_histogram(gray: &[u8]) -> [u32; 256]"
         outputs: 1
+  - module: "wish_board"
+    file: "src/wish_board.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: core/wish_board — AI 代理與使用者跨專案許願池留言板（Wishlist & Feature Requests）。"
+      - "Inputs: wishes/ 目錄路徑、許願單 ID、標題、提報代理名稱。"
+      - "Outputs: 許願單清單 Vec<WishItem>、生成之許願單路徑 Result<String, String>。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、有界檔案掃描 (<= 1000 檔案)、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "list_wishes"
+        signature: "pub fn list_wishes(wishes_dir: &Path, max_scan: usize) -> Result<Vec<WishItem>, String>"
+        outputs: 2
+        domains:
+          max_scan: "[1..1000]"
+      - name: "create_wish_template"
+        signature: "pub fn create_wish_template("
+        outputs: 2
+        domains:
+          id_len: "[1..64]"
+          title_len: "[1..128]"

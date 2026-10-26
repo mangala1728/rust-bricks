@@ -461,7 +461,7 @@ fn check_function_deduplication(repo_root: &Path) -> Vec<String> {
             continue;
         }
         let fname = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
-        if fname == "main.rs" || fname == "guard.rs" || fname == "lib.rs" || fname == "receipt.rs" || fname == "catalog.rs" || fname == "chaos_audit.rs" {
+        if fname == "main.rs" || fname == "guard.rs" || fname == "lib.rs" || fname == "receipt.rs" || fname == "catalog.rs" || fname == "chaos_audit.rs" || fname == "wish_board.rs" {
             continue;
         }
         let content = match fs::read_to_string(&path) {

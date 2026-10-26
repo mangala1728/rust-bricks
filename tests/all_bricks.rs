@@ -712,3 +712,13 @@ fn test_chaos_audit_director() {
     assert_eq!(summary.failed_inspections, 0);
     assert_eq!(summary.total_inspections, summary.passed_inspections);
 }
+
+#[test]
+fn test_wish_board_listing() {
+    let wishes_dir = std::path::Path::new("wishes");
+    let res = rust_bricks::wish_board::list_wishes(wishes_dir, 50);
+    assert!(res.is_ok());
+    // @safety-proof: res 已驗證 is_ok()
+    let list = res.unwrap();
+    assert!(list.len() >= 2);
+}

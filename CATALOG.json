@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 100,
+  "total_functions": 102,
   "modules": [
     {
       "module": "agent_terminal",
@@ -684,6 +684,23 @@
           "name": "calculate_luminance_histogram",
           "signature": "pub fn calculate_luminance_histogram(gray: &[u8]) -> [u32; 256]",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "wish_board",
+      "file": "src/wish_board.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "list_wishes",
+          "signature": "pub fn list_wishes(wishes_dir: &Path, max_scan: usize) -> Result<Vec<WishItem>, String>",
+          "outputs": 2
+        },
+        {
+          "name": "create_wish_template",
+          "signature": "pub fn create_wish_template(",
+          "outputs": 2
         }
       ]
     }
