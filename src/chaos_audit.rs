@@ -406,8 +406,8 @@ fn audit_comm_phy_bus() -> bool {
 /// @outputs: 1
 fn audit_radar_biomed_dsp() -> bool {
     let mut ok = true;
-    ok &= radar_biomed_dsp::radar_hadamard_cdma_code(0, 0).is_none();
-    ok &= radar_biomed_dsp::radar_hadamard_cdma_code(10, 4).is_none();
+    ok &= radar_biomed_dsp::radar_hadamard_cdma_code(0, 0, 0).is_none();
+    ok &= radar_biomed_dsp::radar_hadamard_cdma_code(10, 0, 4).is_none();
     ok &= !radar_biomed_dsp::radar_tdma_tx_burst_active(0, 0, 0);
     ok &= radar_biomed_dsp::radar_fmcw_range_resolution_meters(0.0).is_none();
     ok &= radar_biomed_dsp::radar_fmcw_beat_frequency_to_range(-1.0, 1.0, 1.0).is_none();
@@ -789,7 +789,7 @@ fn audit_nfc_iso14443_ndef() -> bool {
     let mut crc_a = 0x6363u16;
     nfc_iso14443_ndef::nfc_iso14443a_crc_step(0x00, &mut crc_a);
     ok &= crc_a != 0x6363;
-    ok &= nfc_iso14443_ndef::nfc_iso14443b_crc_calculate(&[]) == 0xFFFF;
+    ok &= nfc_iso14443_ndef::nfc_iso14443b_crc_calculate(&[]) == 0x0000; // CRC-16/X-25 空輸入 = !0xFFFF
     ok &= nfc_iso14443_ndef::nfc_ndef_uri_prefix_expand(0xFF).is_none(); // 非法前綴
     ok &= nfc_iso14443_ndef::nfc_mifare_classic_sector_trailer_block_index(50).is_none(); // 扇區溢出 (>39)
     ok &= !nfc_iso14443_ndef::nfc_felica_frame_validate(&[0x01]); // 長度不足

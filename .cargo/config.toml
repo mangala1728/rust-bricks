@@ -1,2 +1,5 @@
-[build]
-target = "x86_64-pc-windows-gnullvm"
+# 不在倉庫層級強制 build target（INC-20261026-11）：
+# 寫死 x86_64-pc-windows-gnullvm 會讓 Linux / macOS 與 GitHub Actions (ubuntu) 以 E0463 編譯失敗。
+# Windows 本機若需要 gnullvm，請改用環境變數：
+#   $env:CARGO_BUILD_TARGET = "x86_64-pc-windows-gnullvm"
+# 或在使用者層級 ~/.cargo/config.toml 設定。

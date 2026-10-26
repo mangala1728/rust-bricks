@@ -94,11 +94,8 @@ pub fn robotics_matrix_to_axis_angle(rot: &[f64; 9]) -> Option<([f64; 3], f64)> 
     }
     let denom = 2.0 * fast_sin_approx(theta);
     if denom.abs() < 1e-6 {
-        // 接近 180 度奇異點
-        let kx = ((rot[0] + 1.0) * 0.5).max(0.0).sqrt();
-        let ky = ((rot[4] + 1.0) * 0.5).max(0.0).sqrt();
-        let kz = ((rot[8] + 1.0) * 0.5).max(0.0).sqrt();
-        return Some(([kx, ky, kz], theta));
+        // 接近 180 度奇異點（保留軸向符號）
+        return Some((axis_at_pi(rot), theta));
     }
     let rx = (rot[7] - rot[5]) / denom;
     let ry = (rot[2] - rot[6]) / denom;
@@ -181,40 +178,44 @@ pub fn robotics_cartesian_linear_blend(p0: [f64; 3], p1: [f64; 3], alpha: f64) -
     ]
 }
 
-/// 內部七階正弦多項式近似
+// 內部三角函式改用 std（屬標準庫，不違反零依賴）：原多項式近似 acos(1) 得 0.404、cos(π) 得 -1.211，
+// 導致 SLERP 非單位四元數、旋轉矩陣不正交 (INC-20261026-06)
+
+/// 內部正弦
 /// @outputs: 1
 fn fast_sin_approx(x: f64) -> f64 {
-    let pi = 3.141592653589793f64;
-    let two_pi = 6.283185307179586f64;
-    let mut rad = x % two_pi;
-    if rad > pi { rad -= two_pi; }
-    if rad < -pi { rad += two_pi; }
-    let x2 = rad * rad;
-    let x4 = x2 * x2;
-    rad * (1.0 - x2 / 6.0 + x4 / 120.0 - (x4 * x2) / 5040.0)
+    x.sin()
 }
 
-/// 內部六階餘弦多項式近似
+/// 內部餘弦
 /// @outputs: 1
 fn fast_cos_approx(x: f64) -> f64 {
-    let pi = 3.141592653589793f64;
-    let two_pi = 6.283185307179586f64;
-    let mut rad = x % two_pi;
-    if rad > pi { rad -= two_pi; }
-    if rad < -pi { rad += two_pi; }
-    let x2 = rad * rad;
-    let x4 = x2 * x2;
-    let x6 = x4 * x2;
-    1.0 - x2 / 2.0 + x4 / 24.0 - x6 / 720.0
+    x.cos()
 }
 
-/// 內部反餘弦近似
+/// 內部反餘弦（輸入夾止至 [-1, 1]）
 /// @outputs: 1
 fn fast_acos_approx(x: f64) -> f64 {
-    let pi = 3.141592653589793f64;
-    let half_pi = 1.5707963267948966f64;
-    let clamped_x = x.clamp(-1.0, 1.0);
-    // acos(x) = pi/2 - asin(x)
-    let asin_approx = clamped_x + (1.0 / 6.0) * clamped_x * clamped_x * clamped_x;
-    (half_pi - asin_approx).clamp(0.0, pi)
+    x.clamp(-1.0, 1.0).acos()
+}
+
+/// 內部 180° 奇異點旋轉軸還原：R = 2kk^T - I，取最大對角分量為正並由非對角項決定其餘符號
+/// @outputs: 1
+fn axis_at_pi(rot: &[f64; 9]) -> [f64; 3] {
+    let diag = [rot[0], rot[4], rot[8]];
+    let mut m = 0usize;
+    for i in 1..3 {
+        if diag[i] > diag[m] {
+            m = i;
+        }
+    }
+    let km = ((diag[m] + 1.0) * 0.5).max(0.0).sqrt();
+    if km < 1e-12 {
+        return [0.0, 0.0, 1.0];
+    }
+    let mut k = [0.0f64; 3];
+    for i in 0..3 {
+        k[i] = if i == m { km } else { (rot[3 * m + i] + rot[3 * i + m]) / (4.0 * km) };
+    }
+    k
 }

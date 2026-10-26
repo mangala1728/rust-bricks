@@ -123,6 +123,9 @@ pub fn spc_weibull_reliability_step(t: f64, eta_scale: f64, beta_shape: f64) -> 
     if t < 0.0 || eta_scale <= 0.0 || beta_shape <= 0.0 || t.is_nan() {
         return None;
     }
+    if t == 0.0 {
+        return Some(1.0); // R(0) = 1 (INC-20261026-07)
+    }
     let ratio = t / eta_scale;
     let ln_r = fast_ln_f64(ratio);
     let power = fast_exp_f64(beta_shape * ln_r);
@@ -174,31 +177,20 @@ pub fn spc_msa_part_to_part_variation(pv_std: f64, total_variation_std: f64) -> 
     Some((pv_std / total_variation_std) * 100.0)
 }
 
-/// 內部快速自然對數
+// 內部數學函式改用 std（屬標準庫，不違反零依賴）：原 12 項 Maclaurin exp 無範圍縮減，
+// exp(-8) 得 55.6，導致 Weibull / Box-Cox / 卡方 CDF 錯誤（CDF 可為負） (INC-20261026-07)
+
+/// 內部自然對數（非正數回傳 0）
 /// @outputs: 1
 fn fast_ln_f64(x: f64) -> f64 {
-    if x <= 0.0 { return 0.0; }
-    let mut val = x;
-    let mut k = 0i32;
-    while val > 2.0 { val *= 0.5; k += 1; }
-    while val < 1.0 { val *= 2.0; k -= 1; }
-    let z = (val - 1.0) / (val + 1.0);
-    let z2 = z * z;
-    let ln_approx = 2.0 * z * (1.0 + z2 / 3.0 + (z2 * z2) / 5.0 + (z2 * z2 * z2) / 7.0);
-    ln_approx + (k as f64) * 0.6931471805599453
+    if x <= 0.0 || !x.is_finite() { return 0.0; }
+    x.ln()
 }
 
-/// 內部快速指數
+/// 內部指數
 /// @outputs: 1
 fn fast_exp_f64(x: f64) -> f64 {
-    let clamped_x = x.clamp(-40.0, 40.0);
-    let mut term = 1.0f64;
-    let mut sum = 1.0f64;
-    for i in 1..=12 {
-        term *= clamped_x / (i as f64);
-        sum += term;
-    }
-    sum
+    x.clamp(-700.0, 700.0).exp()
 }
 
 /// 內部標準常態 CDF 近似

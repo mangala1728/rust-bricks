@@ -6,18 +6,15 @@
 
 /// @outputs: 1
 /// @domain: tx_index [0..64]
+/// @domain: chip_index [0..64]
 /// @domain: code_len [1..64]
-pub fn radar_hadamard_cdma_code(tx_index: usize, code_len: usize) -> Option<i8> {
-    if code_len == 0 || (code_len & (code_len - 1)) != 0 || tx_index >= code_len {
+pub fn radar_hadamard_cdma_code(tx_index: usize, chip_index: usize, code_len: usize) -> Option<i8> {
+    if code_len == 0 || code_len > 64 || (code_len & (code_len - 1)) != 0
+        || tx_index >= code_len || chip_index >= code_len {
         return None;
     }
-    // Walsh-Hadamard 矩陣遞迴性質：H(i, j) = (-1)^(popcount(i AND j))
-    let mut sum_bits = 0usize;
-    for bit in 0..6 {
-        if ((tx_index >> bit) & 1) != 0 && ((code_len >> bit) & 1) != 0 {
-            sum_bits += 1;
-        }
-    }
+    // Sylvester Walsh-Hadamard：H(i, j) = (-1)^(popcount(i AND j)) (INC-20261026-02)
+    let sum_bits = (tx_index & chip_index).count_ones();
     if sum_bits % 2 == 0 {
         Some(1)
     } else {

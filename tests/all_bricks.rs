@@ -400,6 +400,14 @@ fn test_vision_feature_otsu_sobel_integral() {
     let integral = int_res.unwrap();
     let sum_box = rust_bricks::vision_feature::integral_box_sum(&integral, w + 1, 0, 0, w, h);
     assert_eq!(sum_box, (3 * 5 * 255) as u32);
+
+    // 非左上角子框：中間值 br - bl - tr 為負 (INC-20261026-03)
+    let small = rust_bricks::vision_feature::integral_image_compute(&[255, 0, 0, 0], 2, 2);
+    assert!(small.is_ok());
+    // @safety-proof: small 已驗證 is_ok()
+    let small = small.unwrap();
+    assert_eq!(rust_bricks::vision_feature::integral_box_sum(&small, 3, 1, 1, 2, 2), 0);
+    assert_eq!(rust_bricks::vision_feature::integral_box_sum(&small, 3, 0, 0, 1, 1), 255);
 }
 
 #[test]
@@ -1571,6 +1579,10 @@ fn test_wishes_audio_and_text_bricks() {
     assert!(text_cleaner::fuzzy_prefix_match("translat", "translation"));
     assert!(text_cleaner::fuzzy_prefix_match("interp", "interpreter"));
     assert!(!text_cleaner::fuzzy_prefix_match("xyz", "apple"));
+    // 長查詢在距離超過門檻時必須為 false (INC-20261026-04)
+    assert!(!text_cleaner::fuzzy_prefix_match("abcdefgh", "zzzzzzzz"));
+    assert!(text_cleaner::fuzzy_prefix_match("abcdefgh", "abcdxfghij"));
+    assert!(!text_cleaner::fuzzy_prefix_match("abcdef", "abxyef"));
 }
 
 
@@ -1845,10 +1857,12 @@ fn test_radar_biomed_dsp_bricks() {
     use rust_bricks::radar_biomed_dsp;
 
     // 1. MIMO 正交 Hadamard CDMA 編碼
-    let h0 = radar_biomed_dsp::radar_hadamard_cdma_code(0, 4).unwrap();
-    let h1 = radar_biomed_dsp::radar_hadamard_cdma_code(1, 4).unwrap();
-    assert_eq!(h0, 1);
-    assert_eq!(h1, 1);
+    // H4 = [[1,1,1,1],[1,-1,1,-1],[1,1,-1,-1],[1,-1,-1,1]] (INC-20261026-02)
+    let h4: Vec<Vec<i8>> = (0..4)
+        .map(|i| (0..4).map(|j| radar_biomed_dsp::radar_hadamard_cdma_code(i, j, 4).unwrap()).collect())
+        .collect();
+    assert_eq!(h4, vec![vec![1, 1, 1, 1], vec![1, -1, 1, -1], vec![1, 1, -1, -1], vec![1, -1, -1, 1]]);
+    assert!(radar_biomed_dsp::radar_hadamard_cdma_code(0, 4, 4).is_none());
 
     // 2. TDMA 發射天線排程
     assert!(radar_biomed_dsp::radar_tdma_tx_burst_active(0, 3, 0));
@@ -2402,6 +2416,9 @@ fn test_audio_mfcc_pitch_bricks() {
     assert!((mel - 999.98).abs() < 50.0);
     let hz = audio_mfcc_pitch::audio_mel_to_hz(mel);
     assert!((hz - 1000.0).abs() < 50.0);
+    // 高頻往返誤差（INC-20261026-05：原 Taylor exp 在 24 kHz 偏 -271 Hz）
+    let hz_hi = audio_mfcc_pitch::audio_mel_to_hz(audio_mfcc_pitch::audio_hz_to_mel(24000.0));
+    assert!((hz_hi - 24000.0).abs() < 5.0);
 
     // 2. 三角梅爾濾波器組權重
     let w_center = audio_mfcc_pitch::audio_mel_filterbank_weights(100.0, 50.0, 150.0, 100.0);
@@ -2413,6 +2430,14 @@ fn test_audio_mfcc_pitch_bricks() {
     let energies = [1.0f32, 2.0, 3.0, 4.0];
     let c0 = audio_mfcc_pitch::audio_dct_type2_step(&energies, 0, 4).unwrap();
     assert!((c0 - 10.0).abs() < 0.2); // k=0 時近似等於總能量和
+    // k>=1 需要整個 [0, π] 的 cos（INC-20261026-05）：[1..8] 未正規化 DCT-II
+    let ramp = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+    let c1 = audio_mfcc_pitch::audio_dct_type2_step(&ramp, 1, 8).unwrap();
+    let c2 = audio_mfcc_pitch::audio_dct_type2_step(&ramp, 2, 8).unwrap();
+    let c3 = audio_mfcc_pitch::audio_dct_type2_step(&ramp, 3, 8).unwrap();
+    assert!((c1 - (-12.8846)).abs() < 1e-3);
+    assert!(c2.abs() < 1e-3);
+    assert!((c3 - (-1.3469)).abs() < 1e-3);
 
     // 4. 自相關法基頻檢測 (構造 100 Hz 正弦波，採樣率 8000 Hz -> 週期 80 samples)
     let mut pcm = [0i16; 320];
@@ -2441,6 +2466,14 @@ fn test_audio_mfcc_pitch_bricks() {
     let flat_spec = [10.0f32, 10.0, 10.0, 10.0];
     let sfm_white = audio_mfcc_pitch::audio_spectral_flatness_measure(&flat_spec).unwrap();
     assert!((sfm_white - 1.0).abs() < 0.1); // 白噪聲 SFM ~ 1.0
+    // 小功率與大功率頻譜同樣平坦（INC-20261026-05）
+    let sfm_small = audio_mfcc_pitch::audio_spectral_flatness_measure(&[0.01, 0.02, 0.03, 0.04]).unwrap();
+    assert!((sfm_small - 0.8855).abs() < 1e-3);
+    let sfm_big = audio_mfcc_pitch::audio_spectral_flatness_measure(&[1e4, 1e4, 1e4, 1e4]).unwrap();
+    assert!((sfm_big - 1.0).abs() < 1e-4);
+    // 含零 bin 時幾何平均為 0
+    let sfm_zero = audio_mfcc_pitch::audio_spectral_flatness_measure(&[1.0, 1.0, 1.0, 0.0]).unwrap();
+    assert_eq!(sfm_zero, 0.0);
 }
 
 #[test]
@@ -2516,6 +2549,11 @@ fn test_spc_msa_advanced_bricks() {
     // 3. Box-Cox 變換 (lambda = 0 -> ln(x))
     let bc_ln = spc_msa_advanced::spc_box_cox_transform_step(2.718281828, 0.0).unwrap();
     assert!((bc_ln - 1.0).abs() < 1e-3);
+    // 大 λ·ln x（INC-20261026-07）
+    let bc_big = spc_msa_advanced::spc_box_cox_transform_step(1000.0, 1.0).unwrap();
+    assert!((bc_big - 999.0).abs() < 1e-6);
+    let bc_sq = spc_msa_advanced::spc_box_cox_transform_step(50.0, 2.0).unwrap();
+    assert!((bc_sq - 1249.5).abs() < 1e-6);
 
     // 4. Shewhart X-bar 與 R 管制界限
     let (ucl, cl, lcl) = spc_msa_advanced::spc_shewhart_xbar_limits(100.0, 10.0, 0.577);
@@ -2536,6 +2574,10 @@ fn test_spc_msa_advanced_bricks() {
     // 6. 韋伯可靠度 (t = eta -> R = exp(-1) ~ 0.3679)
     let r_weibull = spc_msa_advanced::spc_weibull_reliability_step(100.0, 100.0, 1.0).unwrap();
     assert!((r_weibull - 0.367879).abs() < 1e-3);
+    // t=0 與深尾段（INC-20261026-07）
+    assert_eq!(spc_msa_advanced::spc_weibull_reliability_step(0.0, 100.0, 2.0), Some(1.0));
+    let r_tail = spc_msa_advanced::spc_weibull_reliability_step(300.0, 100.0, 2.0).unwrap();
+    assert!((r_tail - 1.2341e-4).abs() < 1e-7);
 
     // 7. Anderson-Darling A²
     let cdf_vals = [0.1, 0.3, 0.5, 0.7, 0.9];
@@ -2545,6 +2587,11 @@ fn test_spc_msa_advanced_bricks() {
     // 8. 卡方累積概率近似 (df=10, chi2=10 期望值附近 -> p ~ 0.5)
     let chi_p = spc_msa_advanced::spc_chi_square_cdf_approx(10.0, 10).unwrap();
     assert!((chi_p - 0.56).abs() < 0.1);
+    // 尾段必須落在 [0,1] 且接近精確值（INC-20261026-07：原本得 -8.0）
+    let chi_hi = spc_msa_advanced::spc_chi_square_cdf_approx(40.0, 10).unwrap();
+    assert!((chi_hi - 0.99998).abs() < 1e-3);
+    let chi_lo = spc_msa_advanced::spc_chi_square_cdf_approx(3.0, 10).unwrap();
+    assert!((0.0..0.05).contains(&chi_lo));
 
     // 9. AIAG %PV 變異佔比 (PV=8.0, TV=10.0 -> 80%)
     let pct_pv = spc_msa_advanced::spc_msa_part_to_part_variation(8.0, 10.0).unwrap();
@@ -2636,6 +2683,12 @@ fn test_robotics_6dof_slerp_bricks() {
     let q_mid = robotics_6dof_slerp::robotics_quaternion_slerp_step(q1, q2, 0.5);
     assert!((q_mid[0] - 0.7071).abs() < 1e-2);
     assert!((q_mid[1] - 0.7071).abs() < 1e-2);
+    // 非正交端點：t=1 須精確回到 q2 且為單位四元數（INC-20261026-06）
+    let h = 0.5f64.sqrt();
+    let q_end = robotics_6dof_slerp::robotics_quaternion_slerp_step(q1, [h, 0.0, 0.0, h], 1.0);
+    let q_norm = q_end.iter().map(|x| x * x).sum::<f64>().sqrt();
+    assert!((q_norm - 1.0).abs() < 1e-9);
+    assert!((q_end[0] - h).abs() < 1e-9 && (q_end[3] - h).abs() < 1e-9);
 
     // 3. Rodrigues 軸角轉旋轉矩陣 (繞 Z 軸旋轉 90 度)
     let rot_z90 = robotics_6dof_slerp::robotics_axis_angle_to_matrix([0.0, 0.0, 1.0], 1.570796);
@@ -2647,6 +2700,24 @@ fn test_robotics_6dof_slerp_bricks() {
     let (axis, angle) = robotics_6dof_slerp::robotics_matrix_to_axis_angle(&rot_z90).unwrap();
     assert!((axis[2] - 1.0).abs() < 1e-2);
     assert!((angle - 1.570796).abs() < 1e-2);
+    // 單位矩陣 -> 0 度（INC-20261026-06：原本得 0.404 rad）
+    let ident = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+    let (_, a0) = robotics_6dof_slerp::robotics_matrix_to_axis_angle(&ident).unwrap();
+    assert!(a0.abs() < 1e-9);
+    // 大角度往返且矩陣正交
+    let axis_n = [0.0, 0.6, 0.8];
+    let rot_big = robotics_6dof_slerp::robotics_axis_angle_to_matrix(axis_n, 2.5);
+    let (ax_b, ang_b) = robotics_6dof_slerp::robotics_matrix_to_axis_angle(&rot_big).unwrap();
+    assert!((ang_b - 2.5).abs() < 1e-9);
+    assert!((ax_b[1] - 0.6).abs() < 1e-9 && (ax_b[2] - 0.8).abs() < 1e-9);
+    let col0 = rot_big[0] * rot_big[0] + rot_big[3] * rot_big[3] + rot_big[6] * rot_big[6];
+    assert!((col0 - 1.0).abs() < 1e-9);
+    // 180 度奇異點保留軸向符號：繞 (1,-1,0)/√2 旋轉 π
+    let axis_pi = [h, -h, 0.0];
+    let rot_pi = robotics_6dof_slerp::robotics_axis_angle_to_matrix(axis_pi, std::f64::consts::PI);
+    let (ax_pi, ang_pi) = robotics_6dof_slerp::robotics_matrix_to_axis_angle(&rot_pi).unwrap();
+    assert!((ang_pi - std::f64::consts::PI).abs() < 1e-6);
+    assert!((ax_pi[0] * ax_pi[1]) < 0.0); // 兩分量異號
 
     // 5. 五次多項式連續軌跡規劃 (T=10s, 0..100m, t=5s 時正好過半 50m)
     let (s, v, a) = robotics_6dof_slerp::robotics_quintic_polynomial_traj(5.0, 10.0, 0.0, 100.0);
@@ -2657,6 +2728,8 @@ fn test_robotics_6dof_slerp_bricks() {
     // 6. 重力靜力矩負載補償 (5kg, 0.4m 質心, 水平姿勢 theta=0 -> tau = 5 * 9.8 * 0.4 = 19.6 Nm)
     let tau = robotics_6dof_slerp::robotics_gravity_load_torque(5.0, 0.4, 0.0);
     assert!((tau - 19.6133).abs() < 1e-2);
+    let tau_pi = robotics_6dof_slerp::robotics_gravity_load_torque(5.0, 0.4, std::f64::consts::PI);
+    assert!((tau_pi + 19.6133).abs() < 1e-2); // 翻轉 180 度 -> 反向（INC-20261026-06）
 
     // 7. 笛卡爾空間幾何距離
     let d = robotics_6dof_slerp::robotics_cartesian_distance_3d([0.0, 0.0, 0.0], [3.0, 4.0, 0.0]);
@@ -3189,11 +3262,18 @@ fn test_nfc_iso14443_ndef_bricks() {
     let mut crc_a = 0x6363u16;
     nfc_iso14443a_crc_step(0x93, &mut crc_a);
     nfc_iso14443a_crc_step(0x20, &mut crc_a);
-    assert_ne!(crc_a, 0x6363);
+    assert_eq!(crc_a, 0x0C97);
+    // CRC-16/ISO-IEC-14443-3-A 標準檢查值 (INC-20261026-01)
+    let mut crc_chk = 0x6363u16;
+    for &b in b"123456789" {
+        nfc_iso14443a_crc_step(b, &mut crc_chk);
+    }
+    assert_eq!(crc_chk, 0xBF05);
 
     // 2. ISO 14443-3 Type B CRC-B 計算
     let crc_b = nfc_iso14443b_crc_calculate(b"\x05\x00\x00");
-    assert_ne!(crc_b, 0xFFFF);
+    assert_eq!(crc_b, 0xFF71); // REQB：傳輸位元組 71 FF
+    assert_eq!(nfc_iso14443b_crc_calculate(b"123456789"), 0x906E); // CRC-16/X-25 檢查值
 
     // 3. ATQA UID 尺寸 (Double: 7-byte UID, e.g. NTAG215)
     let uid_len = nfc_iso14443a_atqa_uid_size([0x44, 0x00]);

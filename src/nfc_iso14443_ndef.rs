@@ -10,22 +10,19 @@
 /// @outputs: 1
 /// @domain: byte [0, 255]
 pub fn nfc_iso14443a_crc_step(byte: u8, crc: &mut u16) {
-    let mut ch = (byte ^ (*crc as u8)) as u16;
-    ch = ch ^ (ch << 4);
+    // ISO/IEC 14443-3 Annex B：ch 為 8 位元，ch ^= ch << 4 必須截回 8 位元 (INC-20261026-01)
+    let mut ch = byte ^ (*crc as u8);
+    ch ^= ch << 4;
+    let ch = ch as u16;
     *crc = (*crc >> 8) ^ (ch << 8) ^ (ch << 3) ^ (ch >> 4);
 }
 
 /// ## Calc: ISO 14443-3 Type B 雙位元組 CRC-B (多項式 0x8408，初始值 0xFFFF，反相輸出)
 /// @outputs: 1
 pub fn nfc_iso14443b_crc_calculate(data: &[u8]) -> u16 {
-    if data.is_empty() {
-        return 0xFFFF;
-    }
     let mut crc = 0xFFFFu16;
     for &b in data {
-        let mut ch = (b ^ (crc as u8)) as u16;
-        ch = ch ^ (ch << 4);
-        crc = (crc >> 8) ^ (ch << 8) ^ (ch << 3) ^ (ch >> 4);
+        nfc_iso14443a_crc_step(b, &mut crc);
     }
     !crc
 }

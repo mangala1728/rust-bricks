@@ -167,61 +167,57 @@ pub fn audio_spectral_flatness_measure(power_spectrum: &[f32]) -> Option<f32> {
     if power_spectrum.is_empty() {
         return None;
     }
-    let n = power_spectrum.len() as f32;
+    let mut n_valid = 0usize;
+    let mut has_zero_bin = false;
     let mut sum_linear = 0.0f32;
     let mut sum_log = 0.0f32;
 
     for &p in power_spectrum {
-        if p <= 1e-12 || p.is_nan() {
+        if p.is_nan() {
+            continue;
+        }
+        n_valid += 1;
+        if p <= 1e-12 {
+            // 任一 bin 為 0 時幾何平均為 0，不可直接略過 (INC-20261026-05)
+            has_zero_bin = true;
             continue;
         }
         sum_linear += p;
         sum_log += fast_ln_f32(p);
     }
+    if n_valid == 0 {
+        return None;
+    }
+    let n = n_valid as f32;
     let arith_mean = sum_linear / n;
     if arith_mean <= 1e-12 {
         return None;
+    }
+    if has_zero_bin {
+        return Some(0.0);
     }
     let geom_mean = fast_exp_f32(sum_log / n);
     Some((geom_mean / arith_mean).clamp(0.0, 1.0))
 }
 
-/// 內部快速 ln 逼近
+// 內部數學函式改用 std（屬標準庫，不違反零依賴）：原 Taylor 近似未做範圍縮減，
+// cos(π) 得 +0.12、exp(-10) 得 1342，導致 DCT / SFM / mel→Hz 錯誤 (INC-20261026-05)
+
+/// 內部自然對數（非正數回傳 0）
 /// @outputs: 1
 fn fast_ln_f32(x: f32) -> f32 {
-    if x <= 0.0 { return 0.0; }
-    let mut val = x;
-    let mut k = 0i32;
-    while val > 2.0 { val *= 0.5; k += 1; }
-    while val < 1.0 { val *= 2.0; k -= 1; }
-    let z = (val - 1.0) / (val + 1.0);
-    let z2 = z * z;
-    let ln_approx = 2.0 * z * (1.0 + z2 / 3.0 + (z2 * z2) / 5.0);
-    ln_approx + (k as f32) * 0.69314718
+    if x <= 0.0 || !x.is_finite() { return 0.0; }
+    x.ln()
 }
 
-/// 內部快速 exp 逼近
+/// 內部指數
 /// @outputs: 1
 fn fast_exp_f32(x: f32) -> f32 {
-    let clamped_x = x.clamp(-20.0, 20.0);
-    let mut term = 1.0f32;
-    let mut sum = 1.0f32;
-    for i in 1..=8 {
-        term *= clamped_x / (i as f32);
-        sum += term;
-    }
-    sum
+    x.clamp(-80.0, 80.0).exp()
 }
 
-/// 內部四階餘弦多項式近似
+/// 內部餘弦
 /// @outputs: 1
 fn fast_cos_approx(rad: f32) -> f32 {
-    let mut x = rad;
-    let pi = 3.14159265f32;
-    let two_pi = 6.2831853f32;
-    while x > pi { x -= two_pi; }
-    while x < -pi { x += two_pi; }
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    1.0 - x2 / 2.0 + x4 / 24.0
+    rad.cos()
 }

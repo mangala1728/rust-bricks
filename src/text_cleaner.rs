@@ -92,6 +92,8 @@ pub fn fuzzy_prefix_match(query: &str, target: &str) -> bool {
     }
     let prefix_len = q_chars.len().min(t_chars.len());
     let t_sub: String = t_chars[..prefix_len].iter().collect();
-    let dist = levenshtein_distance_bounded(query, &t_sub, 2);
-    dist <= if q_chars.len() <= 3 { 0 } else if q_chars.len() <= 6 { 1 } else { 2 }
+    let threshold = if q_chars.len() <= 3 { 0 } else if q_chars.len() <= 6 { 1 } else { 2 };
+    // bounded 在超過上限時回傳上限本身，因此以 threshold + 1 為上限才能分辨「超過」 (INC-20261026-04)
+    let dist = levenshtein_distance_bounded(query, &t_sub, threshold + 1);
+    dist <= threshold
 }
