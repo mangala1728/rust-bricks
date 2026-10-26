@@ -49,6 +49,8 @@ pub fn pkcs7_unpad<'a>(padded_data: &'a [u8], block_size: usize) -> Option<&'a [
     Some(&padded_data[..start_idx])
 }
 
+/// ## Stretch: 嵌入式輕量級加鹽迭代金鑰拉伸 (非密碼學 PBKDF2/RFC 2898)
+/// 警告：此演算法採用 FNV-1a 搭配 32-bit PRNG 混淆，僅適用於低功耗 MCU 輕量級 Session ID 衍生。
 /// @outputs: 1
 /// @domain: rounds [1..100000]
 pub fn pbkdf_xor_stretch(key: &[u8], salt: &[u8], rounds: u32, out_key: &mut [u8]) -> bool {
@@ -76,6 +78,8 @@ pub fn pbkdf_xor_stretch(key: &[u8], salt: &[u8], rounds: u32, out_key: &mut [u8
     true
 }
 
+/// ## Expand: 嵌入式輕量級上下文金鑰衍生 (非 RFC 5869 HKDF)
+/// 警告：基於 FNV-1a 之確定性衍生，僅供嵌入式測試，不可替代標準密碼學 HKDF。
 /// @outputs: 1
 /// @domain: master_key_len [1..64]
 pub fn simple_kdf_expand(master_key: &[u8], context: &[u8], out_key: &mut [u8]) -> bool {

@@ -58,12 +58,9 @@ pub fn spc_box_cox_transform_step(x: f64, lambda: f64) -> Option<f64> {
         return None;
     }
     if lambda.abs() < 1e-6 {
-        Some(fast_ln_f64(x))
+        Some(x.ln())
     } else {
-        // x^lambda = exp(lambda * ln(x))
-        let ln_x = fast_ln_f64(x);
-        let exp_val = fast_exp_f64(lambda * ln_x);
-        Some((exp_val - 1.0) / lambda)
+        Some((x.powf(lambda) - 1.0) / lambda)
     }
 }
 
@@ -127,9 +124,8 @@ pub fn spc_weibull_reliability_step(t: f64, eta_scale: f64, beta_shape: f64) -> 
         return Some(1.0); // R(0) = 1 (INC-20261026-07)
     }
     let ratio = t / eta_scale;
-    let ln_r = fast_ln_f64(ratio);
-    let power = fast_exp_f64(beta_shape * ln_r);
-    Some(fast_exp_f64(-power).clamp(0.0, 1.0))
+    let power = ratio.powf(beta_shape);
+    Some((-power).exp().clamp(0.0, 1.0))
 }
 
 /// ## Map: Anderson-Darling A² 常態性統計量計算
@@ -145,7 +141,7 @@ pub fn spc_anderson_darling_a2_step(norm_cdf_vals_sorted: &[f64]) -> Option<f64>
         let rev_f = norm_cdf_vals_sorted[norm_cdf_vals_sorted.len() - idx - 1];
         let p1 = f.clamp(1e-12, 1.0 - 1e-12);
         let p2 = (1.0 - rev_f).clamp(1e-12, 1.0 - 1e-12);
-        let term = (2.0 * i - 1.0) * (fast_ln_f64(p1) + fast_ln_f64(p2));
+        let term = (2.0 * i - 1.0) * (p1.ln() + p2.ln());
         s += term;
     }
     let a2 = -n - s / n;
@@ -177,21 +173,9 @@ pub fn spc_msa_part_to_part_variation(pv_std: f64, total_variation_std: f64) -> 
     Some((pv_std / total_variation_std) * 100.0)
 }
 
-// 內部數學函式改用 std（屬標準庫，不違反零依賴）：原 12 項 Maclaurin exp 無範圍縮減，
 // exp(-8) 得 55.6，導致 Weibull / Box-Cox / 卡方 CDF 錯誤（CDF 可為負） (INC-20261026-07)
 
-/// 內部自然對數（非正數回傳 0）
-/// @outputs: 1
-fn fast_ln_f64(x: f64) -> f64 {
-    if x <= 0.0 || !x.is_finite() { return 0.0; }
-    x.ln()
-}
 
-/// 內部指數
-/// @outputs: 1
-fn fast_exp_f64(x: f64) -> f64 {
-    x.clamp(-700.0, 700.0).exp()
-}
 
 /// 內部標準常態 CDF 近似
 /// @outputs: 1
@@ -208,5 +192,5 @@ fn fast_erf_f64(x: f64) -> f64 {
     let p = 0.3275911;
     let t = 1.0 / (1.0 + p * abs_x);
     let poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-    sign * (1.0 - poly * fast_exp_f64(-abs_x * abs_x))
+    sign * (1.0 - poly * (-abs_x * abs_x).exp())
 }

@@ -136,8 +136,7 @@ pub fn beamformer_delay_and_sum_step(samples: &[f32], delays_fraction: &[f32]) -
             return None;
         }
         let lag = dsp_lagrange_fractional_delay_coeffs(d);
-        // 使用一階中心插值近似
-        sum += s * lag[1];
+        sum += s * lag[0];
     }
     Some(sum / samples.len() as f32)
 }

@@ -11,8 +11,7 @@ pub fn audio_hz_to_mel(hz: f32) -> f32 {
         return 0.0;
     }
     let ratio = 1.0 + hz / 700.0;
-    // 零依賴快速 ln 轉 log10 (ln(x) * 0.43429448)
-    2595.0 * fast_ln_f32(ratio) * 0.43429448
+    2595.0 * ratio.log10()
 }
 
 /// ## Map: 梅爾刻度轉赫茲 (Hz = 700 * (10^(mel / 2595) - 1))
@@ -21,9 +20,7 @@ pub fn audio_mel_to_hz(mel: f32) -> f32 {
     if mel <= 0.0 || mel.is_nan() {
         return 0.0;
     }
-    // 10^x = exp(x * ln(10))
-    let exp_arg = (mel / 2595.0) * 2.30258509;
-    let exp_val = fast_exp_f32(exp_arg);
+    let exp_val = 10.0f32.powf(mel / 2595.0);
     700.0 * (exp_val - 1.0).max(0.0)
 }
 
@@ -183,7 +180,7 @@ pub fn audio_spectral_flatness_measure(power_spectrum: &[f32]) -> Option<f32> {
             continue;
         }
         sum_linear += p;
-        sum_log += fast_ln_f32(p);
+        sum_log += p.ln();
     }
     if n_valid == 0 {
         return None;
@@ -196,24 +193,8 @@ pub fn audio_spectral_flatness_measure(power_spectrum: &[f32]) -> Option<f32> {
     if has_zero_bin {
         return Some(0.0);
     }
-    let geom_mean = fast_exp_f32(sum_log / n);
+    let geom_mean = (sum_log / n).exp();
     Some((geom_mean / arith_mean).clamp(0.0, 1.0))
-}
-
-// 內部數學函式改用 std（屬標準庫，不違反零依賴）：原 Taylor 近似未做範圍縮減，
-// cos(π) 得 +0.12、exp(-10) 得 1342，導致 DCT / SFM / mel→Hz 錯誤 (INC-20261026-05)
-
-/// 內部自然對數（非正數回傳 0）
-/// @outputs: 1
-fn fast_ln_f32(x: f32) -> f32 {
-    if x <= 0.0 || !x.is_finite() { return 0.0; }
-    x.ln()
-}
-
-/// 內部指數
-/// @outputs: 1
-fn fast_exp_f32(x: f32) -> f32 {
-    x.clamp(-80.0, 80.0).exp()
 }
 
 

@@ -318,6 +318,30 @@ fn check_file_safety_proofs(path: &Path, content: &str, issues: &mut Vec<String>
 }
 
 /// @outputs: 1
+fn check_forbidden_math_approx(path: &Path, content: &str, issues: &mut Vec<String>) {
+    let fname = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+    if fname == "fast_math.rs" {
+        return;
+    }
+    const FORBIDDEN: &[&str] = &[
+        "fn fast_sin", "fn fast_cos", "fn fast_tan",
+        "fn fast_asin", "fn fast_acos", "fn fast_atan",
+        "fn fast_ln", "fn fast_exp",
+    ];
+    for line in content.lines() {
+        let trimmed = line.trim();
+        for &pattern in FORBIDDEN {
+            if trimmed.starts_with(pattern) {
+                issues.push(format!(
+                    "【鐵律 R1 違規】嚴禁自造殘缺粗糙多項式近似（{}），請優先直接使用 std 數學函式：{}",
+                    pattern, path.display()
+                ));
+            }
+        }
+    }
+}
+
+/// @outputs: 1
 fn check_single_contract(path: &Path, content: &str, issues: &mut Vec<String>) {
     // 1. 必備 ## Map
     if !content.contains("## Map") {
@@ -348,11 +372,49 @@ fn check_single_contract(path: &Path, content: &str, issues: &mut Vec<String>) {
 
     // 5. 防線二：禁止未證明的危險操作（06 號合約安全證明）
     check_file_safety_proofs(path, content, issues);
+
+    // 6. 防線三：嚴禁自造殘缺粗糙多項式近似（工程鐵律 R1）
+    check_forbidden_math_approx(path, content, issues);
+}
+
+/// @outputs: 1
+fn check_test_weak_assertions(repo_root: &Path, issues: &mut Vec<String>) {
+    let tests_dir = repo_root.join("tests");
+    let entries = match fs::read_dir(&tests_dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            continue;
+        }
+        let content = match fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        for (idx, line) in content.lines().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.contains("assert_ne!(") && (trimmed.ends_with(", 0);") || trimmed.contains(", 0)")) {
+                issues.push(format!(
+                    "【鐵律 R2 弱斷言攔截】禁止使用 assert_ne!(..., 0) 掩蓋輸出值：{}:{}",
+                    path.display(), idx + 1
+                ));
+            }
+            if trimmed.contains("assert_ne!(") && trimmed.contains("[0u8;") {
+                issues.push(format!(
+                    "【鐵律 R2 弱斷言攔截】禁止使用 assert_ne!(..., [0u8; N]) 模糊斷言：{}:{}",
+                    path.display(), idx + 1
+                ));
+            }
+        }
+    }
 }
 
 /// @outputs: 2
 fn check_contract_rules(repo_root: &Path) -> Vec<String> {
     let mut issues = Vec::new();
+    check_test_weak_assertions(repo_root, &mut issues);
     let src_dir = repo_root.join("src");
     let entries = match fs::read_dir(&src_dir) {
         Ok(e) => e,

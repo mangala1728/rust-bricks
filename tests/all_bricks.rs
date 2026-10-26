@@ -47,7 +47,7 @@ fn test_dasha_proportion() {
     let prop = math_time::dasha_proportion_days(2191.5, 17.0, 120.0);
     assert!(prop.is_some());
     // @safety-proof: prop 已驗證 is_some()
-    assert!(prop.unwrap() > 300.0);
+    assert!((prop.unwrap() - 310.4625).abs() < 1e-4);
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn test_xor_stream() {
     let text = b"protect me";
     let key = b"my-key";
     let encrypted = crypto_vault::xor_stream(text, key);
-    assert_ne!(encrypted, text);
+    assert_eq!(encrypted, [0x1d, 0x0b, 0x42, 0x1f, 0x00, 0x1a, 0x19, 0x59, 0x40, 0x0e]);
     let decrypted = crypto_vault::xor_stream(&encrypted, key);
     assert_eq!(decrypted, text);
 }
@@ -197,12 +197,12 @@ fn test_audio_dsp_noise_scale_factor() {
 #[test]
 fn test_math_time_xorshift64() {
     let s1 = math_time::xorshift64_step(12345);
-    assert_ne!(s1, 12345);
+    assert_eq!(s1, 13289605635609);
     let s2 = math_time::xorshift64_step(s1);
-    assert_ne!(s2, s1);
+    assert_eq!(s2, 11245129090807876197);
     // Zero seed does not produce zero
     let s_zero = math_time::xorshift64_step(0);
-    assert_ne!(s_zero, 0);
+    assert_eq!(s_zero, 65948600090440590);
 }
 
 #[test]
@@ -232,8 +232,8 @@ fn test_sensor_motion_complementary_and_kalman() {
     assert!((angle - 1.0).abs() < 1e-4);
 
     let (est1, cov1) = rust_bricks::sensor_motion::kalman_filter_1d(0.0, 1.0, 5.0, 0.1, 0.5);
-    assert!(est1 > 0.0 && est1 < 5.0);
-    assert!(cov1 < 1.1);
+    assert!((est1 - 3.4375).abs() < 1e-4);
+    assert!((cov1 - 0.34375).abs() < 1e-4);
 }
 
 #[test]
@@ -243,14 +243,14 @@ fn test_sensor_motion_haversine() {
     assert!(dist_opt.is_some());
     // @safety-proof: dist_opt 已驗證 is_some()
     let dist = dist_opt.unwrap();
-    // 距離約 5 公里左右
-    assert!(dist > 4500.0 && dist < 5500.0);
+    // 台北101至台北車站大圓距離與初始真方位角
+    assert!((dist - 5028.72).abs() < 1.0);
 
     let bearing_opt = rust_bricks::sensor_motion::haversine_bearing_deg(25.0339, 121.5645, 25.0478, 121.5170);
     assert!(bearing_opt.is_some());
     // @safety-proof: bearing_opt 已驗證 is_some()
     let bearing = bearing_opt.unwrap();
-    assert!(bearing >= 0.0 && bearing < 360.0);
+    assert!((bearing - 287.91).abs() < 0.1);
 }
 
 #[test]
@@ -290,7 +290,7 @@ fn test_audio_dsp_pre_emphasis_and_clip() {
     // 軟削峰測試
     assert_eq!(rust_bricks::audio_dsp::soft_clip_i16(500, 1000), 500);
     let clipped = rust_bricks::audio_dsp::soft_clip_i16(20000, 10000);
-    assert!(clipped < 20000 && clipped > 10000);
+    assert_eq!(clipped, 15000);
 }
 
 #[test]
@@ -395,7 +395,7 @@ fn test_vision_feature_otsu_sobel_integral() {
     let mut image = vec![30u8; 50];
     image.extend_from_slice(&[200u8; 50]);
     let thresh = rust_bricks::vision_feature::otsu_threshold(&image);
-    assert!(thresh >= 30 && thresh <= 200);
+    assert_eq!(thresh, 30);
 
     // Sobel 邊緣梯度
     let w = 5usize;
@@ -407,7 +407,7 @@ fn test_vision_feature_otsu_sobel_integral() {
         }
     }
     let grad = rust_bricks::vision_feature::sobel_gradient_3x3(&edge_img, w, h, 2, 2);
-    assert!(grad > 0);
+    assert_eq!(grad, 1020);
 
     // 積分圖與區域求和
     let int_res = rust_bricks::vision_feature::integral_image_compute(&edge_img, w, h);
@@ -433,10 +433,10 @@ fn test_bezier_curve_point_and_tangent() {
     assert!((p_mid - 0.5).abs() < 1e-3);
 
     let tan = rust_bricks::bezier_curve::cubic_bezier_tangent(0.0, 0.333, 0.666, 1.0, 0.5);
-    assert!(tan > 0.0);
+    assert!((tan - 0.99975).abs() < 1e-5);
 
     let curv = rust_bricks::bezier_curve::cubic_bezier_curvature([0.0, 0.0, 1.0, 1.0], [0.0, 1.0, 1.0, 0.0], 0.5);
-    assert!(curv >= 0.0);
+    assert!((curv - 2.666667).abs() < 1e-4);
 }
 
 #[test]
@@ -451,7 +451,7 @@ fn test_sensor_hardware_bricks() {
     assert!(heading_opt.is_some());
     // @safety-proof: heading_opt 已驗證 is_some()
     let heading = heading_opt.unwrap();
-    assert!(heading >= 0.0 && heading < 360.0);
+    assert_eq!(heading, 0.0);
 
     // 閃光燈 PWM 與 SOS 信號
     assert!(rust_bricks::sensor_hardware::flashlight_pwm_duty(1000, 50, 200)); // 0..500us 內為 HIGH
@@ -692,16 +692,16 @@ fn test_spatial_physics_bricks() {
 
     // 4. 彈簧阻尼系統步進 (初始 10.0, 目標 0.0 -> 一步後向 0 移動)
     let (p_next, v_next) = rust_bricks::spatial_physics::spring_damper_step(10.0, 0.0, 0.0, 10.0, 1.0, 0.1);
-    assert!(p_next < 10.0);
-    assert!(v_next < 0.0);
+    assert_eq!(p_next, 9.0);
+    assert_eq!(v_next, -10.0);
 }
 
 #[test]
 fn test_thermal_pid_bricks() {
     // 1. PID 控制步進
     let (out, integral) = rust_bricks::thermal_pid::pid_controller_step(100.0, 20.0, 0.0, 0.0, 2.0, 0.1, 0.5, 0.1, 0.0, 255.0);
-    assert!(out > 0.0 && out <= 255.0);
-    assert!(integral > 0.0);
+    assert_eq!(out, 255.0);
+    assert_eq!(integral, 8.0);
 
     // 2. NTC 測溫 (10k NTC at 25°C)
     let temp_opt = rust_bricks::thermal_pid::ntc_resistance_to_celsius(10000.0, 10000.0, 3950.0, 25.0);
@@ -712,7 +712,7 @@ fn test_thermal_pid_bricks() {
 
     // 3. 人眼知覺 LED 對數亮度映射
     let duty_half = rust_bricks::thermal_pid::led_perceptual_pwm_duty(128, 255);
-    assert!(duty_half < 100); // 人眼平方感知消除低亮跳階
+    assert_eq!(duty_half, 64); // 人眼平方感知消除低亮跳階
 
     // 4. 有功電功率計算
     let power = rust_bricks::thermal_pid::electrical_power_watts(5.0, 2.5);
@@ -872,7 +872,7 @@ fn test_crypto_kdf_bricks() {
     // 3. PBKDF 加鹽迭代拉伸
     let mut stretched = [0u8; 16];
     assert!(rust_bricks::crypto_kdf::pbkdf_xor_stretch(b"pin1234", b"salt5678", 1000, &mut stretched));
-    assert_ne!(stretched, [0u8; 16]);
+    assert_eq!(stretched, [245, 169, 10, 6, 125, 117, 122, 226, 93, 137, 210, 70, 213, 37, 34, 34]);
 
     // 4. KDF 衍生工作金鑰
     let master = b"master_bank_key";
@@ -880,7 +880,8 @@ fn test_crypto_kdf_bricks() {
     let mut key2 = [0u8; 16];
     assert!(rust_bricks::crypto_kdf::simple_kdf_expand(master, b"session_1", &mut key1));
     assert!(rust_bricks::crypto_kdf::simple_kdf_expand(master, b"session_2", &mut key2));
-    assert_ne!(key1, key2); // 不同 session 產生的派生金鑰互斥
+    assert_eq!(key1, [0, 40, 151, 196, 193, 81, 105, 22, 147, 19, 191, 200, 66, 226, 199, 77]);
+    assert_eq!(key2, [226, 126, 218, 179, 242, 225, 117, 143, 242, 102, 201, 129, 178, 243, 58, 41]);
 }
 
 #[test]
@@ -892,7 +893,7 @@ fn test_motor_stepper_bricks() {
     let delay_cruise = rust_bricks::motor_stepper::stepper_trapezoid_delay_us(50, 100, 20, 20, 100, 500);
     assert_eq!(delay_cruise, 100); // 巡航最高速
     let delay_end = rust_bricks::motor_stepper::stepper_trapezoid_delay_us(99, 100, 20, 20, 100, 500);
-    assert!(delay_end > 100); // 減速中
+    assert_eq!(delay_end, 480); // 減速中
 
     // 2. 正交編碼器 4x 倍頻步態
     let mut pos = 0i32;
@@ -1207,7 +1208,8 @@ fn test_can_lin_bus_bricks() {
     let data = [0x01, 0x02, 0x03];
     let classic_cs = rust_bricks::can_lin_bus::lin_checksum(None, &data);
     let enhanced_cs = rust_bricks::can_lin_bus::lin_checksum(Some(pid_01), &data);
-    assert_ne!(classic_cs, enhanced_cs);
+    assert_eq!(classic_cs, 0xF9);
+    assert_eq!(enhanced_cs, 0x38);
 
     // 3. I2S 16-bit 左右聲道解壓
     let left_slot = 0x1234_0000u32;
@@ -1293,7 +1295,9 @@ fn test_ai_tensor_train_softmax_norm_rope() {
     assert!(ai_tensor_train::softmax_stable(&logits, &mut probs));
     let sum: f32 = probs.iter().sum();
     assert!((sum - 1.0).abs() < 1e-5);
-    assert!(probs[2] > probs[1] && probs[1] > probs[0]);
+    assert!((probs[0] - 0.090031).abs() < 1e-4);
+    assert!((probs[1] - 0.244728).abs() < 1e-4);
+    assert!((probs[2] - 0.665241).abs() < 1e-4);
 
     // 2. LayerNorm 前向傳播
     let x = [2.0, 4.0, 6.0];
@@ -1307,7 +1311,9 @@ fn test_ai_tensor_train_softmax_norm_rope() {
     // 3. RMSNorm 前向傳播
     let mut rms_out = [0.0f32; 3];
     assert!(ai_tensor_train::rmsnorm_step(&x, &gamma, 1e-5, &mut rms_out));
-    assert!(rms_out[0] > 0.0 && rms_out[2] > rms_out[1]);
+    assert!((rms_out[0] - 0.46291).abs() < 1e-4);
+    assert!((rms_out[1] - 0.92582).abs() < 1e-4);
+    assert!((rms_out[2] - 1.38873).abs() < 1e-4);
 
     // 4. RoPE 旋轉位置編碼 (正交旋轉保模長)
     let pair = (3.0f32, 4.0f32);
@@ -3499,7 +3505,7 @@ fn test_decision_minimax_alphabeta_bricks() {
     let zobrist_table = [0x1234_5678_9ABC_DEF0u64; 128];
     let h0 = 0xAAAA_BBBB_CCCC_DDDDu64;
     let h1 = decision_zobrist_hash_update(h0, 0, 5, &zobrist_table);
-    assert_ne!(h1, h0);
+    assert_eq!(h1, 0xB89E_EDC3_5670_032Du64);
     let h2 = decision_zobrist_hash_update(h1, 0, 5, &zobrist_table);
     assert_eq!(h2, h0); // 兩次異或還原
 
@@ -3896,7 +3902,7 @@ fn test_rpa_desktop_macro_driver_bricks() {
 
     // 9. 按鍵延遲抖動 (base=100ms, jitter=20% -> 範圍 80..120ms)
     let jittered = rpa_key_delay_jitter_ms(100, 20, 10);
-    assert!(jittered >= 80 && jittered <= 120);
+    assert_eq!(jittered, 90);
 }
 
 #[test]
@@ -3907,8 +3913,8 @@ fn test_dsp_fft_multirate_2d_bricks() {
     let samples = [1.0, 0.0, -1.0, 0.0];
     let energy1 = dsp_goertzel_single_bin_energy(&samples, 1, 4);
     let energy0 = dsp_goertzel_single_bin_energy(&samples, 0, 4);
-    assert!(energy1 > 3.0);
-    assert!(energy0 < 1e-4);
+    assert!((energy1 - 4.0).abs() < 1e-6);
+    assert_eq!(energy0, 0.0);
 
     // 2. 基-4 (Radix-4) 蝶形運算
     let a = (1.0, 0.0);
@@ -3990,7 +3996,7 @@ fn test_doc_office_drawing_shape_bricks() {
     let scale_fit = doc_textbox_autofit_font_scale(10, 200.0, 100.0, 12.0);
     assert_eq!(scale_fit, 1.0);
     let scale_shrink = doc_textbox_autofit_font_scale(500, 100.0, 50.0, 24.0);
-    assert!(scale_shrink < 1.0);
+    assert_eq!(scale_shrink, 0.2);
 
     // 8. 多圖形水平均勻分攤間距
     let spacing = doc_distribute_elements_spacing(100.0, &[30.0, 30.0]).unwrap();
@@ -4021,7 +4027,8 @@ fn test_radar_clustering_dbscan_tracker_bricks() {
     let d_sq = [0.0, 2.0];
     let mut weights = [0.0; 2];
     assert!(radar_jpda_association_weights(&d_sq, 0.1, &mut weights));
-    assert!(weights[0] > weights[1]);
+    assert!((weights[0] - 0.681255).abs() < 1e-4);
+    assert!((weights[1] - 0.250620).abs() < 1e-4);
 
     // 4. IMM 多模型機率轉移步進
     let mut probs = [0.6, 0.2, 0.2];
@@ -4032,15 +4039,15 @@ fn test_radar_clustering_dbscan_tracker_bricks() {
     ];
     let lik = [1.0, 0.2, 0.2];
     assert!(radar_imm_mode_probabilities_step(&mut probs, &trans, &lik));
-    assert!(probs[0] > 0.7);
+    assert!((probs[0] - 0.844156).abs() < 1e-4);
 
     // 5. CTRV 車輛運動預測 (直線 vs 轉彎)
     let straight = radar_ctrv_motion_model_predict([0.0, 0.0, 20.0, 0.0, 0.0], 0.5);
     assert_eq!(straight[0], 10.0);
     assert_eq!(straight[1], 0.0);
     let turning = radar_ctrv_motion_model_predict([0.0, 0.0, 10.0, 0.0, 0.1], 0.1);
-    assert!(turning[0] > 0.0);
-    assert!(turning[1] > 0.0);
+    assert!((turning[0] - 0.999983).abs() < 1e-4);
+    assert!((turning[1] - 0.005000).abs() < 1e-4);
 
     // 6. 微弱呼吸與心跳頻率分離
     let mut phases = vec![0.0f32; 128];
@@ -4145,7 +4152,7 @@ fn test_physics_gjk_epa_contact_bricks() {
     assert!(tri_n.is_some());
     // @safety-proof: tri_n 已驗證 is_some()
     let tn = tri_n.unwrap();
-    assert!(tn[2] < 0.0);
+    assert_eq!(tn, [0.0, 0.0, -1.0]);
 
     // 6. EPA 三角形外法向與距離
     let epa_opt = epa_triangle_normal_and_distance([0.0, 0.0, 2.0], [1.0, 0.0, 2.0], [0.0, 1.0, 2.0]);
@@ -4248,7 +4255,7 @@ fn test_codec_container_multimedia_bricks() {
 
     // 8. Ogg CRC-32 單步
     let crc1 = ogg_crc32_step(0, b'A');
-    assert_ne!(crc1, 0);
+    assert_eq!(crc1, 0x3047_6DC0);
 
     // 9. 音訊樣本數轉毫秒時長
     // @safety-proof: 48000Hz 5秒
@@ -4293,8 +4300,8 @@ fn test_control_systems_estimation_bricks() {
     // 6. Tustin 雙線性一階濾波器
     // @safety-proof: tau=0.1, ts=0.01 > 0
     let (b0, a1) = tustin_bilinear_first_order(0.1, 0.01).unwrap();
-    assert!(b0 > 0.0);
-    assert!(a1 < 0.0);
+    assert!((b0 - 0.047619).abs() < 1e-5);
+    assert!((a1 - (-0.904762)).abs() < 1e-5);
 
     // 7. PID 抗積分飽和
     let i_next = pid_anti_windup_back_calc_step(12.0, 10.0, 1.0, 5.0, 0.1);
@@ -4303,7 +4310,7 @@ fn test_control_systems_estimation_bricks() {
     // 8. 超前補償器最大相位超前角
     // @safety-proof: alpha=0.1 介於 0..1
     let phi_m = lead_lag_max_phase_lead_rad(0.1).unwrap();
-    assert!(phi_m > 0.8 && phi_m < 1.0);
+    assert!((phi_m - 0.958242).abs() < 1e-5);
 
     // 9. 滑模控制邊界層連續化
     let u_smc = sliding_mode_saturation_control(0.2, 0.1, 5.0);
@@ -4315,7 +4322,7 @@ fn test_control_systems_estimation_bricks() {
     let res = [1.0, 0.9, 0.8, 0.7, 0.6];
     // @safety-proof: res 長度 5 >= 4
     let q = ljung_box_q_stat_lag1(&res).unwrap();
-    assert!(q > 0.0);
+    assert!((q - 3.103765).abs() < 1e-5);
 }
 
 #[test]
@@ -4325,9 +4332,9 @@ fn test_geo_spatial_projection_bricks() {
     // 1. WGS84 LLA 轉 ECEF
     // @safety-proof: (0, 0, 0) 合法
     let [x, y, z] = wgs84_lla_to_ecef(0.0, 0.0, 0.0).unwrap();
-    assert!((x - 6378137.0).abs() < 1.0);
-    assert!(y.abs() < 1.0);
-    assert!(z.abs() < 1.0);
+    assert_eq!(x, 6378137.0);
+    assert_eq!(y, 0.0);
+    assert_eq!(z, 0.0);
 
     // 2. ECEF 轉 ENU (赤道本初子午線處: Y 為東, Z 為北, X 為天)
     // @safety-proof: 基準點 (0, 0) 合法
@@ -4363,7 +4370,7 @@ fn test_geo_spatial_projection_bricks() {
     // 8. Vincenty 歸化緯度
     // @safety-proof: 45度弧度合法
     let b_rad = vincenty_reduced_latitude_rad(0.785398).unwrap();
-    assert!(b_rad > 0.7 && b_rad < 0.8);
+    assert!((b_rad - 0.783719).abs() < 1e-5);
 
     // 9. 恒向線航向角
     // @safety-proof: 座標合法
@@ -4373,7 +4380,7 @@ fn test_geo_spatial_projection_bricks() {
     // 10. 球面角超面積
     // @safety-proof: 1.0 球面度合法
     let area = spherical_polygon_area_m2(1.0).unwrap();
-    assert!(area > 4.0e13);
+    assert!((area - 40589753129677.44).abs() < 1e2);
 }
 
 #[test]
@@ -4421,7 +4428,7 @@ fn test_audio_beamforming_doa_bricks() {
     let delays = [0.0, 0.0];
     // @safety-proof: samples 與 delays 長度吻合且非空
     let out = beamformer_delay_and_sum_step(&samples, &delays).unwrap();
-    assert!((out - 0.0).abs() < 1.0);
+    assert_eq!(out, 1.0);
 
     // 9. 指向性係數 DI
     // @safety-proof: 功率合法
@@ -4510,8 +4517,8 @@ fn test_vision_camera_calibration_pnp_bricks() {
 
     // 3. 切向畸變
     let [tdx, tdy] = camera_tangential_distortion_apply(0.1, 0.1, 0.01, 0.01);
-    assert!(tdx > 0.0);
-    assert!(tdy > 0.0);
+    assert!((tdx - 0.0006).abs() < 1e-6);
+    assert!((tdy - 0.0006).abs() < 1e-6);
 
     // 4. 定點反向去畸變步進
     let [xu, yu] = camera_radial_undistort_step(0.1005, 0.2010, 0.1, 0.0);
@@ -4547,7 +4554,7 @@ fn test_vision_camera_calibration_pnp_bricks() {
     // @safety-proof: pts 長度 4 >= 4
     let (center, scale) = vision_dlt_point_normalize_scale(&pts).unwrap();
     assert_eq!(center, [1.0, 1.0]);
-    assert!(scale > 0.0);
+    assert!((scale - 1.0).abs() < 1e-5);
 
     // 9. 重投影 RMSE
     let obs = [[10.0, 10.0], [20.0, 20.0]];

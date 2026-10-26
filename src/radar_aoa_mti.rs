@@ -86,9 +86,7 @@ pub fn radar_clutter_to_signal_ratio_db(clutter_power: f32, signal_power: f32) -
         return None;
     }
     let ratio = clutter_power / signal_power;
-    // 零依賴自然對數與 log10
-    let ln_val = fast_ln_f32(ratio);
-    Some(10.0 * ln_val * 0.4342944819032518) // ln to log10
+    Some(10.0 * ratio.log10())
 }
 
 /// ## Map: FMCW 雷達最大無模糊探測距離 (R_max = fs * c * Tc / (2 * B))
@@ -150,24 +148,4 @@ pub fn radar_doppler_centroid_hz(power_spectrum: &[f32], freq_step_hz: f32) -> O
     Some(weighted_freq / total_power)
 }
 
-/// 內部快速 ln 逼近 (純函式)
-/// @outputs: 1
-fn fast_ln_f32(x: f32) -> f32 {
-    if x <= 0.0 {
-        return 0.0;
-    }
-    let mut val = x;
-    let mut k = 0i32;
-    while val > 2.0 {
-        val *= 0.5;
-        k += 1;
-    }
-    while val < 1.0 {
-        val *= 2.0;
-        k -= 1;
-    }
-    let z = (val - 1.0) / (val + 1.0);
-    let z2 = z * z;
-    let ln_approx = 2.0 * z * (1.0 + z2 / 3.0 + (z2 * z2) / 5.0);
-    ln_approx + (k as f32) * 0.69314718
-}
+
