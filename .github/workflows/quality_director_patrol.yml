@@ -1,0 +1,51 @@
+name: Zero-Trust Quality Director Patrol & Audit
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    # 每日定時夜巡（UTC 20:00 = 台灣時間 04:00 AM）
+    - cron: '0 20 * * *'
+  workflow_dispatch: # 支援在 GitHub 網頁上手動一鍵出巡
+
+jobs:
+  quality_patrol:
+    name: Quality Director Adversarial Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: 1. Full Unit Test Suite
+        run: cargo test --verbose
+
+      - name: 2. Brick Guard & Contract Rules (Line 1~5)
+        run: cargo run -- guard
+
+      - name: 3. Zero-Trust Chaos Adversarial Audit (Black-Box)
+        run: cargo run -- audit
+
+      - name: 4. External Contrib Branch Patrol
+        run: cargo run -- patrol
+
+      - name: 5. Wishlist Board Inspection
+        run: cargo run -- wish list

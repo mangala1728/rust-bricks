@@ -74,10 +74,17 @@
 cargo test                                # 1. 單元測試全綠
 cargo run -- guard                        # 2. 機械合約檢查通過 (含品質總監混沌黑箱防線)
 cargo run -- audit                        # 3. 零信任品質總監黑箱極端抽檢 (0 崩潰保證)
-cargo run -- catalog                      # 4. 重建 CATALOG.yaml / JSON
-cargo run -- receipt kev-4b PASS          # 5. 本地決策模型驗證語義並簽發 SHA-256 收據
-cargo run -- verify-receipt               # 6. 確保收據與當前 Git Diff 100% 吻合
+cargo run -- wish list                    # 4. 許願池留言板掃描
+cargo run -- catalog                      # 5. 重建 CATALOG.yaml / JSON
+cargo run -- receipt kev-4b PASS          # 6. 本地決策模型驗證語義並簽發 SHA-256 收據
+cargo run -- verify-receipt               # 7. 確保收據與當前 Git Diff 100% 吻合
 ```
+
+### 品質總監自動化出巡與排程指令
+- **本機一鍵出巡**：`powershell -ExecutionPolicy Bypass -File "scripts/quality_director_patrol.ps1"`
+- **註冊 Windows 每日 03:00 排程**：`powershell -ExecutionPolicy Bypass -File "scripts/quality_director_patrol.ps1" -RegisterTask`
+- **雲端定時夜巡**：GitHub Actions 每日 UTC 20:00 (台灣時間 04:00 AM) 自動出巡
+- **完整機制規範**：詳見 [`docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md`](docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md)
 
 ---
 
