@@ -7,7 +7,7 @@
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_mfcc_pitch, audio_spectral_codec, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -750,6 +750,19 @@ fn verify_control_systems_estimation() -> bool {
 }
 
 /// @outputs: 1
+fn verify_geo_spatial_projection() -> bool {
+    let ecef = geo_spatial_projection::wgs84_lla_to_ecef(0.0, 0.0, 0.0);
+    let ok_ecef = matches!(ecef, Some([x, y, z]) if (x - 6378137.0).abs() < 1.0 && y.abs() < 1.0 && z.abs() < 1.0);
+    let merc = geo_spatial_projection::web_mercator_forward_epsg3857(0.0, 0.0);
+    let ok_merc = matches!(merc, Some([x, y]) if x.abs() < 1e-4 && y.abs() < 1e-4);
+    let tile = geo_spatial_projection::slippy_tile_xy_from_latlon(0.0, 0.0, 1);
+    let ok_tile = matches!(tile, Some((1, 1)));
+    let zone = geo_spatial_projection::utm_zone_from_longitude(121.5);
+    let ok_zone = matches!(zone, Some(51));
+    ok_ecef && ok_merc && ok_tile && ok_zone
+}
+
+/// @outputs: 1
 fn verify_all_subsystems_batch_a() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -819,6 +832,7 @@ fn verify_all_subsystems_batch_b() -> bool {
         && verify_physics_gjk_epa_contact()
         && verify_codec_container_multimedia()
         && verify_control_systems_estimation()
+        && verify_geo_spatial_projection()
 }
 
 /// @outputs: 1

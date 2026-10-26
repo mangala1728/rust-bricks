@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 660,
+  "total_functions": 670,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1875,6 +1875,63 @@
           "name": "point_in_polygon_raycast",
           "signature": "pub fn point_in_polygon_raycast(px: f32, py: f32, vertices: &[(f32, f32)]) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "geo_spatial_projection",
+      "file": "src/geo_spatial_projection.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "wgs84_lla_to_ecef",
+          "signature": "pub fn wgs84_lla_to_ecef(lat_deg: f64, lon_deg: f64, alt_m: f64) -> Option<[f64; 3]>",
+          "outputs": 1
+        },
+        {
+          "name": "ecef_to_enu_step",
+          "signature": "pub fn ecef_to_enu_step(",
+          "outputs": 1
+        },
+        {
+          "name": "web_mercator_forward_epsg3857",
+          "signature": "pub fn web_mercator_forward_epsg3857(lat_deg: f64, lon_deg: f64) -> Option<[f64; 2]>",
+          "outputs": 1
+        },
+        {
+          "name": "web_mercator_inverse_epsg3857",
+          "signature": "pub fn web_mercator_inverse_epsg3857(x_m: f64, y_m: f64) -> Option<[f64; 2]>",
+          "outputs": 1
+        },
+        {
+          "name": "slippy_tile_xy_from_latlon",
+          "signature": "pub fn slippy_tile_xy_from_latlon(lat_deg: f64, lon_deg: f64, zoom: u8) -> Option<(u32, u32)>",
+          "outputs": 1
+        },
+        {
+          "name": "utm_zone_from_longitude",
+          "signature": "pub fn utm_zone_from_longitude(lon_deg: f64) -> Option<u8>",
+          "outputs": 1
+        },
+        {
+          "name": "utm_central_meridian_lon",
+          "signature": "pub fn utm_central_meridian_lon(zone: u8) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "vincenty_reduced_latitude_rad",
+          "signature": "pub fn vincenty_reduced_latitude_rad(lat_rad: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "rhumb_line_bearing_deg",
+          "signature": "pub fn rhumb_line_bearing_deg(",
+          "outputs": 1
+        },
+        {
+          "name": "spherical_polygon_area_m2",
+          "signature": "pub fn spherical_polygon_area_m2(excess_steradians: f64) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },

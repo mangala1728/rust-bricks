@@ -43,6 +43,7 @@
 | [`ring_buffer`](src/ring_buffer.rs) | 純記憶體無鎖固定容量 PCM16 環形緩衝區、批次讀寫、溢出守衛 | 手機麥克風串流 (Oboe/AudioRecord)、感測器事件佇列、消滅 GC 停頓 |
 | [`sensor_motion`](src/sensor_motion.rs) | 陀螺儀/加速度計互補濾波姿態融合、1D 卡爾曼濾波、Haversine GPS 大圓距離與航向角 | 手機小遊戲體感控制、防手震、GPS 經緯度去噪與定位 |
 | [`gnss_nmea_geodesy`](src/gnss_nmea_geodesy.rs) | NMEA 0183 語句 XOR 異或校驗和、經緯度度分轉十進制度數、WGS84 經緯高 (LLH) 與地心地固直角坐標 (ECEF) 雙向變換 (Bowring 閉式解)、ECEF 轉站心東-北-天 (ENU) 局域坐標、衛星仰角/方位角解算、幾何精度因子 (PDOP/HDOP/VDOP)、大圓大地線前向方位角、偽距鐘差校正、RTK 載波相位周跳檢測 | 車載/無人機高精度 RTK 定位、GNSS 接收機基頻協議解析、地理測繪坐標轉換、衛星星曆可見性計算 |
+| [`geo_spatial_projection`](src/geo_spatial_projection.rs) | WGS84 經緯度高度轉地心地固直角坐標 (ECEF)、本地東北天切平面 (ENU)、Web Mercator (EPSG:3857) 正反投影、Slippy Map 瓦片網格坐標換算、UTM 投影分帶、Vincenty 歸化緯度、恒向線航向角、球面角超面積 | GIS 地理資訊系統、Web 地圖引擎 (Google Maps / OSM / Mapbox)、大地測量坐標投影、無人機與衛星導航大地解算 |
 | [`spatial_physics`](src/spatial_physics.rs) | 四元數哈密頓乘法、羅德里格向量旋轉、VR 射線拾取求交、彈簧阻尼系統步進 | 3D VR/AR 頭顯與手把姿態追蹤、虛擬手把拉扯動畫、空間射線選取 |
 | [`sensor_hardware`](src/sensor_hardware.rs) | 霍爾磁力翻蓋開合偵測、3軸磁力計傾斜補償指南針、閃光燈 PWM 頻閃與 SOS 時序 | 手機磁力皮套偵測、手機傾斜指南針定向、相機補光/求救信號 |
 | [`net_telemetry`](src/net_telemetry.rs) | RTT 網路延遲與抖動平滑、零配置 IPv4/IPv6 CIDR 子網比對、私有網段判定 | Wi-Fi/LTE 串流動態緩衝、局域網設備識別、IP 安全檢核 |

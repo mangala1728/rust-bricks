@@ -7,7 +7,7 @@
 use crate::{
     agent_terminal, ai_autograd_train, ai_rl_policy_gradient, ai_tensor_gemm, ai_tensor_train, ai_transformer_attention, analyzer_sigrok_protocol, audio_dsp, audio_mfcc_pitch, audio_spectral_codec, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
     clock_pll_rtc, cnc_gcode_toolpath, codec_container_multimedia, codec_lossless_compression, comm_controller, comm_phy_bus, control_systems_estimation, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, doc_office_drawing_shape, dsp_fft_multirate_2d, dsp_fft_radix2,
-    dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
+    dsp_fixed_point, env_sensor, fast_math, fieldbus_building_automation, fieldbus_industrial_eth, fieldbus_motion_cia402, fin_apdu_track, geo_collision, geo_spatial_projection, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_gjk_epa_contact, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_clustering_dbscan_tracker, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_desktop_macro_driver, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
@@ -1064,6 +1064,25 @@ fn audit_control_systems_estimation() -> bool {
 }
 
 /// @outputs: 1
+fn audit_geo_spatial_projection() -> bool {
+    let mut ok = true;
+    ok &= geo_spatial_projection::wgs84_lla_to_ecef(91.0, 0.0, 0.0).is_none();
+    ok &= geo_spatial_projection::wgs84_lla_to_ecef(0.0, 181.0, 0.0).is_none();
+    ok &= geo_spatial_projection::ecef_to_enu_step(0.0, 0.0, 0.0, 100.0, 0.0).is_none();
+    ok &= geo_spatial_projection::web_mercator_forward_epsg3857(86.0, 0.0).is_none();
+    ok &= geo_spatial_projection::web_mercator_inverse_epsg3857(30000000.0, 0.0).is_none();
+    ok &= geo_spatial_projection::slippy_tile_xy_from_latlon(0.0, 0.0, 30).is_none();
+    ok &= geo_spatial_projection::utm_zone_from_longitude(200.0).is_none();
+    ok &= geo_spatial_projection::utm_central_meridian_lon(0).is_none();
+    ok &= geo_spatial_projection::utm_central_meridian_lon(61).is_none();
+    ok &= geo_spatial_projection::vincenty_reduced_latitude_rad(f64::NAN).is_none();
+    ok &= geo_spatial_projection::rhumb_line_bearing_deg(0.0, 0.0, f64::NAN, 1.0).is_none();
+    ok &= geo_spatial_projection::spherical_polygon_area_m2(-1.0).is_none();
+    ok &= geo_spatial_projection::spherical_polygon_area_m2(0.0) == Some(0.0);
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -1144,6 +1163,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_physics_gjk_epa_contact(), "【剛體動力學與GJK/EPA抽查失敗】存在除零溢出或法向發散", total, passed, failures);
     check_audit_domain(audit_codec_container_multimedia(), "【多媒體容器與封裝流抽查失敗】存在標頭溢出或VINT解析崩潰", total, passed, failures);
     check_audit_domain(audit_control_systems_estimation(), "【控制系統與卡爾曼平滑抽查失敗】存在Riccati發散或除零崩潰", total, passed, failures);
+    check_audit_domain(audit_geo_spatial_projection(), "【地理空間與大地投影抽查失敗】存在奇異點發散或除零崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

@@ -4204,6 +4204,65 @@ fn test_control_systems_estimation_bricks() {
     assert!(q > 0.0);
 }
 
+#[test]
+fn test_geo_spatial_projection_bricks() {
+    use rust_bricks::geo_spatial_projection::*;
+
+    // 1. WGS84 LLA 轉 ECEF
+    // @safety-proof: (0, 0, 0) 合法
+    let [x, y, z] = wgs84_lla_to_ecef(0.0, 0.0, 0.0).unwrap();
+    assert!((x - 6378137.0).abs() < 1.0);
+    assert!(y.abs() < 1.0);
+    assert!(z.abs() < 1.0);
+
+    // 2. ECEF 轉 ENU (赤道本初子午線處: Y 為東, Z 為北, X 為天)
+    // @safety-proof: 基準點 (0, 0) 合法
+    let [e, n, u] = ecef_to_enu_step(0.0, 100.0, 200.0, 0.0, 0.0).unwrap();
+    assert_eq!(e, 100.0);
+    assert_eq!(n, 200.0);
+    assert_eq!(u, 0.0);
+
+    // 3. Web Mercator 正投影
+    // @safety-proof: (0, 0) 合法
+    let [mx, my] = web_mercator_forward_epsg3857(0.0, 0.0).unwrap();
+    assert!(mx.abs() < 1e-4);
+    assert!(my.abs() < 1e-4);
+
+    // 4. Web Mercator 反投影
+    // @safety-proof: (0, 0) 合法
+    let [lat, lon] = web_mercator_inverse_epsg3857(0.0, 0.0).unwrap();
+    assert!(lat.abs() < 1e-4);
+    assert!(lon.abs() < 1e-4);
+
+    // 5. Slippy Map 瓦片坐標
+    // @safety-proof: 經緯度及 zoom=10 合法
+    let (tx, ty) = slippy_tile_xy_from_latlon(25.033, 121.565, 10).unwrap();
+    assert_eq!(tx, 857);
+    assert_eq!(ty, 438);
+
+    // 6. UTM 分帶
+    assert_eq!(utm_zone_from_longitude(121.5), Some(51));
+
+    // 7. UTM 中央經線
+    assert_eq!(utm_central_meridian_lon(51), Some(123.0));
+
+    // 8. Vincenty 歸化緯度
+    // @safety-proof: 45度弧度合法
+    let b_rad = vincenty_reduced_latitude_rad(0.785398).unwrap();
+    assert!(b_rad > 0.7 && b_rad < 0.8);
+
+    // 9. 恒向線航向角
+    // @safety-proof: 座標合法
+    let bear = rhumb_line_bearing_deg(0.0, 10.0, 0.0, 20.0).unwrap();
+    assert_eq!(bear, 90.0);
+
+    // 10. 球面角超面積
+    // @safety-proof: 1.0 球面度合法
+    let area = spherical_polygon_area_m2(1.0).unwrap();
+    assert!(area > 4.0e13);
+}
+
+
 
 
 
