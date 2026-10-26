@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 456
+total_functions: 466
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2028,6 +2028,54 @@ modules:
       - name: "radar_mimo_virtual_array_positions"
         signature: "pub fn radar_mimo_virtual_array_positions(tx_pos: &[f32], rx_pos: &[f32], out_virtual_pos: &mut [f32]) -> usize"
         outputs: 1
+  - module: "radar_mimo_tracking"
+    file: "src/radar_mimo_tracking.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "radar_mimo_virtual_array_index"
+        signature: "pub fn radar_mimo_virtual_array_index(tx_idx: usize, rx_idx: usize, num_rx: usize) -> usize"
+        outputs: 1
+      - name: "radar_mimo_tdma_tx_active_mask"
+        signature: "pub fn radar_mimo_tdma_tx_active_mask(cycle_idx: usize, num_tx: usize) -> usize"
+        outputs: 1
+      - name: "radar_mimo_barker_code_biphase"
+        signature: "pub fn radar_mimo_barker_code_biphase(code_len: u8, chip_idx: usize) -> Option<f32>"
+        outputs: 1
+      - name: "radar_mimo_phase_matched_filter_step"
+        signature: "pub fn radar_mimo_phase_matched_filter_step("
+        outputs: 2
+        domains:
+          rx_i: "[-1e6, 1e6]"
+          rx_q: "[-1e6, 1e6]"
+          chip_biphase: "[-1.0, 1.0]"
+      - name: "radar_capon_beamforming_weight_num"
+        signature: "pub fn radar_capon_beamforming_weight_num("
+        outputs: 1
+      - name: "radar_gnn_euclidean_distance_2d"
+        signature: "pub fn radar_gnn_euclidean_distance_2d(track_pos: [f32; 2], meas_pos: [f32; 2]) -> f32"
+        outputs: 1
+      - name: "radar_mahalanobis_distance_sq_2d"
+        signature: "pub fn radar_mahalanobis_distance_sq_2d(residual: [f32; 2], s_inv: [[f32; 2]; 2]) -> Option<f32>"
+        outputs: 1
+      - name: "radar_kalman_filter_innovation_step"
+        signature: "pub fn radar_kalman_filter_innovation_step("
+        outputs: 3
+        domains:
+          meas: "[-1e6, 1e6]"
+          pred: "[-1e6, 1e6]"
+          var_pred: "[0.0001, 1e8]"
+          var_meas: "[0.0001, 1e8]"
+      - name: "radar_track_state_coast_decay_score"
+        signature: "pub fn radar_track_state_coast_decay_score(hits: u32, misses: u32, max_misses: u32) -> (bool, f32)"
+        outputs: 2
+      - name: "radar_doppler_velocity_disambiguation"
+        signature: "pub fn radar_doppler_velocity_disambiguation("
+        outputs: 1
+        domains:
+          v_measured: "[-1e4, 1e4]"
+          v_nyquist1: "[0.1, 1e4]"
+          v_nyquist2: "[0.1, 1e4]"
   - module: "receipt"
     file: "src/receipt.rs"
     functions_count: 2

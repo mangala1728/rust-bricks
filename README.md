@@ -76,6 +76,7 @@
 | [`radar_aoa_mti`](src/radar_aoa_mti.rs) | MTI 雙脈衝/三脈衝延遲消除器、雙天線相位單脈衝測角 (AoA)、和差單脈衝比斜率、雷達盲速解算、Range-Doppler 網格轉實體座標、CSR 雜波訊噪比、FMCW 最大無模糊距離/速度、都卜勒頻心估算 | 雷達動目標顯示 (MTI)、毫米波雷達目標空間角度估計、地物雜波抑制、都卜勒頻譜中心校準 |
 | [`radar_biomed_dsp`](src/radar_biomed_dsp.rs) | MIMO 正交 Hadamard CDMA 編碼、TDMA 天線排程、FMCW 距離解析度與拍頻測距、微都卜勒胸腔相位解纏繞、生醫呼吸帶通濾波、Q7/Q31 多位元量化 | 毫米波雷達生命徵象 (心跳/呼吸) 監測、FMCW 測距、MIMO 虛擬孔徑相控陣列、跨位元定點數 DSP |
 | [`radar_cfar_doppler`](src/radar_cfar_doppler.rs) | 1D CA-CFAR 恒虛警率目標檢測、都卜勒速度解算、微都卜勒呼吸胸腔微動位移、點雲距離分群、MIMO 虛擬孔徑合成 | 毫米波雷達 (77GHz/60GHz)、智慧醫療呼吸心跳非接觸監測、ADAS 自駕車避障、點雲聚類 |
+| [`radar_mimo_tracking`](src/radar_mimo_tracking.rs) | MIMO 虛擬天線陣列等效孔徑索引換算、TDMA 發射通道輪詢排程器、CDMA/PMCW 雷達 Barker 雙相編碼 (7/11/13)、脈衝壓縮匹配濾波步進、Capon/MVDR 自適應波束成形權重、GNN 歐氏距與馬氏距波門檢定、1D 卡爾曼濾波量測創新更新、航跡存活確認與信心衰減評分、雙 PRF 多普勒速度解模糊 | 毫米波雷達 MIMO 虛擬孔徑成像、雷達點雲多目標航跡關聯 (GNN/Kalman)、CDMA/PMCW 正交編碼解調、抗模糊測速 |
 | [`fin_apdu_track`](src/fin_apdu_track.rs) | ISO 7816-4 APDU 晶片卡命令封裝與回應解析、磁條 Track 2 卡號效期提取、LRC 校驗 | 金融刷卡機 POS、ATM 讀卡機、晶片卡/磁條卡雙介面支付 |
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |

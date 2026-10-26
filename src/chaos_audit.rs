@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
 };
@@ -747,6 +747,18 @@ fn audit_doc_layout_typography() -> bool {
 }
 
 /// @outputs: 1
+fn audit_radar_mimo_tracking() -> bool {
+    let mut ok = true;
+    ok &= radar_mimo_tracking::radar_mimo_virtual_array_index(2, 3, 0) == 0; // 零RX防護
+    ok &= radar_mimo_tracking::radar_mimo_barker_code_biphase(99, 0).is_none(); // 非法編碼長度
+    ok &= radar_mimo_tracking::radar_gnn_euclidean_distance_2d([f32::NAN, 0.0], [0.0, 0.0]) == f32::INFINITY;
+    ok &= radar_mimo_tracking::radar_kalman_filter_innovation_step(10.0, 10.0, 0.0, 1.0).is_none(); // 零方差
+    let (keep, _) = radar_mimo_tracking::radar_track_state_coast_decay_score(10, 5, 5);
+    ok &= !keep; // 超出最大丟失
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -806,6 +818,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_gnss_nmea_geodesy(), "【GNSS導航與大地測量抽查失敗】存在坐標奇異點或除零崩潰", total, passed, failures);
     check_audit_domain(audit_quant_orderbook_l2(), "【量化L2訂單簿與微觀結構抽查失敗】存在除零溢出或無效買賣價", total, passed, failures);
     check_audit_domain(audit_doc_layout_typography(), "【Word與PPT排版字體抽查失敗】存在除零溢出或惡化度崩潰", total, passed, failures);
+    check_audit_domain(audit_radar_mimo_tracking(), "【雷達MIMO虛擬陣列與追蹤抽查失敗】存在除零溢出或航跡發散", total, passed, failures);
 }
 
 /// @outputs: 2

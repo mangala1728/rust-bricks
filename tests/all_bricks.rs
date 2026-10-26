@@ -2996,6 +2996,69 @@ fn test_doc_layout_typography_bricks() {
     assert!(cost_mid < cost_side);
 }
 
+#[test]
+fn test_radar_mimo_tracking_bricks() {
+    use rust_bricks::radar_mimo_tracking::*;
+
+    // 1. MIMO 虛擬天線陣列等效索引 (3 TX, 4 RX)
+    assert_eq!(radar_mimo_virtual_array_index(0, 0, 4), 0);
+    assert_eq!(radar_mimo_virtual_array_index(1, 2, 4), 6);
+    assert_eq!(radar_mimo_virtual_array_index(2, 3, 4), 11);
+
+    // 2. TDMA 輪詢排程
+    assert_eq!(radar_mimo_tdma_tx_active_mask(0, 3), 0);
+    assert_eq!(radar_mimo_tdma_tx_active_mask(4, 3), 1);
+
+    // 3. Barker 雙相編碼
+    assert_eq!(radar_mimo_barker_code_biphase(7, 0), Some(1.0));
+    assert_eq!(radar_mimo_barker_code_biphase(7, 3), Some(-1.0));
+    assert_eq!(radar_mimo_barker_code_biphase(11, 10), Some(-1.0));
+    assert_eq!(radar_mimo_barker_code_biphase(13, 12), Some(1.0));
+
+    // 4. CDMA PMCW 脈衝壓縮匹配濾波步進
+    let (i_out, q_out) = radar_mimo_phase_matched_filter_step(2.5, -1.5, -1.0);
+    assert_eq!(i_out, -2.5);
+    assert_eq!(q_out, 1.5);
+
+    // 5. Capon / MVDR 2x2 波束成形權重 (單位矩陣)
+    let cov_inv = [[1.0, 0.0], [0.0, 1.0]];
+    let w = radar_capon_beamforming_weight_num(cov_inv, [0.707, 0.707]);
+    assert!(w.is_some());
+    assert_eq!(w.unwrap(), [0.707, 0.707]);
+
+    // 6. GNN 歐氏距離波門檢定 (3-4-5 直角三角形)
+    let dist = radar_gnn_euclidean_distance_2d([0.0, 0.0], [3.0, 4.0]);
+    assert!((dist - 5.0).abs() < 1e-5);
+
+    // 7. 馬氏距離平方 (對角協方差 [0.25, 0.25], 殘差 [1.0, 1.0] -> 1/0.25 + 1/0.25 = 4 + 4 = 8)
+    let s_inv = [[4.0, 0.0], [0.0, 4.0]];
+    let m_dist_sq = radar_mahalanobis_distance_sq_2d([1.0, 1.0], s_inv);
+    assert!(m_dist_sq.is_some());
+    assert!((m_dist_sq.unwrap() - 8.0).abs() < 1e-4);
+
+    // 8. 1D 卡爾曼濾波創新更新步進
+    // 預測 10.0 (var=4.0), 量測 12.0 (var=1.0)
+    // S = 5.0, K = 4/5 = 0.8
+    // updated_state = 10.0 + 0.8 * 2.0 = 11.6
+    // updated_var = (1 - 0.8) * 4.0 = 0.8
+    let kf = radar_kalman_filter_innovation_step(12.0, 10.0, 4.0, 1.0);
+    assert!(kf.is_some());
+    let (x_new, p_new, k_gain) = kf.unwrap();
+    assert!((x_new - 11.6).abs() < 1e-4);
+    assert!((p_new - 0.8).abs() < 1e-4);
+    assert!((k_gain - 0.8).abs() < 1e-4);
+
+    // 9. 航跡狀態評分
+    let (keep_alive, score) = radar_track_state_coast_decay_score(8, 2, 5);
+    assert!(keep_alive);
+    assert!(score > 0.0);
+
+    // 10. 雙 PRF 多普勒解模糊
+    let v_unambig = radar_doppler_velocity_disambiguation(15.0, 10.0, 12.0);
+    assert!(v_unambig.is_some());
+}
+
+
 
 
 

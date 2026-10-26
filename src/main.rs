@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
@@ -495,6 +495,17 @@ fn verify_doc_layout_typography() -> bool {
 }
 
 /// @outputs: 1
+fn verify_radar_mimo_tracking() -> bool {
+    let v_idx = radar_mimo_tracking::radar_mimo_virtual_array_index(2, 3, 4);
+    let ok_idx = v_idx == 11;
+    let b7 = radar_mimo_tracking::radar_mimo_barker_code_biphase(7, 0);
+    let ok_b7 = b7 == Some(1.0);
+    let (up_x, up_p, k) = radar_mimo_tracking::radar_kalman_filter_innovation_step(10.0, 8.0, 4.0, 1.0).unwrap_or((0.0, 0.0, 0.0));
+    let ok_kf = (up_x - 9.6).abs() < 1e-3 && (up_p - 0.8).abs() < 1e-3 && (k - 0.8).abs() < 1e-3;
+    ok_idx && ok_b7 && ok_kf
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -539,6 +550,7 @@ fn verify_all_subsystems() -> bool {
         && verify_gnss_nmea_geodesy()
         && verify_quant_orderbook_l2()
         && verify_doc_layout_typography()
+        && verify_radar_mimo_tracking()
 }
 
 /// @outputs: 1

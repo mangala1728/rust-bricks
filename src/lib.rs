@@ -61,6 +61,7 @@ pub mod quant_orderbook_l2;
 pub mod radar_aoa_mti;
 pub mod radar_biomed_dsp;
 pub mod radar_cfar_doppler;
+pub mod radar_mimo_tracking;
 pub mod receipt;
 pub mod ring_buffer;
 pub mod robotics_6dof_slerp;
