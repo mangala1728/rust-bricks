@@ -953,16 +953,21 @@ fn test_env_sensor_bricks() {
     // @safety-proof: dew_sat 已在有效域內
     assert!((dew_sat - 25.0).abs() < 0.1);
 
-    // 3. AQI PM2.5 換算
-    // 12.0 ug/m3 -> AQI 50
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(12.0), 50);
-    // 35.4 ug/m3 -> AQI 100
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(35.4), 100);
-    // 最高兩段需分開（INC-20261026-08，EPA 舊表）
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(350.4), 400);
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(350.5), 401);
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(500.4), 500);
-    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(12.05), 50); // 先截斷至 0.1
+    // 3. AQI PM2.5 換算（EPA 2024 新表，EPA-403/B-26-003 Table 6）
+    use rust_bricks::env_sensor::aqi_pm25_us_standard as aqi;
+    assert_eq!(aqi(9.0), 50);
+    assert_eq!(aqi(9.05), 50); // 先截斷至 0.1 -> 9.0
+    assert_eq!(aqi(9.1), 51);
+    assert_eq!(aqi(35.4), 100);
+    assert_eq!(aqi(35.9), 102); // EPA TAD 第 15 頁範例
+    assert_eq!(aqi(55.4), 150);
+    assert_eq!(aqi(125.4), 200);
+    assert_eq!(aqi(125.5), 201);
+    assert_eq!(aqi(225.4), 300);
+    assert_eq!(aqi(225.5), 301);
+    assert_eq!(aqi(325.4), 500);
+    assert!(aqi(400.0) > 500); // Table 6 註 4：超過 500 依同一公式外推
+    assert_eq!(aqi(5000.0), aqi(1000.0)); // 越界收斂至 domain 上限
 }
 
 #[test]
