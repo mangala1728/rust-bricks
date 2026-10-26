@@ -5,7 +5,7 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
+    agent_terminal, ai_autograd_train, ai_tensor_train, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
@@ -248,6 +248,17 @@ fn verify_curve_fit_trend() -> bool {
 }
 
 /// @outputs: 1
+fn verify_ai_autograd_train() -> bool {
+    let (ga, gb) = ai_autograd_train::autograd_scalar_add(2.0, 3.0, 1.0);
+    let ok_grad = (ga - 1.0).abs() < 1e-4 && (gb - 1.0).abs() < 1e-4;
+    let lr = ai_autograd_train::lr_schedule_cosine_warmup(100, 10, 100, 0.01, 0.001);
+    let ok_lr = (lr - 0.001).abs() < 1e-4;
+    let lse = ai_autograd_train::log_sum_exp_f32(&[0.0, 0.0]);
+    let ok_lse = matches!(lse, Some(v) if (v - std::f32::consts::LN_2).abs() < 1e-4);
+    ok_grad && ok_lr && ok_lse
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -270,6 +281,7 @@ fn verify_all_subsystems() -> bool {
         && verify_dsp_fft_radix2()
         && verify_decision_mcts()
         && verify_curve_fit_trend()
+        && verify_ai_autograd_train()
 }
 
 /// @outputs: 1

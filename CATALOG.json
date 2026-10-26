@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 236,
+  "total_functions": 246,
   "modules": [
     {
       "module": "agent_terminal",
@@ -23,6 +23,63 @@
         {
           "name": "pty_line_buffer_edit",
           "signature": "pub fn pty_line_buffer_edit(input: &[u8], out_buf: &mut [u8]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "ai_autograd_train",
+      "file": "src/ai_autograd_train.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "autograd_scalar_add",
+          "signature": "pub fn autograd_scalar_add(a_val: f32, b_val: f32, out_grad: f32) -> (f32, f32)",
+          "outputs": 2
+        },
+        {
+          "name": "autograd_scalar_mul",
+          "signature": "pub fn autograd_scalar_mul(a_val: f32, b_val: f32, out_grad: f32) -> (f32, f32)",
+          "outputs": 2
+        },
+        {
+          "name": "autograd_scalar_pow",
+          "signature": "pub fn autograd_scalar_pow(val: f32, exp: f32, out_grad: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "autograd_scalar_relu",
+          "signature": "pub fn autograd_scalar_relu(val: f32, out_grad: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "bpe_find_most_frequent_pair",
+          "signature": "pub fn bpe_find_most_frequent_pair(tokens: &[u32]) -> Option<(u32, u32, usize)>",
+          "outputs": 2
+        },
+        {
+          "name": "bpe_merge_pair",
+          "signature": "pub fn bpe_merge_pair(tokens: &[u32], pair: (u32, u32), new_id: u32, out: &mut [u32]) -> usize",
+          "outputs": 2
+        },
+        {
+          "name": "causal_attention_mask_apply",
+          "signature": "pub fn causal_attention_mask_apply(scores: &mut [f32], seq_len: usize, neg_inf: f32) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "lr_schedule_cosine_warmup",
+          "signature": "pub fn lr_schedule_cosine_warmup(",
+          "outputs": 1
+        },
+        {
+          "name": "gradient_clip_l2_norm",
+          "signature": "pub fn gradient_clip_l2_norm(grads: &mut [f32], max_norm: f32) -> f32",
+          "outputs": 2
+        },
+        {
+          "name": "log_sum_exp_f32",
+          "signature": "pub fn log_sum_exp_f32(logits: &[f32]) -> Option<f32>",
           "outputs": 1
         }
       ]

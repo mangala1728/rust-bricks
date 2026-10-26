@@ -1726,3 +1726,62 @@ fn test_curve_fit_trend_bricks() {
     let silu_pos = curve_fit_trend::curve_silu_activation(2.0);
     assert!(silu_pos > 1.7 && silu_pos < 1.8);
 }
+
+#[test]
+fn test_ai_autograd_train_bricks() {
+    use rust_bricks::ai_autograd_train;
+
+    // 1. 標量自動求導 (Micrograd 加法與乘法)
+    let (ga, gb) = ai_autograd_train::autograd_scalar_add(3.0, 4.0, 2.5);
+    assert_eq!(ga, 2.5);
+    assert_eq!(gb, 2.5);
+
+    let (ma, mb) = ai_autograd_train::autograd_scalar_mul(3.0, 4.0, 1.0);
+    assert_eq!(ma, 4.0); // d(a*b)/da = b
+    assert_eq!(mb, 3.0); // d(a*b)/db = a
+
+    // 2. 冪次與 ReLU 求導
+    let pow_grad = ai_autograd_train::autograd_scalar_pow(2.0, 3.0, 1.0);
+    assert!((pow_grad - 12.0).abs() < 1e-4); // 3 * 2^2 = 12
+    let relu_pos = ai_autograd_train::autograd_scalar_relu(2.0, 1.5);
+    assert_eq!(relu_pos, 1.5);
+    let relu_neg = ai_autograd_train::autograd_scalar_relu(-2.0, 1.5);
+    assert_eq!(relu_neg, 0.0);
+
+    // 3. BPE 詞元頻率統計與合併
+    let tokens = [10u32, 20, 30, 10, 20, 40];
+    let most_freq = ai_autograd_train::bpe_find_most_frequent_pair(&tokens).unwrap();
+    assert_eq!(most_freq, (10, 20, 2));
+
+    let mut merged = [0u32; 6];
+    let out_len = ai_autograd_train::bpe_merge_pair(&tokens, (10, 20), 99, &mut merged);
+    assert_eq!(out_len, 4);
+    assert_eq!(&merged[..4], &[99, 30, 99, 40]);
+
+    // 4. GPT-2 因果自注意力遮罩 (Causal Mask)
+    let mut scores = [0.0f32; 4]; // 2x2
+    assert!(ai_autograd_train::causal_attention_mask_apply(&mut scores, 2, -1e9));
+    assert_eq!(scores[0], 0.0);
+    assert_eq!(scores[1], -1e9); // row 0, col 1 遮蔽
+    assert_eq!(scores[2], 0.0);
+    assert_eq!(scores[3], 0.0);
+
+    // 5. 餘弦退火排程 (Cosine Annealing with Warmup)
+    let lr_warmup = ai_autograd_train::lr_schedule_cosine_warmup(5, 10, 100, 0.01, 0.001);
+    assert!((lr_warmup - 0.0055).abs() < 1e-3);
+    let lr_mid = ai_autograd_train::lr_schedule_cosine_warmup(55, 10, 100, 0.01, 0.001);
+    assert!(lr_mid > 0.001 && lr_mid < 0.01);
+    let lr_end = ai_autograd_train::lr_schedule_cosine_warmup(100, 10, 100, 0.01, 0.001);
+    assert_eq!(lr_end, 0.001);
+
+    // 6. 全域梯度 L2 Norm 截斷 (Gradient Clipping)
+    let mut grads = [3.0f32, 4.0]; // norm = 5.0
+    let norm = ai_autograd_train::gradient_clip_l2_norm(&mut grads, 2.5);
+    assert!((norm - 5.0).abs() < 1e-4);
+    assert!((grads[0] - 1.5).abs() < 1e-4);
+    assert!((grads[1] - 2.0).abs() < 1e-4);
+
+    // 7. 數值穩定 Log-Sum-Exp
+    let lse = ai_autograd_train::log_sum_exp_f32(&[1000.0, 1000.0]).unwrap();
+    assert!((lse - (1000.0 + std::f32::consts::LN_2)).abs() < 1e-3);
+}

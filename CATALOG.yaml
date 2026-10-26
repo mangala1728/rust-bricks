@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 236
+total_functions: 246
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -33,6 +33,56 @@ modules:
         outputs: 1
         domains:
           input_len: "[0..65536]"
+  - module: "ai_autograd_train"
+    file: "src/ai_autograd_train.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: ai/autograd_train — 極簡神經網路訓練、標量自動求導 (Micrograd)、BPE 詞元合併與餘弦退火排程微積木。"
+      - "Inputs: 計算圖標量節點與梯度、詞元切片、因果遮罩矩陣、學習率超參數、梯度向量。"
+      - "Outputs: 標量梯度對 (grad_a, grad_b)、BPE 合併詞元列、遮罩後注意力權重、退火學習率、裁剪後梯度範數。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零與 NaN 剛性防護、有界長度切片、單一函式 <= 60 行。"
+    functions:
+      - name: "autograd_scalar_add"
+        signature: "pub fn autograd_scalar_add(a_val: f32, b_val: f32, out_grad: f32) -> (f32, f32)"
+        outputs: 2
+      - name: "autograd_scalar_mul"
+        signature: "pub fn autograd_scalar_mul(a_val: f32, b_val: f32, out_grad: f32) -> (f32, f32)"
+        outputs: 2
+      - name: "autograd_scalar_pow"
+        signature: "pub fn autograd_scalar_pow(val: f32, exp: f32, out_grad: f32) -> f32"
+        outputs: 1
+        domains:
+          exp: "[-100.0..100.0]"
+      - name: "autograd_scalar_relu"
+        signature: "pub fn autograd_scalar_relu(val: f32, out_grad: f32) -> f32"
+        outputs: 1
+      - name: "bpe_find_most_frequent_pair"
+        signature: "pub fn bpe_find_most_frequent_pair(tokens: &[u32]) -> Option<(u32, u32, usize)>"
+        outputs: 2
+        domains:
+          tokens.len(): "[2..65536]"
+      - name: "bpe_merge_pair"
+        signature: "pub fn bpe_merge_pair(tokens: &[u32], pair: (u32, u32), new_id: u32, out: &mut [u32]) -> usize"
+        outputs: 2
+      - name: "causal_attention_mask_apply"
+        signature: "pub fn causal_attention_mask_apply(scores: &mut [f32], seq_len: usize, neg_inf: f32) -> bool"
+        outputs: 2
+        domains:
+          seq_len: "[1..2048]"
+      - name: "lr_schedule_cosine_warmup"
+        signature: "pub fn lr_schedule_cosine_warmup("
+        outputs: 1
+        domains:
+          base_lr: "[1e-7..10.0]"
+          min_lr: "[0.0..10.0]"
+      - name: "gradient_clip_l2_norm"
+        signature: "pub fn gradient_clip_l2_norm(grads: &mut [f32], max_norm: f32) -> f32"
+        outputs: 2
+        domains:
+          max_norm: "[1e-6..10000.0]"
+      - name: "log_sum_exp_f32"
+        signature: "pub fn log_sum_exp_f32(logits: &[f32]) -> Option<f32>"
+        outputs: 1
   - module: "ai_tensor_train"
     file: "src/ai_tensor_train.rs"
     functions_count: 8

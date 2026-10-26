@@ -5,7 +5,7 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
+    agent_terminal, ai_autograd_train, ai_tensor_train, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
@@ -366,6 +366,25 @@ fn audit_curve_fit_trend() -> bool {
 }
 
 /// @outputs: 1
+fn audit_ai_autograd_train() -> bool {
+    let mut ok = true;
+    let (ga, gb) = ai_autograd_train::autograd_scalar_add(f32::NAN, 1.0, 1.0);
+    ok &= ga == 0.0 && gb == 0.0;
+    let (ma, mb) = ai_autograd_train::autograd_scalar_mul(f32::NAN, 1.0, 1.0);
+    ok &= ma == 0.0 && mb == 0.0;
+    ok &= ai_autograd_train::autograd_scalar_pow(0.0, 2.0, 1.0) == 0.0;
+    ok &= ai_autograd_train::autograd_scalar_relu(f32::NAN, 1.0) == 0.0;
+    ok &= ai_autograd_train::bpe_find_most_frequent_pair(&[]).is_none();
+    ok &= ai_autograd_train::bpe_merge_pair(&[], (0, 1), 2, &mut []) == 0;
+    let mut mask = [0.0f32; 4];
+    ok &= !ai_autograd_train::causal_attention_mask_apply(&mut mask, 0, -1e9);
+    ok &= (ai_autograd_train::lr_schedule_cosine_warmup(10, 5, 0, 0.01, 0.001) - 0.0).abs() < 1e-6;
+    ok &= ai_autograd_train::gradient_clip_l2_norm(&mut [], 1.0) == 0.0;
+    ok &= ai_autograd_train::log_sum_exp_f32(&[]).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -407,6 +426,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_dsp_fft_radix2(), "【快速傅立葉FFT抽查失敗】存在非2的冪次方或溢出崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_decision_mcts(), "【MCTS蒙地卡羅決策抽查失敗】存在無效路徑或零拜訪崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_curve_fit_trend(), "【曲線擬合與趨勢分析抽查失敗】存在除零或核半徑崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_ai_autograd_train(), "【自動求導與神經訓練抽查失敗】存在除零溢出或NaN穿透", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);
