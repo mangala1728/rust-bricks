@@ -10,7 +10,7 @@ use crate::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast,
 };
@@ -648,6 +648,25 @@ fn audit_fieldbus_industrial_eth() -> bool {
 }
 
 /// @outputs: 1
+fn audit_robotics_6dof_slerp() -> bool {
+    let mut ok = true;
+    let p_wc = robotics_6dof_slerp::robotics_wrist_center_decouple([0.0, 0.0, 10.0], &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], 2.0);
+    ok &= (p_wc[2] - 8.0).abs() < 1e-4;
+    let q_slerp = robotics_6dof_slerp::robotics_quaternion_slerp_step([1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], 1.5);
+    ok &= q_slerp[0] == 1.0; // t 超界回退
+    let rot = robotics_6dof_slerp::robotics_axis_angle_to_matrix([0.0, 0.0, 0.0], 0.0);
+    ok &= (rot[0] - 1.0).abs() < 1e-4 && (rot[4] - 1.0).abs() < 1e-4; // 單位矩陣
+    let (s, v, a) = robotics_6dof_slerp::robotics_quintic_polynomial_traj(-1.0, 10.0, 0.0, 10.0);
+    ok &= s == 0.0 && v == 0.0 && a == 0.0;
+    ok &= (robotics_6dof_slerp::robotics_gravity_load_torque(-1.0, 1.0, 0.0) - 0.0).abs() < 1e-6; // 負質量
+    ok &= robotics_6dof_slerp::robotics_cartesian_distance_3d([0.0; 3], [0.0; 3]) == 0.0;
+    ok &= robotics_6dof_slerp::robotics_quaternion_normalize([0.0; 4]).is_none();
+    let p_blend = robotics_6dof_slerp::robotics_cartesian_linear_blend([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], -0.1);
+    ok &= p_blend == [1.0, 2.0, 3.0]; // alpha 越界
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -705,6 +724,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_instrument_lxi_hislip(), "【網路儀控LXI與HiSLIP抽查失敗】存在XDR解碼或封包頭溢出", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

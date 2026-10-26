@@ -10,7 +10,7 @@ use rust_bricks::{
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
-    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
+    radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_6dof_slerp, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_yuv,
 };
@@ -426,6 +426,15 @@ fn verify_fieldbus_industrial_eth() -> bool {
 }
 
 /// @outputs: 1
+fn verify_robotics_6dof_slerp() -> bool {
+    let p_wc = robotics_6dof_slerp::robotics_wrist_center_decouple([0.0, 0.0, 10.0], &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], 2.0);
+    let ok_wc = (p_wc[2] - 8.0).abs() < 1e-4;
+    let (s, v, a) = robotics_6dof_slerp::robotics_quintic_polynomial_traj(5.0, 10.0, 0.0, 100.0);
+    let ok_traj = (s - 50.0).abs() < 1e-2 && v > 0.0 && a.abs() < 1e-2;
+    ok_wc && ok_traj
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -464,6 +473,7 @@ fn verify_all_subsystems() -> bool {
         && verify_instrument_lxi_hislip()
         && verify_spc_msa_advanced()
         && verify_fieldbus_industrial_eth()
+        && verify_robotics_6dof_slerp()
 }
 
 /// @outputs: 1

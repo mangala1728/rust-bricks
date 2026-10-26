@@ -2618,3 +2618,51 @@ fn test_fieldbus_industrial_eth_bricks() {
     assert_eq!(unit, 1);
     assert_eq!(pdu, 6);
 }
+
+#[test]
+fn test_robotics_6dof_slerp_bricks() {
+    use rust_bricks::robotics_6dof_slerp;
+
+    // 1. 腕部球心解耦 (Z 軸朝前 [0, 0, 1]，d6=0.1m -> 腕心向後退 0.1m)
+    let rot_i = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+    let p_wc = robotics_6dof_slerp::robotics_wrist_center_decouple([0.5, 0.2, 0.8], &rot_i, 0.1);
+    assert!((p_wc[0] - 0.5).abs() < 1e-6);
+    assert!((p_wc[1] - 0.2).abs() < 1e-6);
+    assert!((p_wc[2] - 0.7).abs() < 1e-6);
+
+    // 2. 四元數 SLERP 球面插值 (q1=[1,0,0,0], q2=[0,1,0,0] 旋轉 90 度，t=0.5 -> 45 度 [sqrt(0.5), sqrt(0.5), 0, 0])
+    let q1 = [1.0, 0.0, 0.0, 0.0];
+    let q2 = [0.0, 1.0, 0.0, 0.0];
+    let q_mid = robotics_6dof_slerp::robotics_quaternion_slerp_step(q1, q2, 0.5);
+    assert!((q_mid[0] - 0.7071).abs() < 1e-2);
+    assert!((q_mid[1] - 0.7071).abs() < 1e-2);
+
+    // 3. Rodrigues 軸角轉旋轉矩陣 (繞 Z 軸旋轉 90 度)
+    let rot_z90 = robotics_6dof_slerp::robotics_axis_angle_to_matrix([0.0, 0.0, 1.0], 1.570796);
+    assert!(rot_z90[0].abs() < 1e-3); // cos(90) ~ 0
+    assert!((rot_z90[1] - (-1.0)).abs() < 1e-3); // -sin(90) ~ -1
+    assert!((rot_z90[3] - 1.0).abs() < 1e-3); // sin(90) ~ 1
+
+    // 4. 旋轉矩陣反解軸角
+    let (axis, angle) = robotics_6dof_slerp::robotics_matrix_to_axis_angle(&rot_z90).unwrap();
+    assert!((axis[2] - 1.0).abs() < 1e-2);
+    assert!((angle - 1.570796).abs() < 1e-2);
+
+    // 5. 五次多項式連續軌跡規劃 (T=10s, 0..100m, t=5s 時正好過半 50m)
+    let (s, v, a) = robotics_6dof_slerp::robotics_quintic_polynomial_traj(5.0, 10.0, 0.0, 100.0);
+    assert!((s - 50.0).abs() < 1e-3);
+    assert!(v > 10.0); // 中間速度最大
+    assert!(a.abs() < 1e-3); // 中點加速度過零
+
+    // 6. 重力靜力矩負載補償 (5kg, 0.4m 質心, 水平姿勢 theta=0 -> tau = 5 * 9.8 * 0.4 = 19.6 Nm)
+    let tau = robotics_6dof_slerp::robotics_gravity_load_torque(5.0, 0.4, 0.0);
+    assert!((tau - 19.6133).abs() < 1e-2);
+
+    // 7. 笛卡爾空間幾何距離
+    let d = robotics_6dof_slerp::robotics_cartesian_distance_3d([0.0, 0.0, 0.0], [3.0, 4.0, 0.0]);
+    assert_eq!(d, 5.0);
+
+    // 8. 笛卡爾空間直線插補 (Blend)
+    let p_blend = robotics_6dof_slerp::robotics_cartesian_linear_blend([0.0, 0.0, 0.0], [10.0, 20.0, 30.0], 0.3);
+    assert_eq!(p_blend, [3.0, 6.0, 9.0]);
+}

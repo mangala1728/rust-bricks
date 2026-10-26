@@ -59,6 +59,7 @@ pub mod radar_biomed_dsp;
 pub mod radar_cfar_doppler;
 pub mod receipt;
 pub mod ring_buffer;
+pub mod robotics_6dof_slerp;
 pub mod robotics_motion_profile;
 pub mod rpa_screen_control;
 pub mod sensor_baro_als;

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 397
+total_functions: 406
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1848,6 +1848,42 @@ modules:
       - name: "read_chunk"
         signature: "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize"
         outputs: 1
+  - module: "robotics_6dof_slerp"
+    file: "src/robotics_6dof_slerp.rs"
+    functions_count: 9
+    architecture_map:
+    functions:
+      - name: "robotics_wrist_center_decouple"
+        signature: "pub fn robotics_wrist_center_decouple("
+        outputs: 1
+      - name: "robotics_quaternion_slerp_step"
+        signature: "pub fn robotics_quaternion_slerp_step(q1: [f64; 4], mut q2: [f64; 4], t: f64) -> [f64; 4]"
+        outputs: 1
+        domains:
+          t: "[0.0, 1.0]"
+      - name: "robotics_axis_angle_to_matrix"
+        signature: "pub fn robotics_axis_angle_to_matrix(axis: [f64; 3], angle_rad: f64) -> [f64; 9]"
+        outputs: 1
+      - name: "robotics_matrix_to_axis_angle"
+        signature: "pub fn robotics_matrix_to_axis_angle(rot: &[f64; 9]) -> Option<([f64; 3], f64)>"
+        outputs: 1
+      - name: "robotics_quintic_polynomial_traj"
+        signature: "pub fn robotics_quintic_polynomial_traj("
+        outputs: 1
+      - name: "robotics_gravity_load_torque"
+        signature: "pub fn robotics_gravity_load_torque(mass_kg: f64, link_cm_dist_m: f64, theta_rad: f64) -> f64"
+        outputs: 1
+      - name: "robotics_cartesian_distance_3d"
+        signature: "pub fn robotics_cartesian_distance_3d(p1: [f64; 3], p2: [f64; 3]) -> f64"
+        outputs: 1
+      - name: "robotics_quaternion_normalize"
+        signature: "pub fn robotics_quaternion_normalize(q: [f64; 4]) -> Option<[f64; 4]>"
+        outputs: 1
+      - name: "robotics_cartesian_linear_blend"
+        signature: "pub fn robotics_cartesian_linear_blend(p0: [f64; 3], p1: [f64; 3], alpha: f64) -> [f64; 3]"
+        outputs: 1
+        domains:
+          alpha: "[0.0, 1.0]"
   - module: "robotics_motion_profile"
     file: "src/robotics_motion_profile.rs"
     functions_count: 10
