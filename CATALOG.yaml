@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 406
+total_functions: 416
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -713,6 +713,41 @@ modules:
         outputs: 1
         domains:
           master_key_len: "[1..64]"
+  - module: "crypto_modern_wire"
+    file: "src/crypto_modern_wire.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "chacha20_quarter_round"
+        signature: "pub fn chacha20_quarter_round(a: &mut u32, b: &mut u32, c: &mut u32, d: &mut u32)"
+        outputs: 1
+      - name: "chacha20_init_state"
+        signature: "pub fn chacha20_init_state("
+        outputs: 1
+      - name: "poly1305_clamp_key"
+        signature: "pub fn poly1305_clamp_key(r: &mut [u8; 16])"
+        outputs: 1
+      - name: "constant_time_cswap_u32"
+        signature: "pub fn constant_time_cswap_u32(a: &mut u32, b: &mut u32, swap: bool)"
+        outputs: 1
+      - name: "constant_time_zeroize"
+        signature: "pub fn constant_time_zeroize(buf: &mut [u8])"
+        outputs: 1
+      - name: "curve25519_cswap_step"
+        signature: "pub fn curve25519_cswap_step(x2: &mut [u64; 4], x3: &mut [u64; 4], swap: bool)"
+        outputs: 1
+      - name: "blake2s_g_round"
+        signature: "pub fn blake2s_g_round(v: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, x: u32, y: u32)"
+        outputs: 1
+      - name: "gf256_mul_step"
+        signature: "pub fn gf256_mul_step(mut a: u8, mut b: u8) -> u8"
+        outputs: 1
+      - name: "shamir_eval_polynomial_step"
+        signature: "pub fn shamir_eval_polynomial_step(coeffs: &[u8], x: u8) -> u8"
+        outputs: 1
+      - name: "hotp_truncate_code"
+        signature: "pub fn hotp_truncate_code(hash_hmac_sha1: &[u8; 20]) -> u32"
+        outputs: 1
   - module: "crypto_vault"
     file: "src/crypto_vault.rs"
     functions_count: 4

@@ -26,6 +26,7 @@ pub mod comm_controller;
 pub mod comm_phy_bus;
 pub mod crypto_dukpt;
 pub mod crypto_kdf;
+pub mod crypto_modern_wire;
 pub mod crypto_vault;
 pub mod curve_fit_trend;
 pub mod decision_mcts;

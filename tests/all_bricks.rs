@@ -2666,3 +2666,59 @@ fn test_robotics_6dof_slerp_bricks() {
     let p_blend = robotics_6dof_slerp::robotics_cartesian_linear_blend([0.0, 0.0, 0.0], [10.0, 20.0, 30.0], 0.3);
     assert_eq!(p_blend, [3.0, 6.0, 9.0]);
 }
+
+#[test]
+fn test_crypto_modern_wire_bricks() {
+    use rust_bricks::crypto_modern_wire;
+
+    // 1. ChaCha20 Quarter Round (RFC 8439 測試向量步進)
+    let (mut a, mut b, mut c, mut d) = (0x11111111, 0x01020304, 0x9b8d6f43, 0x01234567);
+    crypto_modern_wire::chacha20_quarter_round(&mut a, &mut b, &mut c, &mut d);
+    assert_eq!(a, 0xea2a92f4);
+    assert_eq!(b, 0xcb1cf8ce);
+    assert_eq!(c, 0x4581472e);
+    assert_eq!(d, 0x5881c4bb);
+
+    // 2. ChaCha20 初始狀態矩陣
+    let key = [0u8; 32];
+    let nonce = [0u8; 12];
+    let mut state = [0u32; 16];
+    crypto_modern_wire::chacha20_init_state(&key, &nonce, 1, &mut state);
+    assert_eq!(state[0], 0x61707865); // "expa"
+    assert_eq!(state[12], 1); // counter
+
+    // 3. Poly1305 夾緊
+    let mut r = [0xFFu8; 16];
+    crypto_modern_wire::poly1305_clamp_key(&mut r);
+    assert_eq!(r[3], 0x0F);
+    assert_eq!(r[4], 0xFC);
+
+    // 4. 常數時間交換
+    let mut v1 = 0xAAAA_AAAAu32;
+    let mut v2 = 0x5555_5555u32;
+    crypto_modern_wire::constant_time_cswap_u32(&mut v1, &mut v2, true);
+    assert_eq!(v1, 0x5555_5555);
+    assert_eq!(v2, 0xAAAA_AAAA);
+
+    // 5. 常數時間 Zeroize
+    let mut secret = [0x55u8; 8];
+    crypto_modern_wire::constant_time_zeroize(&mut secret);
+    assert_eq!(secret, [0u8; 8]);
+
+    // 6. GF(2^8) 有限域乘法 (AES 標準測試向量: 0x57 * 0x13 = 0xFE)
+    assert_eq!(crypto_modern_wire::gf256_mul_step(0x57, 0x13), 0xFE);
+
+    // 7. Shamir 門檻多項式求值 (P(x) = 10 + 20x + 30x^2 在 x=0 時為 10)
+    let coeffs = [10u8, 20, 30];
+    assert_eq!(crypto_modern_wire::shamir_eval_polynomial_step(&coeffs, 0), 10);
+
+    // 8. HOTP / TOTP 動態截斷提取
+    let mut hmac_mock = [0u8; 20];
+    hmac_mock[19] = 0x0F; // offset = 15
+    hmac_mock[15] = 0x12;
+    hmac_mock[16] = 0x34;
+    hmac_mock[17] = 0x56;
+    hmac_mock[18] = 0x78;
+    let code = crypto_modern_wire::hotp_truncate_code(&hmac_mock);
+    assert!(code < 1_000_000);
+}

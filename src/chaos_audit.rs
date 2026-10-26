@@ -6,7 +6,7 @@
 
 use crate::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_dsp, audio_mfcc_pitch, audio_vad, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus,
-    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
@@ -667,6 +667,23 @@ fn audit_robotics_6dof_slerp() -> bool {
 }
 
 /// @outputs: 1
+fn audit_crypto_modern_wire() -> bool {
+    let mut ok = true;
+    let (mut a, mut b, mut c, mut d) = (0u32, 0u32, 0u32, 0u32);
+    crypto_modern_wire::chacha20_quarter_round(&mut a, &mut b, &mut c, &mut d);
+    ok &= a == 0 && b == 0 && c == 0 && d == 0;
+    let mut r = [0xFFu8; 16];
+    crypto_modern_wire::poly1305_clamp_key(&mut r);
+    ok &= r[3] & 0xF0 == 0 && r[4] & 3 == 0;
+    let mut v = [0u32; 16];
+    crypto_modern_wire::blake2s_g_round(&mut v, 20, 0, 0, 0, 0, 0); // 索引越界防護
+    ok &= crypto_modern_wire::gf256_mul_step(0, 100) == 0;
+    ok &= crypto_modern_wire::shamir_eval_polynomial_step(&[], 10) == 0; // 空多項式
+    ok &= crypto_modern_wire::hotp_truncate_code(&[0; 20]) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -725,6 +742,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_spc_msa_advanced(), "【進階SPC與車規MSA抽查失敗】存在偏度溢出或無效變異", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_fieldbus_industrial_eth(), "【工業乙太網現場總線抽查失敗】存在訊框溢出或WKC校驗崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_robotics_6dof_slerp(), "【機器人6軸解耦與四元數SLERP抽查失敗】存在退化或除零崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_crypto_modern_wire(), "【現代高階線路加密抽查失敗】存在置換越界或GF256崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
@@ -435,6 +435,20 @@ fn verify_robotics_6dof_slerp() -> bool {
 }
 
 /// @outputs: 1
+fn verify_crypto_modern_wire() -> bool {
+    let (mut a, mut b, mut c, mut d) = (0x11111111u32, 0x22222222u32, 0x33333333u32, 0x44444444u32);
+    crypto_modern_wire::chacha20_quarter_round(&mut a, &mut b, &mut c, &mut d);
+    let ok_qr = a != 0x11111111;
+    let mut x = 10u32;
+    let mut y = 20u32;
+    crypto_modern_wire::constant_time_cswap_u32(&mut x, &mut y, true);
+    let ok_swap = x == 20 && y == 10;
+    let gf_res = crypto_modern_wire::gf256_mul_step(0x57, 0x13);
+    let ok_gf = gf_res == 0xFE;
+    ok_qr && ok_swap && ok_gf
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -474,6 +488,7 @@ fn verify_all_subsystems() -> bool {
         && verify_spc_msa_advanced()
         && verify_fieldbus_industrial_eth()
         && verify_robotics_6dof_slerp()
+        && verify_crypto_modern_wire()
 }
 
 /// @outputs: 1

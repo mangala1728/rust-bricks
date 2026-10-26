@@ -48,6 +48,7 @@
 | [`packet_checksum`](src/packet_checksum.rs) | 零依賴 CRC32 (IEEE 802.3)、Adler-32 校驗、16-bit PCM/感測器專用校驗 | 檔案總管校驗、感測器封包傳輸、PNG/ZIP 區塊校驗 |
 | [`pcb_cad_fem`](src/pcb_cad_fem.rs) | Hammerstad 50Ω 微帶線阻抗求解、OpenEMS FDTD CFL 數值時間步長極限、Gerber 座標微米解析、RF 倒角補償、2D 多邊形面積 | KiCad / FreeCAD / OpenEMS 開源 EDA 工具鏈、PCB 高頻射頻走線設計、電磁仿真網格計算 |
 | [`crypto_vault`](src/crypto_vault.rs) | 零依賴 SHA-256 摘要、常數時間比較 (防時序側信道攻擊)、XOR 流式混淆 | 機密分片校驗、快照雜湊校驗、敏感字串安全防護 |
+| [`crypto_modern_wire`](src/crypto_modern_wire.rs) | RFC 8439 ChaCha20 四分之一輪與 16-word 狀態初始化、Poly1305 金鑰夾緊、32-bit 與 Curve25519 常數時間條件交換 (CSWAP)、安全 Zeroize 記憶體清除、BLAKE2s G 函數混合置換、GF(2^8) 有限域無分支乘法、Shamir 秘密共享門檻多項式求值、RFC 4226 HOTP/TOTP 動態截斷 | 現代線路加密通訊、雙向認證金鑰交換、防側信道時序攻擊、多方門檻密鑰分片、兩步驟動態驗證 (2FA) |
 | [`sys_path`](src/sys_path.rs) | 跨平台相對路徑防穿越校驗、史實層只增不刪 (Append-Only) 差異校驗 | 檔案系統守衛、檔案總管路徑校驗、日誌保鮮關卡 |
 | [`touch_control`](src/touch_control.rs) | 觸控螢幕消抖、EMA 滑動速度估算、壓力觸控三階遲滯分級、手勢狀態機 | 手機 App 觸控跟手度提升、小遊戲手勢判讀、虛擬搖桿 |
 | [`vision_feature`](src/vision_feature.rs) | Otsu 自適應雙峰二值化、Sobel 3x3 邊緣梯度、積分圖 O(1) 區域像素求和 | 手機相機邊緣 OCR、條碼快速定位、文件邊界掃描、特徵萃取 |
