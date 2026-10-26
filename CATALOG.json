@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 154,
+  "total_functions": 160,
   "modules": [
     {
       "module": "agent_terminal",
@@ -195,6 +195,28 @@
         {
           "name": "can_signal_unpack_u32",
           "signature": "pub fn can_signal_unpack_u32(payload: &[u8; 8], start_bit: u8, bit_len: u8) -> u32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "can_lin_bus",
+      "file": "src/can_lin_bus.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "lin_calc_pid",
+          "signature": "pub fn lin_calc_pid(frame_id: u8) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "lin_checksum",
+          "signature": "pub fn lin_checksum(pid: Option<u8>, data: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "i2s_unpack_stereo_16bit",
+          "signature": "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)",
           "outputs": 1
         }
       ]
@@ -686,6 +708,28 @@
         {
           "name": "adler32_pcm16_le",
           "signature": "pub fn adler32_pcm16_le(samples: &[i16]) -> u32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "physics_raycast_3d",
+      "file": "src/physics_raycast_3d.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "ray_triangle_intersect_moller_trumbore",
+          "signature": "pub fn ray_triangle_intersect_moller_trumbore(",
+          "outputs": 2
+        },
+        {
+          "name": "vector3_reflect",
+          "signature": "pub fn vector3_reflect(v: Vec3, normal: Vec3) -> Vec3",
+          "outputs": 1
+        },
+        {
+          "name": "point_plane_distance_signed",
+          "signature": "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32",
           "outputs": 1
         }
       ]

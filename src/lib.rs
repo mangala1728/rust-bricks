@@ -1,6 +1,6 @@
 // ## Map
 // Role: core/lib — rust-bricks 純淨函式積木庫總導出入口。
-// Inputs: 子模組 (agent_terminal, audio_dsp, audio_vad, audio_wav, bezier_curve, ble_adv_parser, can_bus_frame, catalog, chaos_audit, clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, packet_checksum, receipt, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv, wish_board)。
+// Inputs: 子模組 (agent_terminal, audio_dsp, audio_vad, audio_wav, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog, chaos_audit, clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, packet_checksum, physics_raycast_3d, receipt, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv, wish_board)。
 // Outputs: 導出安全、有界、零依賴之純函式介面。
 // Invariants: 零全域可變狀態、禁止 unsafe 代碼、100% 符合 09 號合約。
 
@@ -13,6 +13,7 @@ pub mod audio_wav;
 pub mod bezier_curve;
 pub mod ble_adv_parser;
 pub mod can_bus_frame;
+pub mod can_lin_bus;
 pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;
@@ -33,6 +34,7 @@ pub mod motor_stepper;
 pub mod net_ethernet;
 pub mod net_telemetry;
 pub mod packet_checksum;
+pub mod physics_raycast_3d;
 pub mod receipt;
 pub mod ring_buffer;
 pub mod sensor_baro_als;

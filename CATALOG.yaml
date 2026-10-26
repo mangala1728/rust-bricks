@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 154
+total_functions: 160
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -217,6 +217,28 @@ modules:
         domains:
           start_bit: "[0..63]"
           bit_len: "[1..32]"
+  - module: "can_lin_bus"
+    file: "src/can_lin_bus.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/can_lin_bus — 車載 LIN 總線 2.x PID 奇偶校驗、增強校驗和與 I2S 數位音訊槽位對齊微積木。"
+      - "Inputs: 6 位元 LIN Frame ID (0..63)、LIN 數據切片、I2S 32-bit 原始立體聲槽位。"
+      - "Outputs: 8 位元 LIN PID、Classic/Enhanced 校驗和 u8、I2S 左右聲道解壓數值 (i16, i16)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、LIN 2.x 規範八位元反轉求和。"
+    functions:
+      - name: "lin_calc_pid"
+        signature: "pub fn lin_calc_pid(frame_id: u8) -> u8"
+        outputs: 1
+        domains:
+          frame_id: "[0..63]"
+      - name: "lin_checksum"
+        signature: "pub fn lin_checksum(pid: Option<u8>, data: &[u8]) -> u8"
+        outputs: 1
+        domains:
+          data_len: "[1..8]"
+      - name: "i2s_unpack_stereo_16bit"
+        signature: "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)"
+        outputs: 1
   - module: "chaos_audit"
     file: "src/chaos_audit.rs"
     functions_count: 1
@@ -740,6 +762,24 @@ modules:
         outputs: 1
       - name: "adler32_pcm16_le"
         signature: "pub fn adler32_pcm16_le(samples: &[i16]) -> u32"
+        outputs: 1
+  - module: "physics_raycast_3d"
+    file: "src/physics_raycast_3d.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/physics_raycast_3d — 3D VR 虛擬實境與遊戲引擎之 Möller–Trumbore 射線三角形相交、向量鏡面反射與點面投影微積木。"
+      - "Inputs: 射線起點與方向、三角形頂點 (v0, v1, v2)、入射向量與法向量、平面參考點。"
+      - "Outputs: 射線-三角形交點座標 Option<(f32, f32, f32)>、反射向量、有號點面距離。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、平行射線防除以零除數守衛。"
+    functions:
+      - name: "ray_triangle_intersect_moller_trumbore"
+        signature: "pub fn ray_triangle_intersect_moller_trumbore("
+        outputs: 2
+      - name: "vector3_reflect"
+        signature: "pub fn vector3_reflect(v: Vec3, normal: Vec3) -> Vec3"
+        outputs: 1
+      - name: "point_plane_distance_signed"
+        signature: "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32"
         outputs: 1
   - module: "receipt"
     file: "src/receipt.rs"

@@ -1130,6 +1130,60 @@ fn test_sensor_baro_als_bricks() {
     assert!((lux_bh - 100.0).abs() < 0.1);
 }
 
+#[test]
+fn test_physics_raycast_3d_bricks() {
+    // 1. Möller–Trumbore 射線三角形相交
+    // 三角形在 XY 平面 Z=5: (0, 0, 5), (2, 0, 5), (0, 2, 5)
+    // 射線從 (0.5, 0.5, 0) 朝 +Z 方向 (0, 0, 1) 發射
+    let orig = (0.5f32, 0.5f32, 0.0f32);
+    let dir = (0.0f32, 0.0f32, 1.0f32);
+    let v0 = (0.0f32, 0.0f32, 5.0f32);
+    let v1 = (2.0f32, 0.0f32, 5.0f32);
+    let v2 = (0.0f32, 2.0f32, 5.0f32);
+    let hit_opt = rust_bricks::physics_raycast_3d::ray_triangle_intersect_moller_trumbore(orig, dir, v0, v1, v2);
+    assert!(hit_opt.is_some());
+    // @safety-proof: hit_opt 已驗證 is_some()
+    let hit = hit_opt.unwrap();
+    assert!((hit.0 - 0.5).abs() < 1e-4);
+    assert!((hit.1 - 0.5).abs() < 1e-4);
+    assert!((hit.2 - 5.0).abs() < 1e-4);
+
+    // 2. 向量反射 (入射 (1, -1, 0) 撞擊法線為 (0, 1, 0) 的地面 -> 反射 (1, 1, 0))
+    let refl = rust_bricks::physics_raycast_3d::vector3_reflect((1.0, -1.0, 0.0), (0.0, 1.0, 0.0));
+    assert!((refl.0 - 1.0).abs() < 1e-4);
+    assert!((refl.1 - 1.0).abs() < 1e-4);
+    assert!(refl.2.abs() < 1e-4);
+
+    // 3. 點面有號距離
+    let dist = rust_bricks::physics_raycast_3d::point_plane_distance_signed((0.0, 5.0, 0.0), (0.0, 0.0, 0.0), (0.0, 1.0, 0.0));
+    assert_eq!(dist, 5.0);
+}
+
+#[test]
+fn test_can_lin_bus_bricks() {
+    // 1. LIN PID 奇偶校驗計算 (Frame ID 0x30 -> 48 -> P0=0, P1=0 -> PID=0x30)
+    let pid_30 = rust_bricks::can_lin_bus::lin_calc_pid(0x30);
+    assert_eq!(pid_30 & 0x3F, 0x30);
+
+    // Frame ID 0x01 (1): P0 = 1^0^0^0 = 1 (bit 6 = 1), P1 = !(0^0^0^0) = 1 (bit 7 = 1) -> 0xC1
+    let pid_01 = rust_bricks::can_lin_bus::lin_calc_pid(0x01);
+    assert_eq!(pid_01, 0xC1);
+
+    // 2. LIN 校驗和 (Classic vs Enhanced)
+    let data = [0x01, 0x02, 0x03];
+    let classic_cs = rust_bricks::can_lin_bus::lin_checksum(None, &data);
+    let enhanced_cs = rust_bricks::can_lin_bus::lin_checksum(Some(pid_01), &data);
+    assert_ne!(classic_cs, enhanced_cs);
+
+    // 3. I2S 16-bit 左右聲道解壓
+    let left_slot = 0x1234_0000u32;
+    let right_slot = 0x5678_0000u32;
+    let (l, r) = rust_bricks::can_lin_bus::i2s_unpack_stereo_16bit(left_slot, right_slot, false);
+    assert_eq!(l, 0x1234);
+    assert_eq!(r, 0x5678);
+}
+
+
 
 
 

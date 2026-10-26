@@ -5,11 +5,11 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, clock_pll_rtc,
-    comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor, fast_math,
-    fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
+    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, can_lin_bus,
+    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
+    fast_math, fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
+    motor_stepper, net_ethernet, physics_raycast_3d, sensor_baro_als, sensor_hardware,
+    sensor_motion, sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -157,13 +157,30 @@ fn audit_ethernet_and_apdu() -> bool {
 /// @outputs: 1
 fn audit_power_and_baro() -> bool {
     let mut ok = true;
-    // 1. 電流分流負電阻防禦
     ok &= sensor_power_meter::shunt_voltage_to_current_amperes(1.0, -0.01) == 0.0;
     ok &= sensor_power_meter::lipo_voltage_to_soc_percent(f32::NAN) == 0.0;
-    // 2. 氣壓負壓與零參考
     ok &= sensor_baro_als::baro_pressure_to_altitude_m(-100.0, 1013.25).is_none();
     ok &= sensor_baro_als::baro_pressure_to_altitude_m(1000.0, 0.0).is_none();
     ok &= sensor_baro_als::bh1750_raw_to_lux(100, 0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
+fn audit_lin_and_raycast_3d() -> bool {
+    let mut ok = true;
+    // 1. LIN 空數據
+    ok &= can_lin_bus::lin_checksum(None, &[]) == 0;
+    // 2. 射線-三角形平行射線
+    let hit_parallel = physics_raycast_3d::ray_triangle_intersect_moller_trumbore(
+        (0.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+        (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (0.0, 0.0, 2.0),
+    );
+    ok &= hit_parallel.is_none();
+    let hit_nan = physics_raycast_3d::ray_triangle_intersect_moller_trumbore(
+        (f32::NAN, 0.0, 0.0), (0.0, 0.0, 1.0),
+        (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+    );
+    ok &= hit_nan.is_none();
     ok
 }
 
@@ -222,6 +239,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_power_and_baro() { passed += 1; } else { failures.push("【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰".to_string()); }
+
+    total += 1;
+    if audit_lin_and_raycast_3d() { passed += 1; } else { failures.push("【車載LIN射線3D黑箱抽查失敗】存在平行或空數據崩潰".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }

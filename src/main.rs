@@ -5,12 +5,13 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, clock_pll_rtc,
-    comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math,
-    fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, net_telemetry, packet_checksum, ring_buffer, sensor_baro_als,
-    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path, text_cleaner,
-    thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
+    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, can_lin_bus, catalog,
+    clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
+    env_sensor, fast_math, fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time,
+    motion_dead_reckon, motor_stepper, net_ethernet, net_telemetry, packet_checksum,
+    physics_raycast_3d, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion,
+    sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -130,6 +131,15 @@ fn verify_power_and_baro() -> bool {
 }
 
 /// @outputs: 1
+fn verify_lin_and_raycast_3d() -> bool {
+    let pid = can_lin_bus::lin_calc_pid(0x01);
+    let ok_pid = pid == 0xC1;
+    let refl = physics_raycast_3d::vector3_reflect((1.0, -1.0, 0.0), (0.0, 1.0, 0.0));
+    let ok_refl = (refl.1 - 1.0).abs() < 1e-4;
+    ok_pid && ok_refl
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -140,6 +150,7 @@ fn verify_all_subsystems() -> bool {
         && verify_comm_and_clock()
         && verify_ethernet_and_apdu()
         && verify_power_and_baro()
+        && verify_lin_and_raycast_3d()
 }
 
 /// @outputs: 1
