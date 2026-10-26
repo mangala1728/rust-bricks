@@ -935,4 +935,77 @@ fn test_env_sensor_bricks() {
     assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(35.4), 100);
 }
 
+#[test]
+fn test_comm_controller_bricks() {
+    // 1. I2C 7-bit 地址訊框 (0x3C 寫入 -> 0x78, 讀取 -> 0x79)
+    assert_eq!(rust_bricks::comm_controller::i2c_address_frame(0x3C, false), 0x78);
+    assert_eq!(rust_bricks::comm_controller::i2c_address_frame(0x3C, true), 0x79);
+
+    // 2. SPI 模式映射 (Mode 0: CPOL=0, CPHA=0; Mode 3: CPOL=1, CPHA=1)
+    assert_eq!(rust_bricks::comm_controller::spi_clock_mode(false, false), 0);
+    assert_eq!(rust_bricks::comm_controller::spi_clock_mode(true, true), 3);
+
+    // 3. 5 線 SPI D/C 螢幕命令/資料標記
+    let (is_cmd, val) = rust_bricks::comm_controller::spi_5wire_dc_frame(true, 0x29); // Display ON
+    assert!(is_cmd && val == 0x29);
+
+    // 4. QSPI 0xEB Fast Read 封裝
+    let mut q_cmd = [0u8; 8];
+    let q_len = rust_bricks::comm_controller::qspi_flash_fast_read_cmd(0x00123456, 6, &mut q_cmd);
+    assert_eq!(q_len, 7); // 1 opcode + 3 addr + 3 dummy
+    assert_eq!(q_cmd[0], 0xEB);
+    assert_eq!(&q_cmd[1..4], &[0x12, 0x34, 0x56]);
+
+    // 5. UART 波特率除數 (16MHz, 115200, 16x 超取樣 -> USARTDIV = 8.6875 -> Mantissa=8, Fraction=11)
+    let uart_div = rust_bricks::comm_controller::uart_baud_rate_divisor(16_000_000, 115_200, 16);
+    assert!(uart_div.is_some());
+    // @safety-proof: uart_div 已驗證 is_some()
+    let (mantissa, fraction) = uart_div.unwrap();
+    assert_eq!(mantissa, 8);
+    assert_eq!(fraction, 11);
+
+    // 6. DMA 跨架構 8/16/32/64 位元對齊
+    assert_eq!(rust_bricks::comm_controller::dma_align_padding_bytes(0x1000, 4), 0); // 已對齊
+    assert_eq!(rust_bricks::comm_controller::dma_align_padding_bytes(0x1002, 4), 2); // 需補 2 bytes
+    assert_eq!(rust_bricks::comm_controller::dma_align_padding_bytes(0x1005, 8), 3); // 需補 3 bytes
+}
+
+#[test]
+fn test_clock_pll_rtc_bricks() {
+    // 1. PLL 分頻倍頻解算 (輸入 8MHz HSE, 目標 72MHz STM32 主頻)
+    let pll_opt = rust_bricks::clock_pll_rtc::pll_calculate_prescalers(8_000_000, 72_000_000);
+    assert!(pll_opt.is_some());
+    // @safety-proof: pll_opt 已驗證 is_some()
+    let (m, n, p) = pll_opt.unwrap();
+    assert_eq!(m, 8); // 8MHz / 8 = 1MHz ref
+    let actual_fout = (1_000_000 * n) / p;
+    assert_eq!(actual_fout, 72_000_000);
+
+    // 2. RTC 32.768kHz 晶振拋物線溫漂補償
+    // 常溫 25°C 時偏差為 0.0 ppm
+    let ppm_25c = rust_bricks::clock_pll_rtc::rtc_32768_ppm_compensate(25.0, 25.0, 0.034);
+    assert!(ppm_25c.abs() < 1e-4);
+    // 高溫 45°C (delta=20°C) -> ppm = -0.034 * 400 = -13.6 ppm
+    let ppm_45c = rust_bricks::clock_pll_rtc::rtc_32768_ppm_compensate(45.0, 25.0, 0.034);
+    assert!((ppm_45c - (-13.6)).abs() < 0.1);
+
+    // 3. RTC 補償暫存器換算 (每步 0.954 ppm，-13.6 ppm 需約 14 步)
+    let (is_neg, reg_val) = rust_bricks::clock_pll_rtc::rtc_calibration_register_val(ppm_45c, 0.954);
+    assert!(is_neg);
+    assert_eq!(reg_val, 14);
+
+    // 4. NTP 時戳轉 UNIX 秒數 (NTP 3,900,000,000 -> 3900000000 - 2208988800 = 1691011200)
+    let unix_s = rust_bricks::clock_pll_rtc::ntp_timestamp_to_unix_secs(3_900_000_000);
+    assert_eq!(unix_s, 1_691_011_200);
+
+    // 5. NTP 雙向往返延遲與時鐘偏移
+    // 客戶端發送 t0=1000, 伺服器接收 t1=1020, 伺服器發送 t2=1025, 客戶端接收 t3=1050
+    // Delay = (1050 - 1000) - (1025 - 1020) = 50 - 5 = 45 ms
+    // Offset = ((1020 - 1000) + (1025 - 1050)) / 2 = (20 + (-25)) / 2 = -2 ms
+    let (offset, delay) = rust_bricks::clock_pll_rtc::ntp_clock_offset_and_delay(1000, 1020, 1025, 1050);
+    assert_eq!(delay, 45);
+    assert_eq!(offset, -2);
+}
+
+
 

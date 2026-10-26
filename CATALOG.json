@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 130,
+  "total_functions": 141,
   "modules": [
     {
       "module": "agent_terminal",
@@ -208,6 +208,75 @@
           "name": "run_chaos_audit",
           "signature": "pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "clock_pll_rtc",
+      "file": "src/clock_pll_rtc.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "pll_calculate_prescalers",
+          "signature": "pub fn pll_calculate_prescalers(fin_hz: u32, fout_target_hz: u32) -> Option<(u32, u32, u32)>",
+          "outputs": 2
+        },
+        {
+          "name": "rtc_32768_ppm_compensate",
+          "signature": "pub fn rtc_32768_ppm_compensate(temp_celsius: f32, turnover_temp: f32, parabolic_coeff: f32) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "rtc_calibration_register_val",
+          "signature": "pub fn rtc_calibration_register_val(ppm_error: f32, ppm_per_step: f32) -> (bool, u8)",
+          "outputs": 1
+        },
+        {
+          "name": "ntp_timestamp_to_unix_secs",
+          "signature": "pub fn ntp_timestamp_to_unix_secs(ntp_seconds: u32) -> i64",
+          "outputs": 1
+        },
+        {
+          "name": "ntp_clock_offset_and_delay",
+          "signature": "pub fn ntp_clock_offset_and_delay(t0_ms: i64, t1_ms: i64, t2_ms: i64, t3_ms: i64) -> (i64, i64)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "comm_controller",
+      "file": "src/comm_controller.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "i2c_address_frame",
+          "signature": "pub fn i2c_address_frame(addr_7bit: u8, is_read: bool) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "spi_clock_mode",
+          "signature": "pub fn spi_clock_mode(cpol: bool, cpha: bool) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "spi_5wire_dc_frame",
+          "signature": "pub fn spi_5wire_dc_frame(is_command: bool, data: u8) -> (bool, u8)",
+          "outputs": 1
+        },
+        {
+          "name": "qspi_flash_fast_read_cmd",
+          "signature": "pub fn qspi_flash_fast_read_cmd(addr_24bit: u32, dummy_cycles: u8, out_frame: &mut [u8; 8]) -> usize",
+          "outputs": 2
+        },
+        {
+          "name": "uart_baud_rate_divisor",
+          "signature": "pub fn uart_baud_rate_divisor(sys_clock_hz: u32, baud_rate: u32, oversampling: u8) -> Option<(u16, u8)>",
+          "outputs": 2
+        },
+        {
+          "name": "dma_align_padding_bytes",
+          "signature": "pub fn dma_align_padding_bytes(addr: usize, align_bytes: usize) -> usize",
+          "outputs": 1
         }
       ]
     },

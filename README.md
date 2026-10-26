@@ -54,6 +54,8 @@
 | [`geo_collision`](src/geo_collision.rs) | 軸對齊包圍盒 (AABB) 碰撞重疊、2D 線段空間精確交點、Jordan 射線法點在多邊形內外判定 | 手機虛擬按鍵/點擊命中判定、手遊 2D 碰撞、自定義卡片佈局排版 |
 | [`iso7816_smartcard`](src/iso7816_smartcard.rs) | Luhn 卡號模 10 校驗、ISO 7816 狀態碼判讀、Format 0 PIN Block 密碼塊構造、EMV BER-TLV 解析、敏感記憶體安全擦除 | 金融刷卡機 POS、ATM 提款機、PC/SC 讀卡機、防側信道洩漏 |
 | [`can_bus_frame`](src/can_bus_frame.rs) | CAN 2.0/FD ID 拆解、CAN-FD DLC 長度映射 (0..64)、Modbus RTU CRC16、ISO-TP 單幀封裝、MCU 定時器預分頻重載計算 | 車載 CAN 總線通訊、工控 RS485 模組、STM32/NXP/TI/Microchip 韌體 |
+| [`comm_controller`](src/comm_controller.rs) | I2C 7-bit 讀寫訊框、SPI Mode 0..3 映射、5 線 SPI D/C 螢幕命令訊框、QSPI 0xEB 快速讀取、UART 波特率定點除數、DMA 跨架構記憶體對齊 | OLED/TFT 螢幕驅動、QSPI Flash 晶片、串口通信、8/16/32/64-bit CPU DMA 對齊 |
+| [`clock_pll_rtc`](src/clock_pll_rtc.rs) | 晶振 PLL 鎖相迴路 (M, N, P) 最優倍頻分頻求解、RTC 32.768kHz 晶振拋物線溫漂補償、NTP 雙向網路時鐘對齊與延遲計算 | MCU 系統時鐘樹初始化、高精度 RTC 溫漂校準、物聯網網際網路系統時鐘同步 |
 | [`ble_adv_parser`](src/ble_adv_parser.rs) | BLE 4.2/5.0 廣播封包 AD Structure 零拷貝檢索、發射功率、設備名稱、製造商自定義數據解析 | 醫療手環、工廠 Beacon 室內定位、物聯網低功耗廣播解析（消滅 GC 震盪） |
 | [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
 | [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |

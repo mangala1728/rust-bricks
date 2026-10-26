@@ -5,10 +5,10 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, crypto_dukpt,
-    crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, geo_collision, guard,
-    iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_telemetry, packet_checksum,
-    ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner,
+    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, clock_pll_rtc,
+    comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math,
+    geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_telemetry,
+    packet_checksum, ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner,
     thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
@@ -99,6 +99,16 @@ fn verify_motor_dukpt_and_env() -> bool {
 }
 
 /// @outputs: 1
+fn verify_comm_and_clock() -> bool {
+    let ok_i2c = comm_controller::i2c_address_frame(0x3C, false) == 0x78;
+    let ok_spi = comm_controller::spi_clock_mode(true, true) == 3;
+    let pll = clock_pll_rtc::pll_calculate_prescalers(8_000_000, 72_000_000);
+    let ok_pll = pll.is_some();
+    let ok_ntp = clock_pll_rtc::ntp_timestamp_to_unix_secs(3_900_000_000) == 1_691_011_200;
+    ok_i2c && ok_spi && ok_pll && ok_ntp
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -106,6 +116,7 @@ fn verify_all_subsystems() -> bool {
         && verify_agent_and_physics_pid()
         && verify_thermal_ble_dsp_crypto()
         && verify_motor_dukpt_and_env()
+        && verify_comm_and_clock()
 }
 
 /// @outputs: 1

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 130
+total_functions: 141
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -231,6 +231,79 @@ modules:
         outputs: 2
         domains:
           dummy_level: "[0..10]"
+  - module: "clock_pll_rtc"
+    file: "src/clock_pll_rtc.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/clock_pll_rtc — 晶振 PLL 鎖相迴路分頻求解、RTC 32.768kHz 晶振溫漂補償與 NTP 網路時鐘對齊微積木。"
+      - "Inputs: 晶振輸入頻率、目標系統時脈、當前環境溫度、NTP 網路四元時戳 (t0..t3)。"
+      - "Outputs: PLL 最優配置元組 (M, N, P)、晶振 PPM 偏差與暫存器補償值、UNIX 秒數與網路時鐘偏移 (Offset, Delay)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、RFC 5905 NTP 標竿演算法。"
+    functions:
+      - name: "pll_calculate_prescalers"
+        signature: "pub fn pll_calculate_prescalers(fin_hz: u32, fout_target_hz: u32) -> Option<(u32, u32, u32)>"
+        outputs: 2
+        domains:
+          fin_hz: "[1000000..50000000]"
+          fout_target_hz: "[1000000..500000000]"
+      - name: "rtc_32768_ppm_compensate"
+        signature: "pub fn rtc_32768_ppm_compensate(temp_celsius: f32, turnover_temp: f32, parabolic_coeff: f32) -> f32"
+        outputs: 1
+        domains:
+          temp_celsius: "[-40.0..85.0]"
+          turnover_temp: "[10.0..40.0]"
+          parabolic_coeff: "[0.01..0.06]"
+      - name: "rtc_calibration_register_val"
+        signature: "pub fn rtc_calibration_register_val(ppm_error: f32, ppm_per_step: f32) -> (bool, u8)"
+        outputs: 1
+        domains:
+          ppm_error: "[-200.0..200.0]"
+          ppm_per_step: "[0.1..10.0]"
+      - name: "ntp_timestamp_to_unix_secs"
+        signature: "pub fn ntp_timestamp_to_unix_secs(ntp_seconds: u32) -> i64"
+        outputs: 1
+        domains:
+          ntp_seconds: "[2208988800..4294967295]"
+      - name: "ntp_clock_offset_and_delay"
+        signature: "pub fn ntp_clock_offset_and_delay(t0_ms: i64, t1_ms: i64, t2_ms: i64, t3_ms: i64) -> (i64, i64)"
+        outputs: 1
+  - module: "comm_controller"
+    file: "src/comm_controller.rs"
+    functions_count: 6
+    architecture_map:
+      - "Role: core/comm_controller — I2C、SPI (3/4/5線)、QSPI、UART 通信控制器時序訊框與多架構 DMA 記憶體對齊微積木。"
+      - "Inputs: 7-bit 地址、讀寫標記、CPOL/CPHA 極性、QSPI 位址、系統時脈、目標波特率、DMA 記憶體位址。"
+      - "Outputs: I2C 讀寫首字節、SPI 模式 (0..3)、QSPI 0xEB 訊框長度、UART 整數與小數分頻係數、DMA 補齊長度。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、除以零防禦。"
+    functions:
+      - name: "i2c_address_frame"
+        signature: "pub fn i2c_address_frame(addr_7bit: u8, is_read: bool) -> u8"
+        outputs: 1
+        domains:
+          addr_7bit: "[0..127]"
+      - name: "spi_clock_mode"
+        signature: "pub fn spi_clock_mode(cpol: bool, cpha: bool) -> u8"
+        outputs: 1
+      - name: "spi_5wire_dc_frame"
+        signature: "pub fn spi_5wire_dc_frame(is_command: bool, data: u8) -> (bool, u8)"
+        outputs: 1
+      - name: "qspi_flash_fast_read_cmd"
+        signature: "pub fn qspi_flash_fast_read_cmd(addr_24bit: u32, dummy_cycles: u8, out_frame: &mut [u8; 8]) -> usize"
+        outputs: 2
+        domains:
+          addr_24bit: "[0..16777215]"
+          dummy_cycles: "[0..16]"
+      - name: "uart_baud_rate_divisor"
+        signature: "pub fn uart_baud_rate_divisor(sys_clock_hz: u32, baud_rate: u32, oversampling: u8) -> Option<(u16, u8)>"
+        outputs: 2
+        domains:
+          sys_clock_hz: "[1000..1000000000]"
+          baud_rate: "[300..10000000]"
+      - name: "dma_align_padding_bytes"
+        signature: "pub fn dma_align_padding_bytes(addr: usize, align_bytes: usize) -> usize"
+        outputs: 1
+        domains:
+          align_bytes: "[1..64]"
   - module: "crypto_dukpt"
     file: "src/crypto_dukpt.rs"
     functions_count: 4

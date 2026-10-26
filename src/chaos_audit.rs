@@ -5,10 +5,10 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, crypto_dukpt,
-    crypto_kdf, dsp_fixed_point, env_sensor, fast_math, geo_collision, iso7816_smartcard,
-    math_time, motion_dead_reckon, motor_stepper, sensor_hardware, sensor_motion,
-    spatial_physics, sys_path, thermal_palette, thermal_pid,
+    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, clock_pll_rtc,
+    comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor, fast_math,
+    geo_collision, iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper,
+    sensor_hardware, sensor_motion, spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -20,7 +20,7 @@ pub struct AuditSummary {
 /// @outputs: 1
 fn audit_math_and_geometry() -> bool {
     let mut ok = true;
-    ok &= math_time::clamp_i64(50, 100, 0) == 50; // min > max 拒絕夾止
+    ok &= math_time::clamp_i64(50, 100, 0) == 50;
     ok &= (fast_math::fast_inv_sqrt_f32(f32::NAN) - 0.0).abs() < 1e-6;
     ok &= (fast_math::fast_inv_sqrt_f32(-10.0) - 0.0).abs() < 1e-6;
     ok &= fast_math::isqrt_u64(0) == 0;
@@ -108,20 +108,39 @@ fn audit_ble_and_crypto() -> bool {
 /// @outputs: 1
 fn audit_motor_env_and_dukpt() -> bool {
     let mut ok = true;
-    // 1. 步進馬達總步數為 0 或倒置延遲
     let d_zero = motor_stepper::stepper_trapezoid_delay_us(10, 0, 5, 5, 100, 500);
     ok &= d_zero == 500;
     let d_inv = motor_stepper::stepper_trapezoid_delay_us(10, 100, 5, 5, 800, 200);
     ok &= d_inv == 200;
     let dist_nan = motor_stepper::stepper_steps_to_distance_mm(100, 0, f32::NAN);
     ok &= dist_nan == 0.0;
-    // 2. DUKPT 計數器溢出防禦
     let mut ksn_max = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF];
-    ok &= !crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn_max); // 達到上限不可溢出
-    // 3. 環境露點負濕度與高溫防禦
+    ok &= !crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn_max);
     ok &= env_sensor::dew_point_magnus(25.0, -10.0).is_none();
     ok &= env_sensor::dew_point_magnus(f32::NAN, 50.0).is_none();
     ok &= env_sensor::aqi_pm25_us_standard(-5.0) == 0;
+    ok
+}
+
+/// @outputs: 1
+fn audit_comm_and_clock() -> bool {
+    let mut ok = true;
+    // 1. I2C 越界地址
+    ok &= comm_controller::i2c_address_frame(200, false) == 0x00;
+    // 2. QSPI 越界 Dummy
+    let mut q_buf = [0u8; 8];
+    ok &= comm_controller::qspi_flash_fast_read_cmd(0x1000_0000, 8, &mut q_buf) == 0;
+    ok &= comm_controller::qspi_flash_fast_read_cmd(0x1000, 30, &mut q_buf) == 0;
+    // 3. UART 零波特率與非標準超取樣
+    ok &= comm_controller::uart_baud_rate_divisor(16000000, 0, 16).is_none();
+    ok &= comm_controller::uart_baud_rate_divisor(16000000, 115200, 4).is_none();
+    // 4. DMA 對齊非 2 的冪次
+    ok &= comm_controller::dma_align_padding_bytes(13, 0) == 0;
+    ok &= comm_controller::dma_align_padding_bytes(13, 7) == 0;
+    // 5. PLL 異常輸入
+    ok &= clock_pll_rtc::pll_calculate_prescalers(0, 72000000).is_none();
+    // 6. NTP 極端時戳
+    ok &= clock_pll_rtc::ntp_timestamp_to_unix_secs(1000) == 0;
     ok
 }
 
@@ -171,6 +190,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_motor_env_and_dukpt() { passed += 1; } else { failures.push("【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰".to_string()); }
+
+    total += 1;
+    if audit_comm_and_clock() { passed += 1; } else { failures.push("【通信時脈RTC黑箱抽查失敗】存在除數或對齊崩潰".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }
