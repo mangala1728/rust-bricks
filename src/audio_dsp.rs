@@ -1,7 +1,7 @@
 // ## Map
-// Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數與目標 SNR 雜訊縮放因數。
-// Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率。
-// Outputs: 0.0..=1.0 功率、-100.0..=0.0 dBFS 能量、0.0..=100.0 SNR dB、0.0..=1.0 零交越率、Biquad 係數陣列 [b0, b1, b2, a1, a2]、雜訊縮放乘數。
+// Role: core/audio_dsp — 數位訊號處理：正規化聲學功率、dBFS 能量轉換、信噪比 (SNR) 扣除運算、零交越率 (ZCR)、雙二階 Butterworth 高通濾波係數、Biquad 濾波執行與目標 SNR 雜訊縮放因數。
+// Inputs: PCM16 取樣切片、正規化線性功率、噪聲功率、目標信噪比 dB、截止頻率與取樣率、Biquad 係數 [b0, b1, b2, a1, a2]。
+// Outputs: 0.0..=1.0 功率、-100.0..=0.0 dBFS 能量、0.0..=100.0 SNR dB、0.0..=1.0 零交越率、Biquad 係數陣列 [b0, b1, b2, a1, a2]、濾波後 PCM16 切片、雜訊縮放乘數。
 // Invariants: 零全域可變狀態、無遞迴、除數防零守衛、有界取樣切片（最大 192,000 取樣點）、純標準庫 100% 零依賴。
 
 const SILENCE_DBFS: f64 = -100.0;
@@ -111,6 +111,42 @@ pub fn biquad_butterworth_highpass_coeffs(cutoff_hz: u32, sample_rate: u32) -> O
     let a2 = (1.0 - alpha) / a0;
 
     Some([b0, b1, b2, a1, a2])
+}
+
+/// @outputs: 2
+pub fn biquad_filter_apply(samples: &[i16], coeffs: [f64; 5]) -> Vec<i16> {
+    if samples.is_empty() || samples.len() > MAX_AUDIO_SAMPLES {
+        return Vec::new();
+    }
+    let [b0, b1, b2, a1, a2] = coeffs;
+    if b0.is_nan() || b1.is_nan() || b2.is_nan() || a1.is_nan() || a2.is_nan() {
+        return samples.to_vec();
+    }
+
+    let mut out = Vec::with_capacity(samples.len());
+    let mut x1 = 0.0f64;
+    let mut x2 = 0.0f64;
+    let mut y1 = 0.0f64;
+    let mut y2 = 0.0f64;
+
+    for &s in samples {
+        let x0 = s as f64;
+        let y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+        x2 = x1;
+        x1 = x0;
+        y2 = y1;
+        y1 = y0;
+
+        let clamped = if y0 > 32767.0 {
+            32767
+        } else if y0 < -32768.0 {
+            -32768
+        } else {
+            y0.round() as i16
+        };
+        out.push(clamped);
+    }
+    out
 }
 
 /// @outputs: 2

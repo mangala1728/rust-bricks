@@ -1315,3 +1315,13 @@ fn test_ai_tensor_train_adamw_loss_gelu() {
     assert!(ai_tensor_train::gelu_forward(3.0) > 2.9);
     assert!(ai_tensor_train::gelu_forward(-3.0).abs() < 0.05);
 }
+
+
+#[test]
+fn test_audio_dsp_biquad_apply() {
+    let samples = vec![1000i16; 100];
+    let coeffs = [1.0, 0.0, 0.0, 0.0, 0.0]; // 直通濾波 (Pass-through)
+    let filtered = rust_bricks::audio_dsp::biquad_filter_apply(&samples, coeffs);
+    assert_eq!(filtered.len(), 100);
+    assert_eq!(filtered[0], 1000);
+}
