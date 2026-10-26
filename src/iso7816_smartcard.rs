@@ -199,3 +199,15 @@ pub fn ber_tlv_parse_tag_len(data: &[u8]) -> Option<(u32, usize, usize)> {
     }
     Some((tag, value_len, idx))
 }
+
+/// @outputs: 2
+/// @domain: field_num [1..64]
+pub fn iso8583_bitmap_is_present(bitmap: &[u8; 8], field_num: u8) -> bool {
+    if field_num < 1 || field_num > 64 {
+        return false;
+    }
+    let bit_idx = (field_num - 1) as usize;
+    let byte_pos = bit_idx / 8;
+    let bit_offset = 7 - (bit_idx % 8);
+    (bitmap[byte_pos] & (1 << bit_offset)) != 0
+}

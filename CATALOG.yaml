@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 102
+total_functions: 104
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -149,7 +149,7 @@ modules:
           t: "[0.0..1.0]"
   - module: "can_bus_frame"
     file: "src/can_bus_frame.rs"
-    functions_count: 5
+    functions_count: 6
     architecture_map:
       - "Role: core/can_bus_frame — 車載總線 (CAN/CAN-FD)、ISO-TP 車載診斷與工控 MCU SDK 微積木。"
       - "Inputs: CAN ID 原始碼、DLC 長度碼、Modbus 資料訊框、ISO-TP 負載、系統時鐘頻率。"
@@ -182,6 +182,12 @@ modules:
         domains:
           sys_clock_hz: "[1..1000000000]"
           target_freq_hz: "[1..100000000]"
+      - name: "can_signal_unpack_u32"
+        signature: "pub fn can_signal_unpack_u32(payload: &[u8; 8], start_bit: u8, bit_len: u8) -> u32"
+        outputs: 1
+        domains:
+          start_bit: "[0..63]"
+          bit_len: "[1..32]"
   - module: "chaos_audit"
     file: "src/chaos_audit.rs"
     functions_count: 1
@@ -277,7 +283,7 @@ modules:
           py: "[-10000.0..10000.0]"
   - module: "iso7816_smartcard"
     file: "src/iso7816_smartcard.rs"
-    functions_count: 5
+    functions_count: 6
     architecture_map:
       - "Role: core/iso7816_smartcard — 金融終端、ATM、刷卡機與智慧晶片卡安全微積木。"
       - "Inputs: 卡號字元序列、ISO 7816 狀態碼 SW1/SW2、明文 PIN、卡片主帳號 (PAN)、TLV 位元組流、敏感記憶體緩衝區。"
@@ -311,6 +317,11 @@ modules:
         outputs: 2
         domains:
           data_len: "[2..1024]"
+      - name: "iso8583_bitmap_is_present"
+        signature: "pub fn iso8583_bitmap_is_present(bitmap: &[u8; 8], field_num: u8) -> bool"
+        outputs: 2
+        domains:
+          field_num: "[1..64]"
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5

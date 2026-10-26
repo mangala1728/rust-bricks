@@ -98,3 +98,22 @@ pub fn timer_calc_prescaler_and_period(sys_clock_hz: u32, target_freq_hz: u32) -
     let final_arr = (arr - 1) as u16;
     Some((final_psc, final_arr))
 }
+
+/// @outputs: 1
+/// @domain: start_bit [0..63]
+/// @domain: bit_len [1..32]
+pub fn can_signal_unpack_u32(payload: &[u8; 8], start_bit: u8, bit_len: u8) -> u32 {
+    if start_bit > 63 || bit_len == 0 || bit_len > 32 {
+        return 0;
+    }
+    if (start_bit as u16) + (bit_len as u16) > 64 {
+        return 0;
+    }
+    let raw_u64 = u64::from_le_bytes(*payload);
+    let mask = if bit_len == 32 {
+        0xFFFF_FFFF_u64
+    } else {
+        (1u64 << bit_len) - 1
+    };
+    ((raw_u64 >> start_bit) & mask) as u32
+}

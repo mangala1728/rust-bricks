@@ -589,6 +589,14 @@ fn test_iso7816_smartcard_bricks() {
     assert_eq!(tag, 0x9F02);
     assert_eq!(len, 6);
     assert_eq!(offset, 3);
+
+    // 6. ISO 8583 金融報文點陣圖判定 (0x82 = 10000010b -> Field 1 與 Field 7 存在)
+    let bitmap = [0x82, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]; // Field 1, 7, 64
+    assert!(rust_bricks::iso7816_smartcard::iso8583_bitmap_is_present(&bitmap, 1));
+    assert!(rust_bricks::iso7816_smartcard::iso8583_bitmap_is_present(&bitmap, 7));
+    assert!(rust_bricks::iso7816_smartcard::iso8583_bitmap_is_present(&bitmap, 64));
+    assert!(!rust_bricks::iso7816_smartcard::iso8583_bitmap_is_present(&bitmap, 2));
+    assert!(!rust_bricks::iso7816_smartcard::iso8583_bitmap_is_present(&bitmap, 65)); // 越界
 }
 
 #[test]
@@ -628,6 +636,12 @@ fn test_can_bus_frame_bricks() {
     // @safety-proof: timer_res 已驗證 is_some()
     let (psc, arr) = timer_res.unwrap();
     assert_eq!((psc as u32 + 1) * (arr as u32 + 1), 72_000);
+
+    // 6. 車載 DBC 跨位元組信號解包 (從 bit 8 開始抽取 16 位元信號)
+    // payload: [0xAA, 0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00] -> byte 1=0x34, byte 2=0x12 -> 0x1234
+    let dbc_payload = [0xAA, 0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let signal = rust_bricks::can_bus_frame::can_signal_unpack_u32(&dbc_payload, 8, 16);
+    assert_eq!(signal, 0x1234);
 }
 
 #[test]

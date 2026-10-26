@@ -21,6 +21,10 @@
    - **零全域可變狀態（`R09-2`，Zero `static mut`）**、**禁止遞迴（`R09-7`，No Recursion）**、**有界迴圈（`R09-8`）**。
 3. **Python 語意對照與資產複利（Rosetta Stone）**
    - 針對 Python 標準庫或常用演算法（如時間差、二分法、滑動視窗、音訊能量計算），提煉其純粹數學與演算法核心，以 Rust 嚴密語法重現，成為跨專案長期技術複利。
+4. **指揮官大局思維：廣度泛化與深度泛化雙軸演化（Dual-Axis Evolution）**
+   - **橫向廣度泛化**：開闢新領域橋頭堡（手機、音訊、視覺、車載 CAN、金融卡、3D VR 物理、溫控 PID、Agent Harness）。
+   - **縱向深度泛化**：深耕細作打穿工業級護城河（如 CAN DBC 跨字節信號解包、ISO 8583 銀行交易點陣圖）。
+   - 詳見戰略文件：[`docs/DUAL-AXIS-EVOLUTION-STRATEGY.md`](docs/DUAL-AXIS-EVOLUTION-STRATEGY.md)。
 
 ---
 
@@ -138,7 +142,7 @@ cargo run -- wish list
 
 ## 六、多專案防撞車與核心策展管家協議（Curation & Integration）
 
-為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/ZERO-TRUST-QUALITY-DIRECTOR.md`](docs/ZERO-TRUST-QUALITY-DIRECTOR.md)、[`docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md`](docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
+為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/ZERO-TRUST-QUALITY-DIRECTOR.md`](docs/ZERO-TRUST-QUALITY-DIRECTOR.md)、[`docs/DUAL-AXIS-EVOLUTION-STRATEGY.md`](docs/DUAL-AXIS-EVOLUTION-STRATEGY.md)、[`docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md`](docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
 
 1. **巡檢外部貢獻分支**：執行 `cargo run -- patrol` 主動拉取並檢查 `origin/contrib/*`。
 2. **機械防重發明輪子**：`guard.rs` 自動掃描全庫函式名稱，禁止重複命名。
