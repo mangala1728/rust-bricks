@@ -1838,7 +1838,7 @@ fn test_comm_phy_bus_bricks() {
 
     // 2. MIPI CSI-2 長封包 CRC16
     let crc = comm_phy_bus::mipi_csi2_packet_crc16(b"123456789");
-    assert_ne!(crc, 0);
+    assert_eq!(crc, 0x6F91);
 
     // 3. MIPI D-PHY 低功耗狀態解碼
     assert_eq!(comm_phy_bus::mipi_dphy_lp_state_decode(false, false), 0);
@@ -1853,8 +1853,8 @@ fn test_comm_phy_bus_bricks() {
 
     // 5. RGMII 延遲抽頭解算與速率控制位元
     assert_eq!(comm_phy_bus::rgmii_tx_delay_skew_taps(1500, 50), Some(30));
-    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(1000, true), Some(0b1110));
-    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(100, false), Some(0b1001));
+    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(1000, true), Some(0b1101));
+    assert_eq!(comm_phy_bus::rgmii_speed_duplex_control_byte(100, false), Some(0b0011));
 
     // 6. SGMII 自協商廣告字
     let sgmii = comm_phy_bus::sgmii_auto_negotiation_advertisement(true, true, 2);
@@ -1935,7 +1935,7 @@ fn test_instrument_industrial_bricks() {
     let mut cmd_buf = [0u8; 32];
     let cmd_len = instrument_industrial::scpi_format_dmm_voltage_range_cmd(10.0, 0.00001, &mut cmd_buf);
     assert!(cmd_len > 0);
-    assert_eq!(&cmd_buf[..cmd_len], b"CONF:VOLT:DC 10,DEF\n");
+    assert_eq!(&cmd_buf[..cmd_len], b"CONF:VOLT:DC 10,0.00001\n");
 
     // 3. CANopen SDO 下載加速訊框與成功回應解析
     let (cob_id, sdo_req) = instrument_industrial::canopen_sdo_download_expedited_req(1, 0x1017, 0x00, &[0xE8, 0x03]).unwrap();
@@ -1967,8 +1967,9 @@ fn test_instrument_industrial_bricks() {
     assert_eq!(rtu_frame[3], 0x00);
     assert_eq!(rtu_frame[4], 0x00);
     assert_eq!(rtu_frame[5], 0x02);
-    // CRC 低位先傳、高位後傳
-    assert_ne!(rtu_frame[6], 0);
+    // CRC 低位先傳 (0xC4)、高位後傳 (0x0B)
+    assert_eq!(rtu_frame[6], 0xC4);
+    assert_eq!(rtu_frame[7], 0x0B);
 
     // 7. Modbus 雙 16-bit 暫存器轉 Float32
     // 0x3F800000 = 1.0f32
@@ -2532,8 +2533,8 @@ fn test_instrument_lxi_hislip_bricks() {
 
     // 5. VXI-11 Device_Read 參數封裝
     let mut read_buf = [0u8; 32];
-    let read_len = instrument_lxi_hislip::vxi11_device_read_params_pack(1, 2000, 0, 0, 1024, &mut read_buf);
-    assert_eq!(read_len, 20);
+    let read_len = instrument_lxi_hislip::vxi11_device_read_params_pack(1, 1024, 2000, 0, 0, b'\n', &mut read_buf);
+    assert_eq!(read_len, 24);
 
     // 6. HiSLIP 封包頭封裝與解碼 (Magic "HS", MsgType=1 Initialize, param=256, payload=1024)
     let mut hs_buf = [0u8; 16];
@@ -2645,6 +2646,12 @@ fn test_fieldbus_industrial_eth_bricks() {
     assert_eq!(dgram_len, 10);
     assert_eq!(dgram_buf[0], 0x02);
     assert_eq!(dgram_buf[1], 1);
+
+    // 2b. EtherCAT More 數據報標頭旗標檢驗 (Bit 15 必須為 1)
+    let mut dgram_more_buf = [0u8; 10];
+    fieldbus_industrial_eth::ethercat_datagram_header_pack(0x02, 1, 0x10000, 64, true, 0, &mut dgram_more_buf);
+    assert_eq!(dgram_more_buf[6], 64);
+    assert_eq!(dgram_more_buf[7], 0x80);
 
     // 3. EtherCAT WKC 驗證
     assert!(fieldbus_industrial_eth::ethercat_working_counter_verify(3, 3));
@@ -3148,9 +3155,9 @@ fn test_radar_mimo_tracking_bricks() {
     assert!(keep_alive);
     assert!(score > 0.0);
 
-    // 10. 雙 PRF 多普勒解模糊
-    let v_unambig = radar_doppler_velocity_disambiguation(15.0, 10.0, 12.0);
-    assert!(v_unambig.is_some());
+    // 10. 雙 PRF 多普勒解模糊 (真速度 35.0: PRF1 測得 -5.0, PRF2 測得 11.0)
+    let v_unambig = radar_doppler_velocity_disambiguation(-5.0, 11.0, 10.0, 12.0);
+    assert_eq!(v_unambig, Some(35.0));
 }
 
 #[test]
@@ -4054,15 +4061,15 @@ fn test_radar_clustering_dbscan_tracker_bricks() {
 fn test_fieldbus_building_automation_bricks() {
     use rust_bricks::fieldbus_building_automation::*;
 
-    // 1. BACnet MS/TP CRC-8
+    // 1. BACnet MS/TP CRC-8 標準測試向量
     let hdr = [0x55, 0xFF, 0x05, 0x10, 0x01, 0x00];
     let crc8 = bacnet_mstp_crc8(&hdr);
-    assert_ne!(crc8, 0);
+    assert_eq!(crc8, 0x30);
 
-    // 2. BACnet MS/TP CRC-16
+    // 2. BACnet MS/TP CRC-16 標準測試向量
     let payload = b"BACnet-IP-Gateway-Data";
     let crc16 = bacnet_mstp_crc16(payload);
-    assert_ne!(crc16, 0);
+    assert_eq!(crc16, 0xE646);
 
     // 3. M-Bus 訊框累積校驗和
     let mbus_raw = [0x68, 0x03, 0x03, 0x68, 0x08, 0x01, 0x72];
@@ -4075,18 +4082,19 @@ fn test_fieldbus_building_automation_bricks() {
     assert_eq!(mbus_dif_data_len(0x04), 4);
     assert_eq!(mbus_dif_data_len(0x07), 8);
 
-    // 5. DLMS HDLC FCS-16
+    // 5. DLMS HDLC FCS-16 標準測試向量
     let fcs = dlms_hdlc_fcs16(b"\xA0\x0A\x00\x02\x00\x23\x21\x93");
-    assert_ne!(fcs, 0);
+    assert_eq!(fcs, 0x7118);
 
     // 6. DLMS OBIS 代碼檢驗
     assert!(dlms_obis_is_valid(&[1, 0, 1, 8, 0, 255])); // 電表正向有功電能
     assert!(!dlms_obis_is_valid(&[250, 0, 0, 0, 0, 0]));
 
-    // 7. IEEE 1815 DNP3 CRC-16
+    // 7. IEEE 1815 DNP3 CRC-16 (標準測資與 IEEE 1815 / reveng 123456789 check=0xEA82)
     let dnp_hdr = [0x05, 0x64, 0x05, 0xC0, 0x01, 0x00, 0x00, 0x04];
     let dnp_crc = dnp3_crc16(&dnp_hdr);
-    assert_ne!(dnp_crc, 0);
+    assert_eq!(dnp_crc, 0x21E9);
+    assert_eq!(dnp3_crc16(b"123456789"), 0xEA82);
 
     // 8. HART LRC 異或校驗和
     let hart_data = [0x82, 0x80, 0x00, 0x00];

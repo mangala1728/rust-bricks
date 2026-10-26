@@ -30,18 +30,12 @@ pub fn radar_aoa_phase_monopulse(delta_phase_rad: f32, wavelength_m: f32, d_spac
     if wavelength_m < 0.0001 || wavelength_m > 10.0 || d_spacing_m < 0.0001 || d_spacing_m > 10.0 || delta_phase_rad.is_nan() {
         return None;
     }
-    let pi = 3.141592653589793f32;
+    let pi = std::f32::consts::PI;
     let ratio = (delta_phase_rad * wavelength_m) / (2.0 * pi * d_spacing_m);
     if ratio < -1.0 || ratio > 1.0 {
         return None; // 超出視角極限
     }
-    // 零依賴 arcsin 級數展開近似 (七階奇多項式在 [-1, 1] 內)
-    let x = ratio;
-    let x3 = x * x * x;
-    let x5 = x3 * x * x;
-    let x7 = x5 * x * x;
-    let asin_approx = x + (1.0 / 6.0) * x3 + (3.0 / 40.0) * x5 + (5.0 / 112.0) * x7;
-    Some(asin_approx)
+    Some(ratio.asin())
 }
 
 /// ## Map: 和差單脈衝比值實部估計 (Real Part of Delta / Sigma)

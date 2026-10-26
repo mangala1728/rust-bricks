@@ -60,8 +60,9 @@ pub fn compass_tilt_compensated_bearing(
     let cos_roll = roll.cos();
     let sin_roll = roll.sin();
 
-    let xh = mx * cos_pitch + mz * sin_pitch;
-    let yh = mx * sin_roll * sin_pitch + my * cos_roll - mz * sin_roll * cos_pitch;
+    // 標準 3 軸傾斜補償磁羅盤公式 (含 Roll 與 Pitch 完整投影)
+    let xh = mx * cos_pitch + my * sin_roll * sin_pitch + mz * cos_roll * sin_pitch;
+    let yh = my * cos_roll - mz * sin_roll;
 
     let heading_rad = (-yh).atan2(xh);
     let heading_deg = (heading_rad * RAD_TO_DEG + 360.0) % 360.0;

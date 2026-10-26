@@ -89,11 +89,10 @@ pub fn radar_respiration_bandpass_step(
         return 0.0;
     }
     // state[0]: 高通濾波前一刻輸入，state[1]: 低通濾波累積器
-    let hp_out = alpha_hp * (state[1] + sample - state[0]);
-    state[0] = sample;
-    let lp_out = state[1] + alpha_lp * (hp_out - state[1]);
-    state[1] = lp_out;
-    lp_out
+    state[0] += (1.0 - alpha_hp) * (sample - state[0]);
+    let hp_out = sample - state[0];
+    state[1] += alpha_lp * (hp_out - state[1]);
+    state[1]
 }
 
 /// @outputs: 1

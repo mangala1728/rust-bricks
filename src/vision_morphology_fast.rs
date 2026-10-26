@@ -143,10 +143,9 @@ pub fn vision_hough_line_accumulate_point(
     if theta_deg >= 180 || max_rho == 0 {
         return None;
     }
-    // 零依賴正弦/餘弦定點查表 (0..180 度，放大 1000 倍)
-    let rad = (theta_deg as f32) * 0.0174532925;
-    let cos_t = fast_cos_approx(rad);
-    let sin_t = fast_sin_approx(rad);
+    let rad = (theta_deg as f32).to_radians();
+    let cos_t = rad.cos();
+    let sin_t = rad.sin();
     let rho = (x as f32) * cos_t + (y as f32) * sin_t;
     let rho_idx = (rho + (max_rho as f32)) as isize;
     if rho_idx < 0 || (rho_idx as usize) >= max_rho * 2 {
@@ -306,20 +305,4 @@ pub fn vision_color_hsv_in_range(
     }
 }
 
-/// 內部五階正弦多項式近似
-/// @outputs: 1
-fn fast_sin_approx(rad: f32) -> f32 {
-    let x = rad;
-    let x3 = x * x * x;
-    let x5 = x3 * x * x;
-    x - x3 / 6.0 + x5 / 120.0
-}
 
-/// 內部四階餘弦多項式近似
-/// @outputs: 1
-fn fast_cos_approx(rad: f32) -> f32 {
-    let x = rad;
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    1.0 - x2 / 2.0 + x4 / 24.0
-}

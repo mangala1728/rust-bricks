@@ -39,7 +39,8 @@ pub fn ethercat_datagram_header_pack(
     out_buf[3] = ((addr >> 8) & 0xFF) as u8;
     out_buf[4] = ((addr >> 16) & 0xFF) as u8;
     out_buf[5] = ((addr >> 24) & 0xFF) as u8;
-    let len_more = (len & 0x07FF) | if more { 0x4000 } else { 0 };
+    // 依據 ETG.1000.4 規範，EtherCAT 數據報標頭 More 旗標位於 Bit 15 (0x8000)
+    let len_more = (len & 0x07FF) | if more { 0x8000 } else { 0 };
     out_buf[6] = (len_more & 0xFF) as u8;
     out_buf[7] = (len_more >> 8) as u8;
     out_buf[8] = (irq & 0xFF) as u8;

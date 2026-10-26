@@ -194,8 +194,8 @@ pub fn vision_se2_rigid_transform_point_2d(
     if !tx.is_finite() || !ty.is_finite() || !theta_rad.is_finite() || !x.is_finite() || !y.is_finite() {
         return (0.0, 0.0);
     }
-    let c = fast_cos_approx(theta_rad);
-    let s = fast_sin_approx(theta_rad);
+    let c = theta_rad.cos();
+    let s = theta_rad.sin();
     let x_prime = c * x - s * y + tx;
     let y_prime = s * x + c * y + ty;
     (x_prime, y_prime)
@@ -246,29 +246,4 @@ pub fn vision_least_squares_line_2d(points: &[[f32; 2]]) -> Option<(f32, f32)> {
     Some((m, c))
 }
 
-/// 內部高階正弦多項式近似 (7 階麥克勞林展開帶週期折疊)
-/// @outputs: 1
-fn fast_sin_approx(rad: f32) -> f32 {
-    let pi = 3.14159265;
-    let two_pi = 6.2831853;
-    let mut x = rad % two_pi;
-    if x > pi { x -= two_pi; } else if x < -pi { x += two_pi; }
-    let x2 = x * x;
-    let x3 = x * x2;
-    let x5 = x3 * x2;
-    let x7 = x5 * x2;
-    x - x3 / 6.0 + x5 / 120.0 - x7 / 5040.0
-}
 
-/// 內部高階餘弦多項式近似 (6 階麥克勞林展開帶週期折疊)
-/// @outputs: 1
-fn fast_cos_approx(rad: f32) -> f32 {
-    let pi = 3.14159265;
-    let two_pi = 6.2831853;
-    let mut x = rad % two_pi;
-    if x > pi { x -= two_pi; } else if x < -pi { x += two_pi; }
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x6 = x4 * x2;
-    1.0 - x2 / 2.0 + x4 / 24.0 - x6 / 720.0
-}

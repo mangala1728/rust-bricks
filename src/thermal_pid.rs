@@ -29,7 +29,15 @@ pub fn pid_controller_step(
         return (out_min, 0.0);
     }
     let error = setpoint - measured;
-    let new_integral = (integral + error * dt).clamp(out_min, out_max);
+    // 抗積分飽和夾止必須與輸出端單位一致 (夾止 Ki * integral)
+    let new_integral = if ki.abs() > 1e-9 {
+        let i_raw = integral + error * dt;
+        let i_limit_min = out_min / ki.abs();
+        let i_limit_max = out_max / ki.abs();
+        i_raw.clamp(i_limit_min.min(i_limit_max), i_limit_min.max(i_limit_max))
+    } else {
+        0.0
+    };
     let derivative = (error - prev_error) / dt;
     let raw_out = kp * error + ki * new_integral + kd * derivative;
     let clamped_out = raw_out.clamp(out_min, out_max);

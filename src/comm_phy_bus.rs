@@ -16,12 +16,13 @@ pub fn mipi_csi2_short_packet_header(data_type: u8, virtual_channel: u8, data_fi
 
     // 計算 MIPI CSI-2 6-bit ECC (針對 24-bit DI + DataField)
     let d = (di as u32) | ((b1 as u32) << 8) | ((b2 as u32) << 16);
-    let p0 = (d & 0x074355).count_ones() as u8 & 1;
-    let p1 = (d & 0x0DA699).count_ones() as u8 & 1;
-    let p2 = (d & 0x0EE8E6).count_ones() as u8 & 1;
-    let p3 = (d & 0x1B1F0F).count_ones() as u8 & 1;
-    let p4 = (d & 0x2E2F30).count_ones() as u8 & 1;
-    let p5 = (d & 0x3FFC00).count_ones() as u8 & 1;
+    // 依據 MIPI CSI-2 規範 Section 9.2 標準 ECC 產生多項式遮罩
+    let p0 = (d & 0x00F12CB7).count_ones() as u8 & 1;
+    let p1 = (d & 0x00F2555B).count_ones() as u8 & 1;
+    let p2 = (d & 0x00749A6D).count_ones() as u8 & 1;
+    let p3 = (d & 0x00B8E38E).count_ones() as u8 & 1;
+    let p4 = (d & 0x00DF03F0).count_ones() as u8 & 1;
+    let p5 = (d & 0x00EFFC00).count_ones() as u8 & 1;
     let ecc = p0 | (p1 << 1) | (p2 << 2) | (p3 << 3) | (p4 << 4) | (p5 << 5);
 
     [di, b1, b2, ecc]
@@ -86,16 +87,18 @@ pub fn rgmii_tx_delay_skew_taps(delay_ps: u32, tap_resolution_ps: u32) -> Option
 
 /// @outputs: 1
 /// @domain: speed_mbps [10..1000]
+/// 依據 RGMII v2.0 標準帶內狀態位元組 (Inband Status): Bit0=LinkUp, Bit[2:1]=Speed, Bit3=Duplex
 pub fn rgmii_speed_duplex_control_byte(speed_mbps: u16, duplex_full: bool) -> Option<u8> {
-    let speed_bits = match speed_mbps {
+    let speed_code = match speed_mbps {
         10 => 0b00,
         100 => 0b01,
         1000 => 0b10,
         _ => return None,
     };
-    let duplex_bit = if duplex_full { 0b0100 } else { 0b0000 };
-    let link_up_bit = 0b1000;
-    Some(link_up_bit | duplex_bit | speed_bits)
+    let link_up_bit = 0b0001;
+    let speed_bits = speed_code << 1;
+    let duplex_bit = if duplex_full { 0b1000 } else { 0b0000 };
+    Some(duplex_bit | speed_bits | link_up_bit)
 }
 
 /// @outputs: 1

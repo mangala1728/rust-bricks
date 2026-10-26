@@ -114,23 +114,26 @@ pub fn vxi11_create_link_params_pack(
 
 /// ## Map: VXI-11 Device_Read Procedure 呼叫參數序列化
 /// @outputs: 1
+/// ## Map: VXI-11 Device_Read Procedure 呼叫參數序列化 (依據 VXI-11 規範 Section B.2: lid, requestSize, io_timeout, lock_timeout, flags, termChar)
 pub fn vxi11_device_read_params_pack(
     link_id: u32,
+    req_size: u32,
     io_timeout_ms: u32,
     lock_timeout_ms: u32,
     flags: u32,
-    req_size: u32,
+    term_char: u8,
     out_buf: &mut [u8],
 ) -> usize {
-    if out_buf.len() < 20 {
+    if out_buf.len() < 24 {
         return 0;
     }
     let mut offset = 0;
     offset += xdr_encode_u32(link_id, &mut out_buf[offset..]);
+    offset += xdr_encode_u32(req_size, &mut out_buf[offset..]);
     offset += xdr_encode_u32(io_timeout_ms, &mut out_buf[offset..]);
     offset += xdr_encode_u32(lock_timeout_ms, &mut out_buf[offset..]);
     offset += xdr_encode_u32(flags, &mut out_buf[offset..]);
-    offset += xdr_encode_u32(req_size, &mut out_buf[offset..]);
+    offset += xdr_encode_u32(term_char as u32, &mut out_buf[offset..]);
     offset
 }
 

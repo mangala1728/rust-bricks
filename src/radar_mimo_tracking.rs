@@ -165,31 +165,31 @@ pub fn radar_track_state_coast_decay_score(hits: u32, misses: u32, max_misses: u
 /// @domain: v_nyquist1 [0.1, 1e4]
 /// @domain: v_nyquist2 [0.1, 1e4]
 pub fn radar_doppler_velocity_disambiguation(
-    v_measured: f32,
+    v_meas1: f32,
+    v_meas2: f32,
     v_nyquist1: f32,
     v_nyquist2: f32,
 ) -> Option<f32> {
-    if !v_measured.is_finite() || !v_nyquist1.is_finite() || !v_nyquist2.is_finite() ||
+    if !v_meas1.is_finite() || !v_meas2.is_finite() || !v_nyquist1.is_finite() || !v_nyquist2.is_finite() ||
        v_nyquist1 <= 0.0 || v_nyquist2 <= 0.0 {
         return None;
     }
-    // 依據兩不同 PRF 之最大不模糊速度尋找整數解折疊
-    let mut best_v = v_measured;
-    let mut min_diff = f32::MAX;
-    for k1 in -3..=3 {
-        let candidate1 = v_measured + (k1 as f32) * 2.0 * v_nyquist1;
-        for k2 in -3..=3 {
-            let candidate2 = v_measured + (k2 as f32) * 2.0 * v_nyquist2;
-            let diff = (candidate1 - candidate2).abs();
-            if diff < min_diff && diff < 0.5 {
-                min_diff = diff;
-                best_v = 0.5 * (candidate1 + candidate2);
+    // 依據兩不同 PRF 測得之折疊速度與中國剩餘定理 (CRT) 求解真速度
+    let mut best_v = None;
+    let mut min_k_mag = i32::MAX;
+    for k1 in -6i32..=6i32 {
+        let cand1 = v_meas1 + (k1 as f32) * 2.0 * v_nyquist1;
+        for k2 in -6i32..=6i32 {
+            let cand2 = v_meas2 + (k2 as f32) * 2.0 * v_nyquist2;
+            let diff = (cand1 - cand2).abs();
+            if diff < 0.2 {
+                let k_mag = k1.abs() + k2.abs();
+                if k_mag < min_k_mag {
+                    min_k_mag = k_mag;
+                    best_v = Some(0.5 * (cand1 + cand2));
+                }
             }
         }
     }
-    if min_diff < f32::MAX {
-        Some(best_v)
-    } else {
-        Some(v_measured)
-    }
+    best_v
 }

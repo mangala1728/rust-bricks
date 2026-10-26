@@ -605,7 +605,7 @@ fn audit_instrument_lxi_hislip() -> bool {
     ok &= instrument_lxi_hislip::xdr_encode_opaque_padded(b"123", &mut buf) == 0;
     ok &= instrument_lxi_hislip::vxi11_rpc_header_pack(1, 2, 3, 4, &mut buf) == 0;
     ok &= instrument_lxi_hislip::vxi11_create_link_params_pack(1, false, 0, "inst0", &mut buf) == 0;
-    ok &= instrument_lxi_hislip::vxi11_device_read_params_pack(1, 0, 0, 0, 0, &mut buf) == 0;
+    ok &= instrument_lxi_hislip::vxi11_device_read_params_pack(1, 0, 0, 0, 0, 0, &mut buf) == 0;
     ok &= instrument_lxi_hislip::hislip_packet_header_pack(0, 0, 0, 0, &mut buf) == 0;
     ok &= instrument_lxi_hislip::hislip_packet_header_unpack(&[0; 16]).is_none(); // 幻數不匹配
     ok &= instrument_lxi_hislip::lxi_mdns_service_name_format("", "123", &mut buf) == 0;

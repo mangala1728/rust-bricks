@@ -61,30 +61,13 @@ pub fn scpi_format_dmm_voltage_range_cmd(
     if range_v <= 0.0 || resolution_v <= 0.0 || !range_v.is_finite() || !resolution_v.is_finite() {
         return 0;
     }
-    let prefix = b"CONF:VOLT:DC ";
-    if out_buf.len() < prefix.len() + 10 {
-        return 0;
+    use std::io::Write;
+    let mut cursor = std::io::Cursor::new(out_buf);
+    if write!(cursor, "CONF:VOLT:DC {},{}\n", range_v, resolution_v).is_ok() {
+        cursor.position() as usize
+    } else {
+        0
     }
-    let mut pos = 0;
-    for &b in prefix {
-        out_buf[pos] = b;
-        pos += 1;
-    }
-    // 寫入 range 整數部分
-    let r_int = range_v as u32;
-    if r_int >= 100 {
-        out_buf[pos] = b'0' + ((r_int / 100) % 10) as u8; pos += 1;
-        out_buf[pos] = b'0' + ((r_int / 10) % 10) as u8; pos += 1;
-    } else if r_int >= 10 {
-        out_buf[pos] = b'0' + ((r_int / 10) % 10) as u8; pos += 1;
-    }
-    out_buf[pos] = b'0' + (r_int % 10) as u8; pos += 1;
-    out_buf[pos] = b','; pos += 1;
-    out_buf[pos] = b'D'; pos += 1;
-    out_buf[pos] = b'E'; pos += 1;
-    out_buf[pos] = b'F'; pos += 1;
-    out_buf[pos] = b'\n'; pos += 1;
-    pos
 }
 
 /// @outputs: 1
