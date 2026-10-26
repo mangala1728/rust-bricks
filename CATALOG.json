@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 556,
+  "total_functions": 566,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2048,6 +2048,63 @@
         {
           "name": "nfc_felica_frame_validate",
           "signature": "pub fn nfc_felica_frame_validate(frame: &[u8]) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "numerical_optimization_gradient",
+      "file": "src/numerical_optimization_gradient.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "opt_golden_section_search_step",
+          "signature": "pub fn opt_golden_section_search_step(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_wolfe_condition_armijo",
+          "signature": "pub fn opt_wolfe_condition_armijo(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_wolfe_condition_curvature",
+          "signature": "pub fn opt_wolfe_condition_curvature(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_conjugate_gradient_polak_ribiere",
+          "signature": "pub fn opt_conjugate_gradient_polak_ribiere(g_k: &[f64], g_prev: &[f64]) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "opt_bfgs_hessian_inv_update_step",
+          "signature": "pub fn opt_bfgs_hessian_inv_update_step(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_gauss_newton_step_2d",
+          "signature": "pub fn opt_gauss_newton_step_2d(j: &[[f64; 2]], r: &[f64]) -> Option<[f64; 2]>",
+          "outputs": 1
+        },
+        {
+          "name": "opt_levenberg_marquardt_damping",
+          "signature": "pub fn opt_levenberg_marquardt_damping(lambda: f64, rho: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "opt_nelder_mead_reflection_point",
+          "signature": "pub fn opt_nelder_mead_reflection_point(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_nelder_mead_expansion_point",
+          "signature": "pub fn opt_nelder_mead_expansion_point(",
+          "outputs": 1
+        },
+        {
+          "name": "opt_learning_rate_warmup_cosine",
+          "signature": "pub fn opt_learning_rate_warmup_cosine(",
           "outputs": 1
         }
       ]

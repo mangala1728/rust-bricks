@@ -59,6 +59,7 @@ pub mod net_ethernet;
 pub mod net_telemetry;
 pub mod net_tsn_macsec;
 pub mod nfc_iso14443_ndef;
+pub mod numerical_optimization_gradient;
 pub mod office_calc_layout;
 pub mod packet_checksum;
 pub mod pcb_cad_fem;

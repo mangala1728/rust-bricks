@@ -9,7 +9,7 @@ use crate::{
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
-    net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_ethernet, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
     vision_morphology_fast, vision_optical_flow_homography,
@@ -873,6 +873,23 @@ fn audit_codec_lossless_compression() -> bool {
 }
 
 /// @outputs: 1
+fn audit_numerical_optimization_gradient() -> bool {
+    let mut ok = true;
+    let (a, b) = numerical_optimization_gradient::opt_golden_section_search_step(f64::NAN, 1.0, 0.0, 0.0);
+    ok &= a.is_nan() && b == 1.0;
+    ok &= !numerical_optimization_gradient::opt_wolfe_condition_armijo(1.0, 2.0, 1.0, 0.1, 0.1); // 非下降方向
+    ok &= !numerical_optimization_gradient::opt_wolfe_condition_curvature(1.0, -1.0, 0.9); // 非下降方向
+    ok &= numerical_optimization_gradient::opt_conjugate_gradient_polak_ribiere(&[], &[]) == 0.0;
+    let mut h = [1.0];
+    ok &= !numerical_optimization_gradient::opt_bfgs_hessian_inv_update_step(&mut h, &[1.0], &[-2.0], 1); // 負曲率
+    ok &= numerical_optimization_gradient::opt_gauss_newton_step_2d(&[], &[]).is_none();
+    ok &= numerical_optimization_gradient::opt_levenberg_marquardt_damping(f64::NAN, 0.5) == 1.0;
+    ok &= !numerical_optimization_gradient::opt_nelder_mead_reflection_point(&[], &[], 1.0, &mut []);
+    ok &= numerical_optimization_gradient::opt_learning_rate_warmup_cosine(0, 0, 0, 1.0, 0.0) == 0.0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -942,6 +959,7 @@ fn run_chaos_audit_batch_b(total: &mut usize, passed: &mut usize, failures: &mut
     check_audit_domain(audit_rpa_mobile_touch_macro(), "【手機自動化連點與觸控巨集抽查失敗】存在除零溢出或坐標越界", total, passed, failures);
     check_audit_domain(audit_audio_spectral_codec(), "【音訊頻譜降噪與語音編解碼抽查失敗】存在除零溢出或壓擴失真", total, passed, failures);
     check_audit_domain(audit_codec_lossless_compression(), "【無損數據壓縮與線路編碼抽查失敗】存在溢出或越界解碼崩潰", total, passed, failures);
+    check_audit_domain(audit_numerical_optimization_gradient(), "【數值最佳化與梯度求解抽查失敗】存在奇異發散或除零崩潰", total, passed, failures);
 }
 
 /// @outputs: 2

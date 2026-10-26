@@ -3576,6 +3576,68 @@ fn test_codec_lossless_compression_bricks() {
     assert_eq!(crc, 0xE3069283); // 標準 CRC-32C 測試向量 "123456789" -> 0xE3069283
 }
 
+#[test]
+fn test_numerical_optimization_gradient_bricks() {
+    use rust_bricks::numerical_optimization_gradient::*;
+
+    // 1. 黃金分割線搜尋步進
+    let (a, b) = opt_golden_section_search_step(0.0, 1.0, 0.2, 0.8);
+    assert_eq!(a, 0.0);
+    assert!((b - 0.618).abs() < 0.01);
+
+    // 2. Wolfe 条件 1 (Armijo 充分下降)
+    // f_0 = 10, f_alpha = 7, dir_deriv = -10, alpha = 0.5, c1 = 0.1
+    // f_alpha (7) <= f_0 + c1 * alpha * dir_deriv (10 - 0.5 = 9.5) -> true
+    assert!(opt_wolfe_condition_armijo(10.0, 7.0, -10.0, 0.5, 0.1));
+    assert!(!opt_wolfe_condition_armijo(10.0, 9.8, -10.0, 0.5, 0.1));
+
+    // 3. Wolfe 条件 2 (曲率條件)
+    // dir_deriv_0 = -10, c2 = 0.9, dir_deriv_alpha = -5 >= -9 -> true
+    assert!(opt_wolfe_condition_curvature(-10.0, -5.0, 0.9));
+    assert!(!opt_wolfe_condition_curvature(-10.0, -9.5, 0.9));
+
+    // 4. Polak-Ribière CG Beta 係數
+    let g_k = [1.0, 2.0];
+    let g_prev = [1.0, 0.0]; // diff = [0.0, 2.0], dot = 0 + 4 = 4, norm_prev_sq = 1 -> beta = 4.0
+    let beta = opt_conjugate_gradient_polak_ribiere(&g_k, &g_prev);
+    assert!((beta - 4.0).abs() < 1e-4);
+
+    // 5. BFGS 逆黑塞秩二更新步進 (測試單位陣列更新)
+    let mut h = [1.0, 0.0, 0.0, 1.0];
+    let s = [1.0, 0.0];
+    let y = [2.0, 0.0];
+    assert!(opt_bfgs_hessian_inv_update_step(&mut h, &s, &y, 2));
+    assert!(h[0] > 0.0); // 依然保持正定
+
+    // 6. 2D 高斯-牛頓步進
+    let j = [[1.0, 0.0], [0.0, 1.0]];
+    let r = [2.0, -3.0];
+    let delta = opt_gauss_newton_step_2d(&j, &r).unwrap();
+    // delta = -r = [-2.0, 3.0]
+    assert!((delta[0] - (-2.0)).abs() < 1e-4);
+    assert!((delta[1] - 3.0).abs() < 1e-4);
+
+    // 7. LM 阻尼係數調整
+    let l_down = opt_levenberg_marquardt_damping(1.0, 0.9);
+    assert!(l_down < 1.0);
+    let l_up = opt_levenberg_marquardt_damping(1.0, 0.1);
+    assert!(l_up > 1.0);
+
+    // 8. Nelder-Mead 反射點運算
+    let centroid = [2.0, 3.0];
+    let worst = [0.0, 1.0];
+    let mut reflected = [0.0, 0.0];
+    assert!(opt_nelder_mead_reflection_point(&centroid, &worst, 1.0, &mut reflected));
+    // x_r = c + 1.0*(c - w) = [2+2, 3+2] = [4.0, 5.0]
+    assert_eq!(reflected, [4.0, 5.0]);
+
+    // 9. 餘弦退火學習率預熱
+    let lr_warm = opt_learning_rate_warmup_cosine(5, 10, 100, 0.1, 0.0);
+    assert!((lr_warm - 0.05).abs() < 1e-4);
+    let lr_end = opt_learning_rate_warmup_cosine(100, 10, 100, 0.1, 0.001);
+    assert_eq!(lr_end, 0.001);
+}
+
 
 
 

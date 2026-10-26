@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 556
+total_functions: 566
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1994,6 +1994,55 @@ modules:
       - name: "nfc_felica_frame_validate"
         signature: "pub fn nfc_felica_frame_validate(frame: &[u8]) -> bool"
         outputs: 1
+  - module: "numerical_optimization_gradient"
+    file: "src/numerical_optimization_gradient.rs"
+    functions_count: 10
+    architecture_map:
+    functions:
+      - name: "opt_golden_section_search_step"
+        signature: "pub fn opt_golden_section_search_step("
+        outputs: 1
+        domains:
+          a: "[-1e12, 1e12], b [-1e12, 1e12], f_x1 [-1e12, 1e12], f_x2 [-1e12, 1e12]"
+      - name: "opt_wolfe_condition_armijo"
+        signature: "pub fn opt_wolfe_condition_armijo("
+        outputs: 1
+        domains:
+          f_0: "[-1e12, 1e12], f_alpha [-1e12, 1e12], dir_deriv [-1e12, 1e12], alpha [0.0, 1e6], c1 [0.0, 1.0]"
+      - name: "opt_wolfe_condition_curvature"
+        signature: "pub fn opt_wolfe_condition_curvature("
+        outputs: 1
+        domains:
+          dir_deriv_0: "[-1e12, 1e12], dir_deriv_alpha [-1e12, 1e12], c2 [0.0, 1.0]"
+      - name: "opt_conjugate_gradient_polak_ribiere"
+        signature: "pub fn opt_conjugate_gradient_polak_ribiere(g_k: &[f64], g_prev: &[f64]) -> f64"
+        outputs: 1
+      - name: "opt_bfgs_hessian_inv_update_step"
+        signature: "pub fn opt_bfgs_hessian_inv_update_step("
+        outputs: 1
+      - name: "opt_gauss_newton_step_2d"
+        signature: "pub fn opt_gauss_newton_step_2d(j: &[[f64; 2]], r: &[f64]) -> Option<[f64; 2]>"
+        outputs: 1
+      - name: "opt_levenberg_marquardt_damping"
+        signature: "pub fn opt_levenberg_marquardt_damping(lambda: f64, rho: f64) -> f64"
+        outputs: 1
+        domains:
+          lambda: "[1e-12, 1e12], rho [-1e6, 1e6]"
+      - name: "opt_nelder_mead_reflection_point"
+        signature: "pub fn opt_nelder_mead_reflection_point("
+        outputs: 1
+        domains:
+          alpha: "[0.1, 10.0]"
+      - name: "opt_nelder_mead_expansion_point"
+        signature: "pub fn opt_nelder_mead_expansion_point("
+        outputs: 1
+        domains:
+          gamma: "[1.0, 10.0]"
+      - name: "opt_learning_rate_warmup_cosine"
+        signature: "pub fn opt_learning_rate_warmup_cosine("
+        outputs: 1
+        domains:
+          base_lr: "[0.0, 100.0], min_lr [0.0, 100.0]"
   - module: "office_calc_layout"
     file: "src/office_calc_layout.rs"
     functions_count: 8

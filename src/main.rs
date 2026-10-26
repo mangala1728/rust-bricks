@@ -9,7 +9,7 @@ use rust_bricks::{
     clock_pll_rtc, cnc_gcode_toolpath, codec_lossless_compression, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, decision_minimax_alphabeta, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
-    net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
+    net_telemetry, net_tsn_macsec, nfc_iso14443_ndef, numerical_optimization_gradient, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, radar_mimo_tracking, ring_buffer, robotics_6dof_slerp, robotics_dynamics_jacobian, robotics_motion_profile, rpa_mobile_touch_macro, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_msa_advanced, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
@@ -613,6 +613,16 @@ fn verify_codec_lossless_compression() -> bool {
 }
 
 /// @outputs: 1
+fn verify_numerical_optimization_gradient() -> bool {
+    let (a, b) = numerical_optimization_gradient::opt_golden_section_search_step(0.0, 1.0, 0.2, 0.8);
+    let ok_gold = (b - 0.618).abs() < 0.01 && a == 0.0;
+    let ok_armijo = numerical_optimization_gradient::opt_wolfe_condition_armijo(10.0, 8.0, -5.0, 0.5, 0.1);
+    let lr = numerical_optimization_gradient::opt_learning_rate_warmup_cosine(50, 100, 1000, 0.01, 0.001);
+    let ok_lr = lr > 0.001 && lr < 0.01;
+    ok_gold && ok_armijo && ok_lr
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -667,6 +677,7 @@ fn verify_all_subsystems() -> bool {
         && verify_rpa_mobile_touch_macro()
         && verify_audio_spectral_codec()
         && verify_codec_lossless_compression()
+        && verify_numerical_optimization_gradient()
 }
 
 /// @outputs: 1
