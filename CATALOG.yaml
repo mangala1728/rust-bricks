@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 296
+total_functions: 307
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1385,6 +1385,72 @@ modules:
       - name: "point_plane_distance_signed"
         signature: "pub fn point_plane_distance_signed(pt: Vec3, plane_pt: Vec3, plane_norm: Vec3) -> f32"
         outputs: 1
+  - module: "quant_finance_market"
+    file: "src/quant_finance_market.rs"
+    functions_count: 11
+    architecture_map:
+      - "Role: fin/quant_market — 量化金融與股市分析 (技術面 EMA/RSI/布林通道、基本面 PE/PB/ROE、籌碼面 VWAP/淨流入、期貨基差與匯率調整報酬) 微積木。"
+      - "Inputs: 價格切片、成交量、EPS、BPS、淨利與權益、期貨與現貨價、存續天數 (DTE)、匯率。"
+      - "Outputs: EMA 數值、RSI 強弱指標、布林軌道三線、PE/PB/ROE/FCF Yield、VWAP、大單淨流入率、基差年化殖利率、匯率調整報酬率。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、無溢位、單一函式 <= 60 行。"
+    functions:
+      - name: "quant_ema_step"
+        signature: "pub fn quant_ema_step(prev_ema: f64, current_price: f64, period: usize) -> Option<f64>"
+        outputs: 1
+        domains:
+          period: "[1..1000]"
+      - name: "quant_rsi_step"
+        signature: "pub fn quant_rsi_step(avg_gain: f64, avg_loss: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          avg_gain: "[0.0..1.0e9]"
+          avg_loss: "[0.0..1.0e9]"
+      - name: "quant_bollinger_bands"
+        signature: "pub fn quant_bollinger_bands(prices: &[f64], k_mult: f64) -> Option<(f64, f64, f64)>"
+        outputs: 3
+        domains:
+          k_mult: "[0.1..10.0]"
+      - name: "quant_macd_line"
+        signature: "pub fn quant_macd_line(fast_ema: f64, slow_ema: f64) -> f64"
+        outputs: 1
+      - name: "quant_pe_pb_ratio"
+        signature: "pub fn quant_pe_pb_ratio(price: f64, eps: f64, bps: f64) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          price: "[0.001..1.0e9]"
+      - name: "quant_roe_and_fcf_yield"
+        signature: "pub fn quant_roe_and_fcf_yield("
+        outputs: 2
+        domains:
+          equity: "[1.0..1.0e15]"
+          market_cap: "[1.0..1.0e15]"
+      - name: "quant_vwap_step"
+        signature: "pub fn quant_vwap_step("
+        outputs: 3
+        domains:
+          price: "[0.0001..1.0e9]"
+          volume: "[0.0001..1.0e12]"
+      - name: "quant_order_flow_net_inflow_ratio"
+        signature: "pub fn quant_order_flow_net_inflow_ratio(buy_volume: f64, sell_volume: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          buy_volume: "[0.0..1.0e12]"
+          sell_volume: "[0.0..1.0e12]"
+      - name: "quant_futures_basis_spread"
+        signature: "pub fn quant_futures_basis_spread(futures_price: f64, spot_price: f64) -> (f64, bool)"
+        outputs: 2
+      - name: "quant_futures_annualized_carry_yield"
+        signature: "pub fn quant_futures_annualized_carry_yield("
+        outputs: 1
+        domains:
+          spot_price: "[0.001..1.0e9]"
+          dte_days: "[0.1..3650.0]"
+      - name: "quant_fx_adjusted_return"
+        signature: "pub fn quant_fx_adjusted_return("
+        outputs: 1
+        domains:
+          fx_start: "[0.0001..1.0e6]"
+          fx_end: "[0.0001..1.0e6]"
   - module: "radar_biomed_dsp"
     file: "src/radar_biomed_dsp.rs"
     functions_count: 10

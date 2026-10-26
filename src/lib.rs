@@ -48,6 +48,7 @@ pub mod office_calc_layout;
 pub mod packet_checksum;
 pub mod pcb_cad_fem;
 pub mod physics_raycast_3d;
+pub mod quant_finance_market;
 pub mod radar_biomed_dsp;
 pub mod radar_cfar_doppler;
 pub mod receipt;

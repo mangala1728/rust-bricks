@@ -9,7 +9,7 @@ use crate::{
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
-    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d,
+    net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_biomed_dsp, radar_cfar_doppler, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
 };
@@ -465,6 +465,22 @@ fn audit_spc_six_sigma_msa() -> bool {
 }
 
 /// @outputs: 1
+fn audit_quant_finance_market() -> bool {
+    let mut ok = true;
+    ok &= quant_finance_market::quant_ema_step(10.0, 12.0, 0).is_none();
+    ok &= quant_finance_market::quant_rsi_step(-1.0, 1.0).is_none();
+    ok &= quant_finance_market::quant_bollinger_bands(&[10.0], 2.0).is_none();
+    ok &= (quant_finance_market::quant_macd_line(f64::NAN, 1.0) - 0.0).abs() < 1e-6;
+    ok &= quant_finance_market::quant_pe_pb_ratio(0.0, 1.0, 1.0).is_none();
+    ok &= quant_finance_market::quant_roe_and_fcf_yield(1.0, 0.0, 1.0, 10.0).is_none();
+    ok &= quant_finance_market::quant_vwap_step(0.0, 0.0, 0.0, 1.0).is_none();
+    ok &= quant_finance_market::quant_order_flow_net_inflow_ratio(0.0, 0.0).is_none();
+    ok &= quant_finance_market::quant_futures_annualized_carry_yield(100.0, 0.0, 30.0).is_none();
+    ok &= quant_finance_market::quant_fx_adjusted_return(0.1, 0.0, 1.0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -512,6 +528,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_quant_finance_market(), "【量化金融與股市指標抽查失敗】存在除零溢出或無效股價", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

@@ -2051,3 +2051,59 @@ fn test_spc_six_sigma_msa_bricks() {
     let ndc = spc_six_sigma_msa::msa_number_of_distinct_categories_ndc(10.0, 2.0).unwrap();
     assert_eq!(ndc, 7);
 }
+
+#[test]
+fn test_quant_finance_market_bricks() {
+    use rust_bricks::quant_finance_market;
+
+    // 1. 技術面 EMA 步進 (alpha = 2 / (9+1) = 0.2, EMA = 0.2 * 12 + 0.8 * 10 = 10.4)
+    let ema = quant_finance_market::quant_ema_step(10.0, 12.0, 9).unwrap();
+    assert!((ema - 10.4).abs() < 1e-4);
+
+    // 2. 技術面 RSI (RS = 3 / 1 = 3 -> RSI = 100 - 100/4 = 75.0)
+    let rsi = quant_finance_market::quant_rsi_step(3.0, 1.0).unwrap();
+    assert_eq!(rsi, 75.0);
+
+    // 3. 技術面布林通道 (Bollinger Bands)
+    let prices = [10.0, 12.0, 14.0, 16.0, 18.0];
+    let (upper, sma, lower) = quant_finance_market::quant_bollinger_bands(&prices, 2.0).unwrap();
+    assert_eq!(sma, 14.0);
+    assert!(upper > sma && lower < sma);
+
+    // 4. MACD 差離值
+    let macd = quant_finance_market::quant_macd_line(15.5, 14.0);
+    assert!((macd - 1.5).abs() < 1e-4);
+
+    // 5. 基本面 PE 與 PB 比率 (Price=100, EPS=5, BPS=50 -> PE=20, PB=2)
+    let (pe, pb) = quant_finance_market::quant_pe_pb_ratio(100.0, 5.0, 50.0).unwrap();
+    assert_eq!(pe, 20.0);
+    assert_eq!(pb, 2.0);
+
+    // 6. 基本面 ROE 與 FCF Yield
+    let (roe, fcf_yield) = quant_finance_market::quant_roe_and_fcf_yield(20.0, 100.0, 8.0, 100.0).unwrap();
+    assert_eq!(roe, 20.0);
+    assert_eq!(fcf_yield, 8.0);
+
+    // 7. 籌碼面 VWAP 累計步進
+    let (cum_vp, cum_vol, vwap) = quant_finance_market::quant_vwap_step(1000.0, 10.0, 110.0, 10.0).unwrap();
+    assert_eq!(cum_vp, 2100.0);
+    assert_eq!(cum_vol, 20.0);
+    assert_eq!(vwap, 105.0);
+
+    // 8. 籌碼面 大單買賣淨流入率 (Buy=600, Sell=400 -> Net = +20%)
+    let net_ratio = quant_finance_market::quant_order_flow_net_inflow_ratio(600.0, 400.0).unwrap();
+    assert_eq!(net_ratio, 20.0);
+
+    // 9. 期貨基差與正逆價差判定 (Contango vs Backwardation)
+    let (basis, is_contango) = quant_finance_market::quant_futures_basis_spread(20100.0, 20000.0);
+    assert_eq!(basis, 100.0);
+    assert!(is_contango);
+
+    // 10. 期貨年化持有成本殖利率 (Basis=100, Spot=20000, DTE=36.5 -> 0.5% * 10 = 5.0%)
+    let carry = quant_finance_market::quant_futures_annualized_carry_yield(20100.0, 20000.0, 36.5).unwrap();
+    assert!((carry - 5.0).abs() < 1e-4);
+
+    // 11. 匯市調整後報酬 (美股報酬 10%, 美元對台幣從 30 升至 31.5 -> 總報酬 = 1.1 * 1.05 - 1 = 15.5%)
+    let fx_ret = quant_finance_market::quant_fx_adjusted_return(0.10, 30.0, 31.5).unwrap();
+    assert!((fx_ret - 0.155).abs() < 1e-4);
+}

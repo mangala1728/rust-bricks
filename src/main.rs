@@ -9,7 +9,7 @@ use rust_bricks::{
     clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_industrial, instrument_scpi_vna,
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
-    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
+    net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_biomed_dsp, radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
@@ -314,6 +314,17 @@ fn verify_spc_six_sigma_msa() -> bool {
 }
 
 /// @outputs: 1
+fn verify_quant_finance_market() -> bool {
+    let ema = quant_finance_market::quant_ema_step(10.0, 12.0, 9);
+    let ok_ema = matches!(ema, Some(v) if (v - 10.4).abs() < 1e-3);
+    let rsi = quant_finance_market::quant_rsi_step(2.0, 1.0);
+    let ok_rsi = matches!(rsi, Some(v) if (v - 66.666).abs() < 1e-2);
+    let (basis, is_contango) = quant_finance_market::quant_futures_basis_spread(105.0, 100.0);
+    let ok_fut = (basis - 5.0).abs() < 1e-4 && is_contango;
+    ok_ema && ok_rsi && ok_fut
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -342,6 +353,7 @@ fn verify_all_subsystems() -> bool {
         && verify_instrument_industrial()
         && verify_cad_geom_model()
         && verify_spc_six_sigma_msa()
+        && verify_quant_finance_market()
 }
 
 /// @outputs: 1

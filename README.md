@@ -72,6 +72,7 @@
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |
 | [`office_calc_layout`](src/office_calc_layout.rs) | Excel XLOOKUP 查表、PMT 貸款等額本息、NPV 淨現值、PERCENTILE 線性插值、Word Twips/EMUs 換算、貪婪文字折行、PPT 元素等距對齊 | 辦公試算表引擎 (Excel 代碼重現)、Word/PPT 跨平台排版佈局、報表財務精算 |
 | [`spc_six_sigma_msa`](src/spc_six_sigma_msa.rs) | 六標準差製程能力 (Cp/Cpk)、常態分佈累積概率 (Phi/erf)、規格內良率與 DPPM、雙邊截斷高斯分佈 (Truncated Normal) 統計值與 PDF、AIAG 車規 MSA 量測系統分析 (Gage R&R EV/AV, %GRR, P/T Ratio, ndc 區分度) | 半導體/電子工廠 SPC 品質管制、車用 IATF 16949 / AIAG MSA 量產放行、精密公差不良率精算 |
+| [`quant_finance_market`](src/quant_finance_market.rs) | 技術面 EMA 步進/RSI 強弱/布林通道三軌/MACD、基本面 PE/PB/ROE/FCF Yield、籌碼面 VWAP/大單淨流入率、指數期貨基差 (Contango/Backwardation)/年化持有成本殖利率、匯率調整報酬率 | 量化高頻交易、股市籌碼與基本面精算、期現套利 (Cash & Carry)、跨市場匯率對沖 |
 | [`rpa_screen_control`](src/rpa_screen_control.rs) | 螢幕 RGB 感知色彩距離 (Redmean)、模糊色塊找色 (Find Color Patch)、擬人滑鼠移動軌跡、雙擊狀態機、GPIB IEEE 488.1 3線握手、RS485 傳輸時延 | 土法自動化 (按鍵精靈 / PyAutoGUI 替代)、工控儀表 GPIB 握手、RS485 半雙工方向切換 |
 | [`sensor_baro_als`](src/sensor_baro_als.rs) | 巴羅米特氣壓公式國際標準海拔高度解算、OPT3001/BH1750 環境光感測器 Lux 換算 | 智慧手錶/手環爬樓梯氣壓高度計、螢幕自動亮度調節、氣象站 |
 | [`sensor_power_meter`](src/sensor_power_meter.rs) | 歐姆定律分流電流計算、庫侖計電量時間積分 (mAh)、單節鋰電池 OCV 開路電壓轉 SOC% | 智慧電池管理系統 (BMS)、可穿戴設備電量百分比顯示、功率計 |
