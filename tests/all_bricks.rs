@@ -1453,3 +1453,84 @@ fn test_motion_render_timeline_bricks() {
     assert!(motion_render_timeline::ffmpeg_time_seek_str(3_661_250, &mut seek_buf));
     assert_eq!(&seek_buf, b"01:01:01.250");
 }
+
+
+#[test]
+fn test_office_calc_layout_bricks() {
+    use rust_bricks::office_calc_layout;
+
+    // 1. XLOOKUP 精確查表與近似查表
+    let keys = [10.0, 20.0, 30.0, 40.0];
+    let vals = [100.0, 200.0, 300.0, 400.0];
+    assert_eq!(office_calc_layout::excel_xlookup_f64(20.0, &keys, &vals, true), Some(200.0));
+    assert_eq!(office_calc_layout::excel_xlookup_f64(25.0, &keys, &vals, false), Some(200.0)); // 近似匹配小於等於 25 者為 20
+
+    // 2. PMT 貸款等額本息攤還公式 (年息 5% 月息 5%/12，30 年 360 期，10 萬本金 -> 每月 536.82)
+    let pmt_opt = office_calc_layout::excel_pmt_loan(0.05 / 12.0, 360, 100_000.0);
+    assert!(pmt_opt.is_some());
+    // @safety-proof: pmt_opt 已驗證 is_some()
+    assert!((pmt_opt.unwrap() - 536.82).abs() < 0.1);
+
+    // 3. NPV 淨現值折現計算 (折現率 10%，現金流 100, 200)
+    let npv_opt = office_calc_layout::excel_npv_discounted(0.10, &[110.0, 121.0]);
+    assert!(npv_opt.is_some());
+    // @safety-proof: npv_opt 已驗證 is_some()
+    assert!((npv_opt.unwrap() - 200.0).abs() < 1e-4);
+
+    // 4. 百分位數線性插值 (中位數 50% 與 25% 四分位數)
+    let data = [10.0, 20.0, 30.0, 40.0, 50.0];
+    assert_eq!(office_calc_layout::excel_percentile_linear(&data, 0.5), Some(30.0));
+    assert_eq!(office_calc_layout::excel_percentile_linear(&data, 0.25), Some(20.0));
+
+    // 5. Office 排版單位換算 (Twips 與 EMUs)
+    assert_eq!(office_calc_layout::office_units_pt_to_twips(12.0), 240); // 12pt = 240 twips
+    assert_eq!(office_calc_layout::office_units_inches_to_emus(1.0), 914_400); // 1 inch = 914,400 EMUs
+
+    // 6. Word 貪婪文字折行 (行寬 100px, 詞寬 40px, 空白 10px -> 40+10+40=90 放得下2個詞，第3個詞換行 -> 2行)
+    let lines = office_calc_layout::word_greedy_wrap_line_count(&[40, 40, 40], 100, 10);
+    assert_eq!(lines, 2);
+
+    // 7. PPT 元素 1D 均勻等間距對齊佈局 (跨度 50，3 個大小為 10 的形狀 -> 間隔為 10，座標為 0, 20, 40)
+    let mut positions = [0.0f32; 3];
+    assert!(office_calc_layout::ppt_distribute_elements_1d(&[10.0, 10.0, 10.0], 50.0, &mut positions));
+    assert_eq!(positions, [0.0, 20.0, 40.0]);
+}
+
+#[test]
+fn test_rpa_screen_control_bricks() {
+    use rust_bricks::rpa_screen_control;
+
+    // 1. 螢幕顏色感知距離與容差判定
+    let c_red = (255, 0, 0);
+    let c_near_red = (250, 2, 2);
+    assert_eq!(rpa_screen_control::rpa_color_diff_rgb(c_red, c_red), 0);
+    assert!(rpa_screen_control::rpa_color_match_tolerance(c_red, c_near_red, 5));
+    assert!(!rpa_screen_control::rpa_color_match_tolerance(c_red, (0, 255, 0), 10));
+
+    // 2. 螢幕區域模糊色塊搜尋 (4x4 影像，在 (2, 1) 放紅色像素)
+    let mut screen = vec![0u8; 4 * 4 * 3];
+    let target_idx = (1 * 4 + 2) * 3;
+    screen[target_idx] = 255; // R
+    screen[target_idx + 1] = 0;   // G
+    screen[target_idx + 2] = 0;   // B
+    let found = rpa_screen_control::rpa_screen_find_color_patch(&screen, 4, 4, (255, 0, 0), 2);
+    assert_eq!(found, Some((2, 1)));
+
+    // 3. 擬人滑鼠移動軌跡點 (起點 (0,0), 終點 (100,100), 貝茲控制點 (50,0), t=0.5 -> (50, 25))
+    let pt = rpa_screen_control::rpa_mouse_human_trajectory_point((0.0, 0.0), (100.0, 100.0), (50.0, 0.0), 0.5);
+    assert!((pt.0 - 50.0).abs() < 1e-4 && (pt.1 - 25.0).abs() < 1e-4);
+
+    // 4. 雙擊點擊狀態機判定 (間隔 200ms -> true, 間隔 800ms 超出 300ms 門檻 -> false)
+    assert!(rpa_screen_control::rpa_click_double_click_detect(1000, 1200, 300));
+    assert!(!rpa_screen_control::rpa_click_double_click_detect(1000, 1800, 300));
+
+    // 5. GPIB IEEE 488.1 3 線交握狀態解碼
+    assert_eq!(rpa_screen_control::gpib_ieee488_handshake_step(false, false, false), 0); // Idle
+    assert_eq!(rpa_screen_control::gpib_ieee488_handshake_step(false, true, false), 1);  // Listeners ready
+    assert_eq!(rpa_screen_control::gpib_ieee488_handshake_step(true, false, false), 2);   // Data valid
+    assert_eq!(rpa_screen_control::gpib_ieee488_handshake_step(true, false, true), 3);    // Data accepted
+
+    // 6. RS485 字符傳輸微秒時間 (115200 波特率，8N1 = 10 bits -> 86.8 us -> 86 us)
+    let tx_time = rpa_screen_control::rs485_calc_char_tx_time_us(115200, 8, 1, false);
+    assert_eq!(tx_time, 86);
+}

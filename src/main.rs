@@ -9,9 +9,9 @@ use rust_bricks::{
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point,
     env_sensor, fast_math, fin_apdu_track, geo_collision, guard, instrument_scpi_vna, iso7816_smartcard, math_time,
     motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_telemetry, net_tsn_macsec,
-    packet_checksum, pcb_cad_fem, physics_raycast_3d, ring_buffer, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
-    touch_control, vision_feature, vision_yuv,
+    office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, ring_buffer, rpa_screen_control,
+    sensor_baro_als, sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
+    text_cleaner, thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -187,6 +187,28 @@ fn verify_motion_render_timeline() -> bool {
 }
 
 /// @outputs: 1
+fn verify_office_calc_layout() -> bool {
+    let pmt = office_calc_layout::excel_pmt_loan(0.05 / 12.0, 360, 100000.0);
+    let ok_pmt = matches!(pmt, Some(p) if p > 500.0 && p < 600.0);
+    let twips = office_calc_layout::office_units_pt_to_twips(12.0);
+    let ok_twips = twips == 240;
+    let lines = office_calc_layout::word_greedy_wrap_line_count(&[40, 40, 40], 50, 10);
+    let ok_wrap = lines == 3;
+    ok_pmt && ok_twips && ok_wrap
+}
+
+/// @outputs: 1
+fn verify_rpa_screen_control() -> bool {
+    let diff = rpa_screen_control::rpa_color_diff_rgb((255, 0, 0), (250, 0, 0));
+    let ok_diff = diff < 15;
+    let (mx, my) = rpa_screen_control::rpa_mouse_human_trajectory_point((0.0, 0.0), (100.0, 100.0), (50.0, 0.0), 0.5);
+    let ok_mouse = (mx - 50.0).abs() < 1e-3 && (my - 25.0).abs() < 1e-3;
+    let tx_us = rpa_screen_control::rs485_calc_char_tx_time_us(115200, 8, 1, false);
+    let ok_rs = tx_us > 80 && tx_us < 95;
+    ok_diff && ok_mouse && ok_rs
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -203,6 +225,8 @@ fn verify_all_subsystems() -> bool {
         && verify_instrument_scpi_vna()
         && verify_pcb_cad_fem()
         && verify_motion_render_timeline()
+        && verify_office_calc_layout()
+        && verify_rpa_screen_control()
 }
 
 /// @outputs: 1

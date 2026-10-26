@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 192,
+  "total_functions": 207,
   "modules": [
     {
       "module": "agent_terminal",
@@ -839,6 +839,53 @@
       ]
     },
     {
+      "module": "office_calc_layout",
+      "file": "src/office_calc_layout.rs",
+      "functions_count": 8,
+      "functions": [
+        {
+          "name": "excel_xlookup_f64",
+          "signature": "pub fn excel_xlookup_f64(lookup_val: f64, lookup_array: &[f64], return_array: &[f64], exact_match: bool) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "excel_pmt_loan",
+          "signature": "pub fn excel_pmt_loan(rate_per_period: f64, num_periods: u32, present_value: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "excel_npv_discounted",
+          "signature": "pub fn excel_npv_discounted(rate: f64, cash_flows: &[f64]) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "excel_percentile_linear",
+          "signature": "pub fn excel_percentile_linear(sorted_vals: &[f64], percentile: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "office_units_pt_to_twips",
+          "signature": "pub fn office_units_pt_to_twips(pt: f64) -> i64",
+          "outputs": 1
+        },
+        {
+          "name": "office_units_inches_to_emus",
+          "signature": "pub fn office_units_inches_to_emus(inches: f64) -> i64",
+          "outputs": 1
+        },
+        {
+          "name": "word_greedy_wrap_line_count",
+          "signature": "pub fn word_greedy_wrap_line_count(word_widths_px: &[u32], max_line_width_px: u32, space_width_px: u32) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "ppt_distribute_elements_1d",
+          "signature": "pub fn ppt_distribute_elements_1d(element_sizes: &[f32], total_span: f32, out_positions: &mut [f32]) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "packet_checksum",
       "file": "src/packet_checksum.rs",
       "functions_count": 6,
@@ -984,6 +1031,48 @@
         {
           "name": "read_chunk",
           "signature": "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "rpa_screen_control",
+      "file": "src/rpa_screen_control.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "rpa_color_diff_rgb",
+          "signature": "pub fn rpa_color_diff_rgb(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_color_match_tolerance",
+          "signature": "pub fn rpa_color_match_tolerance(c1: (u8, u8, u8), c2: (u8, u8, u8), tolerance: u8) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_screen_find_color_patch",
+          "signature": "pub fn rpa_screen_find_color_patch(",
+          "outputs": 2
+        },
+        {
+          "name": "rpa_mouse_human_trajectory_point",
+          "signature": "pub fn rpa_mouse_human_trajectory_point(",
+          "outputs": 1
+        },
+        {
+          "name": "rpa_click_double_click_detect",
+          "signature": "pub fn rpa_click_double_click_detect(prev_click_ms: u64, now_ms: u64, double_click_threshold_ms: u64) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "gpib_ieee488_handshake_step",
+          "signature": "pub fn gpib_ieee488_handshake_step(dav: bool, nrfd: bool, ndac: bool) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "rs485_calc_char_tx_time_us",
+          "signature": "pub fn rs485_calc_char_tx_time_us(baud_rate: u32, data_bits: u8, stop_bits: u8, has_parity: bool) -> u32",
           "outputs": 1
         }
       ]

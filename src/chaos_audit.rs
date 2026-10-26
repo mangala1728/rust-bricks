@@ -9,8 +9,9 @@ use crate::{
     clock_pll_rtc, comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor,
     fast_math, fin_apdu_track, geo_collision, instrument_scpi_vna, iso7816_smartcard, math_time,
     motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet, net_tsn_macsec,
-    pcb_cad_fem, physics_raycast_3d, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
+    office_calc_layout, pcb_cad_fem, physics_raycast_3d, rpa_screen_control, sensor_baro_als,
+    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path,
+    thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -286,6 +287,32 @@ fn audit_motion_render_timeline() -> bool {
 }
 
 /// @outputs: 1
+fn audit_office_calc_layout() -> bool {
+    let mut ok = true;
+    ok &= office_calc_layout::excel_xlookup_f64(1.0, &[], &[], true).is_none();
+    ok &= office_calc_layout::excel_pmt_loan(0.05, 0, 1000.0).is_none();
+    ok &= office_calc_layout::excel_pmt_loan(0.05, 12, -100.0).is_none();
+    ok &= office_calc_layout::excel_npv_discounted(-1.5, &[100.0]).is_none();
+    ok &= office_calc_layout::excel_percentile_linear(&[], 0.5).is_none();
+    ok &= office_calc_layout::word_greedy_wrap_line_count(&[], 100, 5) == 0;
+    let mut out_pos = [0.0f32; 2];
+    ok &= !office_calc_layout::ppt_distribute_elements_1d(&[100.0, 200.0], 50.0, &mut out_pos);
+    ok
+}
+
+/// @outputs: 1
+fn audit_rpa_screen_control() -> bool {
+    let mut ok = true;
+    ok &= rpa_screen_control::rpa_screen_find_color_patch(&[], 0, 0, (255, 0, 0), 10).is_none();
+    let pt_nan = rpa_screen_control::rpa_mouse_human_trajectory_point((0.0, 0.0), (100.0, 100.0), (50.0, 50.0), f32::NAN);
+    ok &= pt_nan == (0.0, 0.0);
+    ok &= !rpa_screen_control::rpa_click_double_click_detect(1000, 500, 300);
+    ok &= rpa_screen_control::rs485_calc_char_tx_time_us(0, 8, 1, false) == 0;
+    ok &= rpa_screen_control::gpib_ieee488_handshake_step(false, false, false) == 0;
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -321,6 +348,8 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_instrument_scpi_vna(), "【儀器控制SCPI與VNA抽查失敗】存在除零或阻抗奇異點", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_pcb_cad_fem(), "【PCB與電磁FDTD抽查失敗】存在CFL除零或無效介電常數", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_motion_render_timeline(), "【影音動態Remotion時序抽查失敗】存在FPS除零或牛頓法發散", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_office_calc_layout(), "【辦公試算表與排版抽查失敗】存在PMT除零或溢出折行崩潰", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_rpa_screen_control(), "【RPA按鍵螢幕控制抽查失敗】存在螢幕色彩或GPIB握手崩潰", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

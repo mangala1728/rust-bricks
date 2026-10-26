@@ -65,6 +65,8 @@
 | [`fin_apdu_track`](src/fin_apdu_track.rs) | ISO 7816-4 APDU 晶片卡命令封裝與回應解析、磁條 Track 2 卡號效期提取、LRC 校驗 | 金融刷卡機 POS、ATM 讀卡機、晶片卡/磁條卡雙介面支付 |
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |
+| [`office_calc_layout`](src/office_calc_layout.rs) | Excel XLOOKUP 查表、PMT 貸款等額本息、NPV 淨現值、PERCENTILE 線性插值、Word Twips/EMUs 換算、貪婪文字折行、PPT 元素等距對齊 | 辦公試算表引擎 (Excel 代碼重現)、Word/PPT 跨平台排版佈局、報表財務精算 |
+| [`rpa_screen_control`](src/rpa_screen_control.rs) | 螢幕 RGB 感知色彩距離 (Redmean)、模糊色塊找色 (Find Color Patch)、擬人滑鼠移動軌跡、雙擊狀態機、GPIB IEEE 488.1 3線握手、RS485 傳輸時延 | 土法自動化 (按鍵精靈 / PyAutoGUI 替代)、工控儀表 GPIB 握手、RS485 半雙工方向切換 |
 | [`sensor_baro_als`](src/sensor_baro_als.rs) | 巴羅米特氣壓公式國際標準海拔高度解算、OPT3001/BH1750 環境光感測器 Lux 換算 | 智慧手錶/手環爬樓梯氣壓高度計、螢幕自動亮度調節、氣象站 |
 | [`sensor_power_meter`](src/sensor_power_meter.rs) | 歐姆定律分流電流計算、庫侖計電量時間積分 (mAh)、單節鋰電池 OCV 開路電壓轉 SOC% | 智慧電池管理系統 (BMS)、可穿戴設備電量百分比顯示、功率計 |
 | [`ble_adv_parser`](src/ble_adv_parser.rs) | BLE 4.2/5.0 廣播封包 AD Structure 零拷貝檢索、發射功率、設備名稱、製造商自定義數據解析 | 醫療手環、工廠 Beacon 室內定位、物聯網低功耗廣播解析（消滅 GC 震盪） |

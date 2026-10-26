@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 192
+total_functions: 207
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -900,6 +900,57 @@ modules:
         outputs: 1
         domains:
           window_size: "[0..65536]"
+  - module: "office_calc_layout"
+    file: "src/office_calc_layout.rs"
+    functions_count: 8
+    architecture_map:
+      - "Role: office/office_calc_layout — 零依賴 Excel 核心財務/統計/檢索算子與 Word/PPT 排版版面幾何控制微積木。"
+      - "Inputs: 檢索鍵值與陣列、利率與期數、現金流切片、百分位數、排版磅數/英吋、文字寬度與投影片尺寸。"
+      - "Outputs: XLOOKUP 查表結果、PMT 每期攤還本息、NPV 淨現值、Twips/EMUs 單位、折行行數、等距分佈座標。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、折現率合法邊界、單一函式 <= 60 行。"
+    functions:
+      - name: "excel_xlookup_f64"
+        signature: "pub fn excel_xlookup_f64(lookup_val: f64, lookup_array: &[f64], return_array: &[f64], exact_match: bool) -> Option<f64>"
+        outputs: 2
+        domains:
+          lookup_array.len(): "[1..65536]"
+      - name: "excel_pmt_loan"
+        signature: "pub fn excel_pmt_loan(rate_per_period: f64, num_periods: u32, present_value: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          rate_per_period: "[0.0..10.0]"
+          num_periods: "[1..1200]"
+      - name: "excel_npv_discounted"
+        signature: "pub fn excel_npv_discounted(rate: f64, cash_flows: &[f64]) -> Option<f64>"
+        outputs: 2
+        domains:
+          rate: "[-0.999..100.0]"
+          cash_flows.len(): "[1..1000]"
+      - name: "excel_percentile_linear"
+        signature: "pub fn excel_percentile_linear(sorted_vals: &[f64], percentile: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          percentile: "[0.0..1.0]"
+      - name: "office_units_pt_to_twips"
+        signature: "pub fn office_units_pt_to_twips(pt: f64) -> i64"
+        outputs: 1
+        domains:
+          pt: "[0.0..10000.0]"
+      - name: "office_units_inches_to_emus"
+        signature: "pub fn office_units_inches_to_emus(inches: f64) -> i64"
+        outputs: 1
+        domains:
+          inches: "[0.0..1000.0]"
+      - name: "word_greedy_wrap_line_count"
+        signature: "pub fn word_greedy_wrap_line_count(word_widths_px: &[u32], max_line_width_px: u32, space_width_px: u32) -> u32"
+        outputs: 1
+        domains:
+          max_line_width_px: "[1..100000]"
+      - name: "ppt_distribute_elements_1d"
+        signature: "pub fn ppt_distribute_elements_1d(element_sizes: &[f32], total_span: f32, out_positions: &mut [f32]) -> bool"
+        outputs: 2
+        domains:
+          total_span: "[0.0..10000.0]"
   - module: "packet_checksum"
     file: "src/packet_checksum.rs"
     functions_count: 6
@@ -1031,6 +1082,48 @@ modules:
       - name: "read_chunk"
         signature: "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize"
         outputs: 1
+  - module: "rpa_screen_control"
+    file: "src/rpa_screen_control.rs"
+    functions_count: 7
+    architecture_map:
+      - "Role: rpa/rpa_screen_control — 零依賴土法自動化操作 (按鍵精靈 / RPA / 螢幕取色找色)、擬人滑鼠軌跡與 GPIB/RS485 儀控協調微積木。"
+      - "Inputs: RGB 像素顏色、容差閾值、螢幕影像緩衝區、起點/終點/控制點座標、時間戳、GPIB 信號線狀態、波特率。"
+      - "Outputs: 顏色感知距離、顏色匹配結果、找到之 (x, y) 座標、擬人貝茲座標、雙擊判定、GPIB 狀態機碼、RS485 字符微秒時間。"
+      - "Invariants: 零外部依賴、純 Rust 實現、除零剛性防護、有界座標搜尋、單一函式 <= 60 行。"
+    functions:
+      - name: "rpa_color_diff_rgb"
+        signature: "pub fn rpa_color_diff_rgb(c1: (u8, u8, u8), c2: (u8, u8, u8)) -> u32"
+        outputs: 1
+      - name: "rpa_color_match_tolerance"
+        signature: "pub fn rpa_color_match_tolerance(c1: (u8, u8, u8), c2: (u8, u8, u8), tolerance: u8) -> bool"
+        outputs: 1
+        domains:
+          tolerance: "[0..255]"
+      - name: "rpa_screen_find_color_patch"
+        signature: "pub fn rpa_screen_find_color_patch("
+        outputs: 2
+        domains:
+          width: "[1..8192]"
+          height: "[1..8192]"
+      - name: "rpa_mouse_human_trajectory_point"
+        signature: "pub fn rpa_mouse_human_trajectory_point("
+        outputs: 1
+        domains:
+          t: "[0.0..1.0]"
+      - name: "rpa_click_double_click_detect"
+        signature: "pub fn rpa_click_double_click_detect(prev_click_ms: u64, now_ms: u64, double_click_threshold_ms: u64) -> bool"
+        outputs: 1
+        domains:
+          double_click_threshold_ms: "[50..2000]"
+      - name: "gpib_ieee488_handshake_step"
+        signature: "pub fn gpib_ieee488_handshake_step(dav: bool, nrfd: bool, ndac: bool) -> u8"
+        outputs: 1
+      - name: "rs485_calc_char_tx_time_us"
+        signature: "pub fn rs485_calc_char_tx_time_us(baud_rate: u32, data_bits: u8, stop_bits: u8, has_parity: bool) -> u32"
+        outputs: 1
+        domains:
+          baud_rate: "[300..10000000]"
+          data_bits: "[5..9]"
   - module: "sensor_baro_als"
     file: "src/sensor_baro_als.rs"
     functions_count: 3
