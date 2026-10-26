@@ -1089,6 +1089,48 @@ fn test_fin_apdu_track_bricks() {
     assert_eq!(lrc, b'1' ^ b'2' ^ b'3' ^ b'4' ^ b'5');
 }
 
+#[test]
+fn test_sensor_power_meter_bricks() {
+    // 1. 歐姆定律分流電流計算 (分流 0.05V, 電阻 0.01 歐姆 -> 5.0A)
+    let amps = rust_bricks::sensor_power_meter::shunt_voltage_to_current_amperes(0.05, 0.01);
+    assert!((amps - 5.0).abs() < 1e-4);
+
+    // 2. 庫侖計積分 (1.0A 運行 3600 秒 -> 1000.0 mAh)
+    let mut accum_mah = 0.0f32;
+    rust_bricks::sensor_power_meter::coulomb_counter_integrate_mah(1.0, 3600.0, &mut accum_mah);
+    assert!((accum_mah - 1000.0).abs() < 1.0);
+
+    // 3. 鋰電池開路電壓轉 SOC 剩餘電量
+    assert_eq!(rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(3.20), 0.0);
+    assert_eq!(rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(4.25), 100.0);
+    let soc_mid = rust_bricks::sensor_power_meter::lipo_voltage_to_soc_percent(3.84);
+    assert!((soc_mid - 50.0).abs() < 0.1);
+}
+
+#[test]
+fn test_sensor_baro_als_bricks() {
+    // 1. 氣壓高度計 (海平面 1013.25 hPa，當前 1013.25 hPa -> 0 公尺)
+    let alt_zero = rust_bricks::sensor_baro_als::baro_pressure_to_altitude_m(1013.25, 1013.25);
+    assert!(alt_zero.is_some());
+    // @safety-proof: alt_zero 已驗證 is_some()
+    assert!(alt_zero.unwrap().abs() < 0.1);
+
+    // 氣壓 900 hPa -> 海拔約 988 公尺
+    let alt_900 = rust_bricks::sensor_baro_als::baro_pressure_to_altitude_m(900.0, 1013.25).unwrap();
+    // @safety-proof: 氣壓有效
+    assert!((alt_900 - 988.0).abs() < 5.0);
+
+    // 2. OPT3001 光照度換算 (E=4, R=100 -> LSB = 0.01 * 16 = 0.16 -> Lux = 16.0)
+    let raw_opt = (4u16 << 12) | 100u16;
+    let lux_opt = rust_bricks::sensor_baro_als::opt3001_raw_to_lux(raw_opt);
+    assert!((lux_opt - 16.0).abs() < 1e-3);
+
+    // 3. BH1750 光照度換算 (Raw=120, MTreg=69 -> 100 Lux)
+    let lux_bh = rust_bricks::sensor_baro_als::bh1750_raw_to_lux(120, 69);
+    assert!((lux_bh - 100.0).abs() < 0.1);
+}
+
+
 
 
 

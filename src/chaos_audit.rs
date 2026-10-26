@@ -8,8 +8,8 @@ use crate::{
     agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, clock_pll_rtc,
     comm_controller, crypto_dukpt, crypto_kdf, dsp_fixed_point, env_sensor, fast_math,
     fin_apdu_track, geo_collision, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, sensor_hardware, sensor_motion, spatial_physics,
-    sys_path, thermal_palette, thermal_pid,
+    motor_stepper, net_ethernet, sensor_baro_als, sensor_hardware, sensor_motion,
+    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -142,17 +142,28 @@ fn audit_comm_and_clock() -> bool {
 /// @outputs: 1
 fn audit_ethernet_and_apdu() -> bool {
     let mut ok = true;
-    // 1. 以太網畸形截斷
     let short_eth = [0u8; 10];
     ok &= net_ethernet::parse_ethernet_frame_header(&short_eth).is_none();
-    let mut vlan_pkt = [0u8; 16]; // 宣告 VLAN 但不足 18 字節
+    let mut vlan_pkt = [0u8; 16];
     vlan_pkt[12] = 0x81;
     vlan_pkt[13] = 0x00;
     ok &= net_ethernet::parse_ethernet_frame_header(&vlan_pkt).is_none();
-    // 2. APDU 截斷回應與畸形磁條
-    ok &= fin_apdu_track::apdu_parse_response(&[0x90]).is_none(); // 僅 1 字節不足 SW1/SW2
+    ok &= fin_apdu_track::apdu_parse_response(&[0x90]).is_none();
     ok &= fin_apdu_track::track2_parse_pan_and_exp("").is_none();
-    ok &= fin_apdu_track::track2_parse_pan_and_exp(";123=45?").is_none(); // PAN 太短
+    ok &= fin_apdu_track::track2_parse_pan_and_exp(";123=45?").is_none();
+    ok
+}
+
+/// @outputs: 1
+fn audit_power_and_baro() -> bool {
+    let mut ok = true;
+    // 1. 電流分流負電阻防禦
+    ok &= sensor_power_meter::shunt_voltage_to_current_amperes(1.0, -0.01) == 0.0;
+    ok &= sensor_power_meter::lipo_voltage_to_soc_percent(f32::NAN) == 0.0;
+    // 2. 氣壓負壓與零參考
+    ok &= sensor_baro_als::baro_pressure_to_altitude_m(-100.0, 1013.25).is_none();
+    ok &= sensor_baro_als::baro_pressure_to_altitude_m(1000.0, 0.0).is_none();
+    ok &= sensor_baro_als::bh1750_raw_to_lux(100, 0) == 0.0;
     ok
 }
 
@@ -208,6 +219,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_ethernet_and_apdu() { passed += 1; } else { failures.push("【以太網APDU黑箱抽查失敗】存在截斷或解析漏洞".to_string()); }
+
+    total += 1;
+    if audit_power_and_baro() { passed += 1; } else { failures.push("【電力氣壓光感黑箱抽查失敗】存在除零或負壓崩潰".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }

@@ -8,9 +8,9 @@ use rust_bricks::{
     agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, clock_pll_rtc,
     comm_controller, crypto_dukpt, crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math,
     fin_apdu_track, geo_collision, guard, iso7816_smartcard, math_time, motion_dead_reckon,
-    motor_stepper, net_ethernet, net_telemetry, packet_checksum, ring_buffer, sensor_hardware,
-    sensor_motion, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
-    touch_control, vision_feature, vision_yuv,
+    motor_stepper, net_ethernet, net_telemetry, packet_checksum, ring_buffer, sensor_baro_als,
+    sensor_hardware, sensor_motion, sensor_power_meter, spatial_physics, sys_path, text_cleaner,
+    thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -120,6 +120,16 @@ fn verify_ethernet_and_apdu() -> bool {
 }
 
 /// @outputs: 1
+fn verify_power_and_baro() -> bool {
+    let amps = sensor_power_meter::shunt_voltage_to_current_amperes(0.1, 0.1);
+    let ok_amps = (amps - 1.0).abs() < 1e-4;
+    let alt = sensor_baro_als::baro_pressure_to_altitude_m(1013.25, 1013.25);
+    let ok_alt = matches!(alt, Some(a) if a.abs() < 0.1);
+    let ok_lux = sensor_baro_als::bh1750_raw_to_lux(120, 69) > 0.0;
+    ok_amps && ok_alt && ok_lux
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -129,6 +139,7 @@ fn verify_all_subsystems() -> bool {
         && verify_motor_dukpt_and_env()
         && verify_comm_and_clock()
         && verify_ethernet_and_apdu()
+        && verify_power_and_baro()
 }
 
 /// @outputs: 1

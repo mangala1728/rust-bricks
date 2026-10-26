@@ -58,6 +58,8 @@
 | [`clock_pll_rtc`](src/clock_pll_rtc.rs) | 晶振 PLL 鎖相迴路 (M, N, P) 最優倍頻分頻求解、RTC 32.768kHz 晶振拋物線溫漂補償、NTP 雙向網路時鐘對齊與延遲計算 | MCU 系統時鐘樹初始化、高精度 RTC 溫漂校準、物聯網網際網路系統時鐘同步 |
 | [`fin_apdu_track`](src/fin_apdu_track.rs) | ISO 7816-4 APDU 晶片卡命令封裝與回應解析、磁條 Track 2 卡號效期提取、LRC 校驗 | 金融刷卡機 POS、ATM 讀卡機、晶片卡/磁條卡雙介面支付 |
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
+| [`sensor_baro_als`](src/sensor_baro_als.rs) | 巴羅米特氣壓公式國際標準海拔高度解算、OPT3001/BH1750 環境光感測器 Lux 換算 | 智慧手錶/手環爬樓梯氣壓高度計、螢幕自動亮度調節、氣象站 |
+| [`sensor_power_meter`](src/sensor_power_meter.rs) | 歐姆定律分流電流計算、庫侖計電量時間積分 (mAh)、單節鋰電池 OCV 開路電壓轉 SOC% | 智慧電池管理系統 (BMS)、可穿戴設備電量百分比顯示、功率計 |
 | [`ble_adv_parser`](src/ble_adv_parser.rs) | BLE 4.2/5.0 廣播封包 AD Structure 零拷貝檢索、發射功率、設備名稱、製造商自定義數據解析 | 醫療手環、工廠 Beacon 室內定位、物聯網低功耗廣播解析（消滅 GC 震盪） |
 | [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
 | [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |

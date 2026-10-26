@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 148
+total_functions: 154
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -788,6 +788,29 @@ modules:
       - name: "read_chunk"
         signature: "pub fn read_chunk(&mut self, out: &mut [i16]) -> usize"
         outputs: 1
+  - module: "sensor_baro_als"
+    file: "src/sensor_baro_als.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/sensor_baro_als — 巴羅米特氣壓感測器海拔高度解算與環境光感測器 (OPT3001/BH1750) 照度換算微積木。"
+      - "Inputs: 大氣壓強 (hPa)、海平面參考氣壓 (hPa)、光感測器原始暫存器數值。"
+      - "Outputs: 海拔高度 (公尺)、環境光照度 (Lux)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、除以零防禦。"
+    functions:
+      - name: "baro_pressure_to_altitude_m"
+        signature: "pub fn baro_pressure_to_altitude_m(pressure_hpa: f32, sea_level_hpa: f32) -> Option<f32>"
+        outputs: 2
+        domains:
+          pressure_hpa: "[300.0..1200.0]"
+          sea_level_hpa: "[800.0..1200.0]"
+      - name: "opt3001_raw_to_lux"
+        signature: "pub fn opt3001_raw_to_lux(raw_reg: u16) -> f32"
+        outputs: 1
+      - name: "bh1750_raw_to_lux"
+        signature: "pub fn bh1750_raw_to_lux(raw_count: u16, mtreg: u8) -> f32"
+        outputs: 1
+        domains:
+          mtreg: "[31..254]"
   - module: "sensor_hardware"
     file: "src/sensor_hardware.rs"
     functions_count: 4
@@ -855,6 +878,32 @@ modules:
           lon1: "[-180.0..180.0]"
           lat2: "[-90.0..90.0]"
           lon2: "[-180.0..180.0]"
+  - module: "sensor_power_meter"
+    file: "src/sensor_power_meter.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/sensor_power_meter — 分流電阻電流採樣、庫侖計電量積分與鋰電池 SOC 開路電壓換算微積木。"
+      - "Inputs: 分流電壓 (V)、電阻 (歐姆)、取樣間隔 (秒)、單節電池電壓 (V)。"
+      - "Outputs: 電流 (A)、累計毫安時 (mAh)、電池剩餘電量百分比 (0..100%)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、除以零防禦。"
+    functions:
+      - name: "shunt_voltage_to_current_amperes"
+        signature: "pub fn shunt_voltage_to_current_amperes(v_shunt_volts: f32, r_shunt_ohms: f32) -> f32"
+        outputs: 1
+        domains:
+          v_shunt: "[-10.0..10.0]"
+          r_shunt: "[0.0001..1000.0]"
+      - name: "coulomb_counter_integrate_mah"
+        signature: "pub fn coulomb_counter_integrate_mah(current_amps: f32, dt_seconds: f32, accum_mah: &mut f32)"
+        outputs: 1
+        domains:
+          current_amps: "[-100.0..100.0]"
+          dt_seconds: "[0.0001..3600.0]"
+      - name: "lipo_voltage_to_soc_percent"
+        signature: "pub fn lipo_voltage_to_soc_percent(cell_voltage: f32) -> f32"
+        outputs: 1
+        domains:
+          cell_voltage: "[2.5..4.5]"
   - module: "spatial_physics"
     file: "src/spatial_physics.rs"
     functions_count: 4
