@@ -143,5 +143,6 @@ pub fn integral_box_sum(
     let bl = integral[idx_bl];
     let tr = integral[idx_tr];
     let tl = integral[idx_tl];
-    br.saturating_sub(bl).saturating_sub(tr).saturating_add(tl)
+    // br - bl - tr 合法地可為負，須以模 2^32 運算後再加 tl，不可 saturating 截斷 (INC-20261026-03)
+    br.wrapping_sub(bl).wrapping_sub(tr).wrapping_add(tl)
 }

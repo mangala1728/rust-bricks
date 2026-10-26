@@ -39,6 +39,8 @@ pub fn moving_average_f64(window: &[f64]) -> Option<f64> {
     Some(sum / (window.len() as f64))
 }
 
+/// 天文慣例（Meeus）：1582-10-15 起用格里曆，之前用儒略曆；年份採天文紀年（0 = 西元前 1 年）。
+/// 回傳 0h UT 的儒略日；無效日期（含 1582-10-05..14）回傳 None。
 /// @outputs: 2
 /// @domain: year [-4713..9999]
 /// @domain: month [1..12]
@@ -47,20 +49,47 @@ pub fn julian_day_from_ymd(year: i32, month: u32, day: u32) -> Option<f64> {
     if year < -4713 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31 {
         return None;
     }
+    let gregorian = (year, month, day) >= (1582, 10, 15);
+    if !gregorian && (year, month, day) >= (1582, 10, 5) {
+        return None; // 格里曆改革跳過的 10 天
+    }
+    if day > days_in_month(year, month, gregorian) {
+        return None;
+    }
     let mut y = year as i64;
     let mut m = month as i64;
     if m <= 2 {
         y -= 1;
         m += 12;
     }
-    let a = y / 100;
-    let b = 2 - a + (a / 4);
+    // ⌊Y/100⌋ 需 floor 除法；1582-10-15 前不套用格里曆修正 (INC-20261026-09)
+    let a = y.div_euclid(100);
+    let b = if gregorian { 2 - a + a.div_euclid(4) } else { 0 };
     let jd = (365.25 * ((y + 4716) as f64)).floor()
         + (30.6001 * ((m + 1) as f64)).floor()
         + (day as f64)
         + (b as f64)
         - 1524.5;
     Some(jd)
+}
+
+/// 內部：指定曆法下的當月天數
+/// @outputs: 3
+/// @domain: month [1..12]
+fn days_in_month(year: i32, month: u32, gregorian: bool) -> u32 {
+    if month < 1 || month > 12 {
+        return 0;
+    }
+    let leap = if gregorian {
+        (year.rem_euclid(4) == 0 && year.rem_euclid(100) != 0) || year.rem_euclid(400) == 0
+    } else {
+        year.rem_euclid(4) == 0
+    };
+    match month {
+        2 => if leap { 29 } else { 28 },
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
 }
 
 /// @outputs: 2

@@ -26,9 +26,10 @@ pub fn spi_5wire_dc_frame(is_command: bool, data: u8) -> (bool, u8) {
 
 /// @outputs: 2
 /// @domain: addr_24bit [0..16777215]
-/// @domain: dummy_cycles [0..16]
+/// @domain: dummy_cycles [0..8]
 pub fn qspi_flash_fast_read_cmd(addr_24bit: u32, dummy_cycles: u8, out_frame: &mut [u8; 8]) -> usize {
-    if addr_24bit > 0x00FF_FFFF || dummy_cycles > 16 {
+    // 4 + ceil(dummy/2) 必須 <= 8 位元組緩衝區，故 dummy_cycles 上限為 8 (INC-20261026-10)
+    if addr_24bit > 0x00FF_FFFF || dummy_cycles > 8 {
         return 0;
     }
     // Quad I/O Fast Read (0xEB)
