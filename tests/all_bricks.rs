@@ -2334,3 +2334,61 @@ fn test_radar_aoa_mti_bricks() {
     let centroid = radar_aoa_mti::radar_doppler_centroid_hz(&spectrum, 100.0).unwrap();
     assert!((centroid - 200.0).abs() < 5.0);
 }
+
+#[test]
+fn test_vision_morphology_fast_bricks() {
+    use rust_bricks::vision_morphology_fast;
+
+    // 1. 3x3 形態學膨脹與侵蝕
+    let mut img = [0u8; 9];
+    img[4] = 255; // 中心點白色
+    let mut dilated = [0u8; 9];
+    assert!(vision_morphology_fast::morphology_binary_dilation_3x3(&img, 3, 3, &mut dilated));
+    assert_eq!(dilated[4], 255);
+
+    let mut eroded = [0u8; 9];
+    assert!(vision_morphology_fast::morphology_binary_erosion_3x3(&img, 3, 3, &mut eroded));
+    assert_eq!(eroded[4], 0); // 鄰域未全白
+
+    // 2. 形態學梯度
+    let mut grad = [0u8; 9];
+    assert!(vision_morphology_fast::morphology_gradient_edge_3x3(&img, 3, 3, &mut grad));
+    assert_eq!(grad[4], 255); // 255 - 0 = 255
+
+    // 3. FAST-9 角點判定
+    let mut big_img = vec![100u8; 100]; // 10x10
+    // 中心 (5, 5)，值 100；設定圓周連續 9 點為 200
+    let circle_coords = [
+        (5, 2), (6, 2), (7, 3), (8, 4), (8, 5), (8, 6), (7, 7), (6, 8), (5, 8),
+    ];
+    for (cx, cy) in circle_coords {
+        big_img[cy * 10 + cx] = 200;
+    }
+    assert!(vision_morphology_fast::fast9_corner_detect_point(&big_img, 10, 10, 5, 5, 30));
+
+    // 4. 霍夫累加索引換算 (theta=0 deg -> rho = x)
+    let rho_idx = vision_morphology_fast::vision_hough_line_accumulate_point(20, 10, 0, 100).unwrap();
+    assert_eq!(rho_idx, 120); // 20 + 100
+
+    // 5. 投影積分直方圖
+    let mut prof = [0u32; 3];
+    assert!(vision_morphology_fast::vision_projection_integral_profile(&img, 3, 3, true, &mut prof));
+    assert_eq!(prof, [0, 255, 0]);
+
+    // 6. IoU 包圍盒重疊率
+    let iou = vision_morphology_fast::vision_bbox_intersection_over_union([0, 0, 10, 10], [5, 0, 10, 10]);
+    assert!((iou - (50.0 / 150.0)).abs() < 1e-4);
+
+    // 7. NCC 樣板比對
+    let p_a = [10u8, 20, 30, 40];
+    let p_b = [20u8, 40, 60, 80];
+    let ncc = vision_morphology_fast::vision_normalized_cross_correlation_step(&p_a, &p_b).unwrap();
+    assert!((ncc - 1.0).abs() < 1e-4);
+
+    // 8. RGB 轉 HSV 與色彩遮罩 (純綠色: 0, 255, 0 -> H=120)
+    let (h, s, v) = vision_morphology_fast::vision_rgb_to_hsv_step(0, 255, 0);
+    assert_eq!(h, 120);
+    assert_eq!(s, 255);
+    assert_eq!(v, 255);
+    assert!(vision_morphology_fast::vision_color_hsv_in_range(h, s, v, 100, 140, 200, 200));
+}

@@ -70,5 +70,6 @@ pub mod thermal_palette;
 pub mod thermal_pid;
 pub mod touch_control;
 pub mod vision_feature;
+pub mod vision_morphology_fast;
 pub mod vision_yuv;
 pub mod wish_board;

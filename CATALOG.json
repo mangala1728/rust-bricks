@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 347,
+  "total_functions": 357,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2145,6 +2145,63 @@
         {
           "name": "integral_box_sum",
           "signature": "pub fn integral_box_sum(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "vision_morphology_fast",
+      "file": "src/vision_morphology_fast.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "morphology_binary_dilation_3x3",
+          "signature": "pub fn morphology_binary_dilation_3x3(src: &[u8], width: usize, height: usize, out: &mut [u8]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "morphology_binary_erosion_3x3",
+          "signature": "pub fn morphology_binary_erosion_3x3(src: &[u8], width: usize, height: usize, out: &mut [u8]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "morphology_gradient_edge_3x3",
+          "signature": "pub fn morphology_gradient_edge_3x3(src: &[u8], width: usize, height: usize, out: &mut [u8]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "fast9_corner_detect_point",
+          "signature": "pub fn fast9_corner_detect_point(img: &[u8], width: usize, height: usize, cx: usize, cy: usize, threshold: u8) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "vision_hough_line_accumulate_point",
+          "signature": "pub fn vision_hough_line_accumulate_point(",
+          "outputs": 1
+        },
+        {
+          "name": "vision_projection_integral_profile",
+          "signature": "pub fn vision_projection_integral_profile(",
+          "outputs": 1
+        },
+        {
+          "name": "vision_bbox_intersection_over_union",
+          "signature": "pub fn vision_bbox_intersection_over_union(bbox_a: [u32; 4], bbox_b: [u32; 4]) -> f32",
+          "outputs": 1
+        },
+        {
+          "name": "vision_normalized_cross_correlation_step",
+          "signature": "pub fn vision_normalized_cross_correlation_step(patch_a: &[u8], patch_b: &[u8]) -> Option<f32>",
+          "outputs": 1
+        },
+        {
+          "name": "vision_rgb_to_hsv_step",
+          "signature": "pub fn vision_rgb_to_hsv_step(r: u8, g: u8, b: u8) -> (u16, u8, u8)",
+          "outputs": 1
+        },
+        {
+          "name": "vision_color_hsv_in_range",
+          "signature": "pub fn vision_color_hsv_in_range(",
           "outputs": 1
         }
       ]

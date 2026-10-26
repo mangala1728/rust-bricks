@@ -12,6 +12,7 @@ use crate::{
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
+    vision_morphology_fast,
 };
 
 pub struct AuditSummary {
@@ -560,6 +561,26 @@ fn audit_radar_aoa_mti() -> bool {
 }
 
 /// @outputs: 1
+fn audit_vision_morphology_fast() -> bool {
+    let mut ok = true;
+    let mut out_morph = [0u8; 4];
+    ok &= !vision_morphology_fast::morphology_binary_dilation_3x3(&[], 2, 2, &mut out_morph);
+    ok &= !vision_morphology_fast::morphology_binary_erosion_3x3(&[], 2, 2, &mut out_morph);
+    ok &= !vision_morphology_fast::morphology_gradient_edge_3x3(&[], 2, 2, &mut out_morph);
+    ok &= !vision_morphology_fast::fast9_corner_detect_point(&[], 10, 10, 1, 1, 20); // 邊緣越界
+    ok &= vision_morphology_fast::vision_hough_line_accumulate_point(10, 10, 200, 100).is_none(); // 角度 > 180
+    let mut prof = [0u32; 2];
+    ok &= !vision_morphology_fast::vision_projection_integral_profile(&[], 0, 0, true, &mut prof);
+    let iou = vision_morphology_fast::vision_bbox_intersection_over_union([0, 0, 0, 0], [10, 10, 10, 10]);
+    ok &= iou == 0.0;
+    ok &= vision_morphology_fast::vision_normalized_cross_correlation_step(&[10, 10], &[10, 10]).is_none(); // 零方差
+    let (h, s, v) = vision_morphology_fast::vision_rgb_to_hsv_step(0, 0, 0);
+    ok &= h == 0 && s == 0 && v == 0;
+    ok &= !vision_morphology_fast::vision_color_hsv_in_range(400, 100, 100, 0, 180, 50, 50); // H > 360
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -612,6 +633,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_ai_tensor_gemm(), "【AI張量算子分塊GEMM抽查失敗】存在維度不匹配或除零崩潰", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_iot_wire_protocol(), "【物聯網通訊與線路協議抽查失敗】存在溢出或轉義漏洞", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_radar_aoa_mti(), "【雷達測角與動目標顯示抽查失敗】存在除零溢出或無效視角", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_vision_morphology_fast(), "【視覺形態學與角點特徵抽查失敗】存在越界或無效色彩", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

@@ -12,7 +12,7 @@ use rust_bricks::{
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market,
     radar_aoa_mti, radar_biomed_dsp, radar_cfar_doppler, ring_buffer, robotics_motion_profile, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
     sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
-    touch_control, vision_feature, vision_yuv,
+    touch_control, vision_feature, vision_morphology_fast, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -374,6 +374,16 @@ fn verify_radar_aoa_mti() -> bool {
 }
 
 /// @outputs: 1
+fn verify_vision_morphology_fast() -> bool {
+    let iou = vision_morphology_fast::vision_bbox_intersection_over_union([0, 0, 10, 10], [0, 0, 10, 10]);
+    let ok_iou = (iou - 1.0).abs() < 1e-4;
+    let (h, s, v) = vision_morphology_fast::vision_rgb_to_hsv_step(255, 0, 0);
+    let ok_hsv = h == 0 && s == 255 && v == 255;
+    let ok_in_range = vision_morphology_fast::vision_color_hsv_in_range(h, s, v, 350, 10, 200, 200);
+    ok_iou && ok_hsv && ok_in_range
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -407,6 +417,7 @@ fn verify_all_subsystems() -> bool {
         && verify_ai_tensor_gemm()
         && verify_iot_wire_protocol()
         && verify_radar_aoa_mti()
+        && verify_vision_morphology_fast()
 }
 
 /// @outputs: 1
