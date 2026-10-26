@@ -5,11 +5,11 @@
 // Invariants: 零全域可變狀態、無遞迴、零外部依賴、控制流巢狀深度 <= 2。
 
 use rust_bricks::{
-    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, crypto_kdf,
-    crypto_vault, dsp_fixed_point, fast_math, geo_collision, guard, iso7816_smartcard, math_time,
-    motion_dead_reckon, net_telemetry, packet_checksum, ring_buffer, sensor_hardware, sensor_motion,
-    spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid, touch_control,
-    vision_feature, vision_yuv,
+    agent_terminal, audio_vad, bezier_curve, ble_adv_parser, can_bus_frame, catalog, crypto_dukpt,
+    crypto_kdf, crypto_vault, dsp_fixed_point, env_sensor, fast_math, geo_collision, guard,
+    iso7816_smartcard, math_time, motion_dead_reckon, motor_stepper, net_telemetry, packet_checksum,
+    ring_buffer, sensor_hardware, sensor_motion, spatial_physics, sys_path, text_cleaner,
+    thermal_palette, thermal_pid, touch_control, vision_feature, vision_yuv,
 };
 use std::env;
 use std::path::Path;
@@ -88,12 +88,24 @@ fn verify_thermal_ble_dsp_crypto() -> bool {
 }
 
 /// @outputs: 1
+fn verify_motor_dukpt_and_env() -> bool {
+    let d = motor_stepper::stepper_trapezoid_delay_us(50, 100, 20, 20, 100, 500);
+    let ok_motor = d == 100;
+    let mut ksn = [0u8; 10];
+    let ok_dukpt = crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn);
+    let ok_crc = env_sensor::sht3x_crc8(&[0xBE, 0xEF]) == 0x92;
+    let ok_aqi = env_sensor::aqi_pm25_us_standard(12.0) == 50;
+    ok_motor && ok_dukpt && ok_crc && ok_aqi
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
         && verify_security_and_automotive()
         && verify_agent_and_physics_pid()
         && verify_thermal_ble_dsp_crypto()
+        && verify_motor_dukpt_and_env()
 }
 
 /// @outputs: 1

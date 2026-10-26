@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 120
+total_functions: 130
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -231,6 +231,35 @@ modules:
         outputs: 2
         domains:
           dummy_level: "[0..10]"
+  - module: "crypto_dukpt"
+    file: "src/crypto_dukpt.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/crypto_dukpt — ANSI X9.24 金融終端 DUKPT (每筆交易唯一衍生金鑰) 序列號與變體派生微積木。"
+      - "Inputs: 10 位元組 KSN (Key Serial Number)、16 位元組當前衍生密鑰。"
+      - "Outputs: 21 位元交易計數器 u32、KSN 累加布林結果 bool、PIN/Data 變體金鑰陣列 [u8; 16]。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、計數器上限 0x1FFFFF (2,097,151) 溢出保護。"
+    functions:
+      - name: "dukpt_ksn_parse_counter"
+        signature: "pub fn dukpt_ksn_parse_counter(ksn: &[u8; 10]) -> u32"
+        outputs: 1
+        domains:
+          ksn_bytes: "[10..10]"
+      - name: "dukpt_ksn_increment_counter"
+        signature: "pub fn dukpt_ksn_increment_counter(ksn: &mut [u8; 10]) -> bool"
+        outputs: 1
+        domains:
+          ksn_bytes: "[10..10]"
+      - name: "dukpt_derive_pin_variant"
+        signature: "pub fn dukpt_derive_pin_variant(current_key: &[u8; 16]) -> [u8; 16]"
+        outputs: 1
+        domains:
+          key_len: "[16..16]"
+      - name: "dukpt_derive_data_variant"
+        signature: "pub fn dukpt_derive_data_variant(current_key: &[u8; 16]) -> [u8; 16]"
+        outputs: 1
+        domains:
+          key_len: "[16..16]"
   - module: "crypto_kdf"
     file: "src/crypto_kdf.rs"
     functions_count: 4
@@ -316,6 +345,31 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "env_sensor"
+    file: "src/env_sensor.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/env_sensor — 恆溫恆濕機與環境監控之 SHT3x CRC8、露點溫度與 AQI 空氣指標微積木。"
+      - "Inputs: 感測器位元組切片、攝氏溫度、相對濕度 (0..100%)、PM2.5 濃度 (ug/m3)。"
+      - "Outputs: CRC8 校驗值 u8、露點溫度 Option<f32>、空氣品質指標 AQI (0..500)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、Magnus 公式防止對數小於等於零守衛。"
+    functions:
+      - name: "sht3x_crc8"
+        signature: "pub fn sht3x_crc8(data: &[u8]) -> u8"
+        outputs: 1
+        domains:
+          data_len: "[0..64]"
+      - name: "dew_point_magnus"
+        signature: "pub fn dew_point_magnus(temp_c: f32, humidity_rh: f32) -> Option<f32>"
+        outputs: 2
+        domains:
+          temp_c: "[-50.0..100.0]"
+          humidity_rh: "[0.1..100.0]"
+      - name: "aqi_pm25_us_standard"
+        signature: "pub fn aqi_pm25_us_standard(pm25: f32) -> u16"
+        outputs: 1
+        domains:
+          pm25: "[0.0..1000.0]"
   - module: "fast_math"
     file: "src/fast_math.rs"
     functions_count: 4
@@ -482,6 +536,35 @@ modules:
         domains:
           pattern_id: "[0..3]"
           elapsed_ms: "[0..10000]"
+  - module: "motor_stepper"
+    file: "src/motor_stepper.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: core/motor_stepper — 工控步進馬達梯形加減速時序與正交編碼器 4x 解碼微積木。"
+      - "Inputs: 當前步數、總步數、加減速段步數、微秒延遲區間、正交 AB 相電位。"
+      - "Outputs: 下一步定時器脈衝延遲 (us)、位置計數器增量、行程換算 (mm)。"
+      - "Invariants: 零外部依賴、零 Heap 分配、無遞迴、零全域狀態、控制流巢狀深度 <= 2、除以零防禦。"
+    functions:
+      - name: "stepper_trapezoid_delay_us"
+        signature: "pub fn stepper_trapezoid_delay_us("
+        outputs: 1
+        domains:
+          current_step: "[0..1000000]"
+          total_steps: "[1..1000000]"
+          min_delay_us: "[1..1000000]"
+          max_delay_us: "[1..1000000]"
+      - name: "quadrature_encoder_update"
+        signature: "pub fn quadrature_encoder_update(last_state: u8, a: bool, b: bool, position: &mut i32) -> u8"
+        outputs: 1
+        domains:
+          last_state: "[0..3]"
+      - name: "stepper_steps_to_distance_mm"
+        signature: "pub fn stepper_steps_to_distance_mm(steps: u32, steps_per_rev: u32, pitch_mm: f32) -> f32"
+        outputs: 1
+        domains:
+          steps: "[0..10000000]"
+          steps_per_rev: "[1..65536]"
+          pitch_mm: "[0.0..1000.0]"
   - module: "net_telemetry"
     file: "src/net_telemetry.rs"
     functions_count: 4

@@ -859,3 +859,80 @@ fn test_crypto_kdf_bricks() {
     assert_ne!(key1, key2); // 不同 session 產生的派生金鑰互斥
 }
 
+#[test]
+fn test_motor_stepper_bricks() {
+    // 1. 梯形加減速微秒延遲
+    // 總步數 100，加速 20 步，減速 20 步，延遲區間 100us .. 500us
+    let delay_start = rust_bricks::motor_stepper::stepper_trapezoid_delay_us(0, 100, 20, 20, 100, 500);
+    assert_eq!(delay_start, 500); // 起始最慢
+    let delay_cruise = rust_bricks::motor_stepper::stepper_trapezoid_delay_us(50, 100, 20, 20, 100, 500);
+    assert_eq!(delay_cruise, 100); // 巡航最高速
+    let delay_end = rust_bricks::motor_stepper::stepper_trapezoid_delay_us(99, 100, 20, 20, 100, 500);
+    assert!(delay_end > 100); // 減速中
+
+    // 2. 正交編碼器 4x 倍頻步態
+    let mut pos = 0i32;
+    let s0 = 0b00u8;
+    let s1 = rust_bricks::motor_stepper::quadrature_encoder_update(s0, false, true, &mut pos); // 00 -> 01 (+1)
+    assert_eq!(pos, 1);
+    let s2 = rust_bricks::motor_stepper::quadrature_encoder_update(s1, true, true, &mut pos); // 01 -> 11 (+1)
+    assert_eq!(pos, 2);
+    let _ = rust_bricks::motor_stepper::quadrature_encoder_update(s2, false, true, &mut pos); // 11 -> 01 (-1)
+    assert_eq!(pos, 1);
+
+    // 3. 步數轉行程換算 (200 步/圈，導程 8.0 mm，走 400 步 -> 16.0 mm)
+    let dist = rust_bricks::motor_stepper::stepper_steps_to_distance_mm(400, 200, 8.0);
+    assert!((dist - 16.0).abs() < 1e-4);
+}
+
+#[test]
+fn test_crypto_dukpt_bricks() {
+    // 1. 解析 KSN 計數器
+    // KSN: [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x05] -> 計數器為 5
+    let mut ksn = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x05];
+    assert_eq!(rust_bricks::crypto_dukpt::dukpt_ksn_parse_counter(&ksn), 5);
+
+    // 2. 交易計數器自增
+    assert!(rust_bricks::crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn));
+    assert_eq!(rust_bricks::crypto_dukpt::dukpt_ksn_parse_counter(&ksn), 6);
+    assert_eq!(ksn[9], 0x06);
+
+    // 3. PIN 變體與 Data 變體金鑰衍生
+    let base_key = [0x11u8; 16];
+    let pin_var = rust_bricks::crypto_dukpt::dukpt_derive_pin_variant(&base_key);
+    assert_eq!(pin_var[7], 0x11 ^ 0xFF);
+    assert_eq!(pin_var[15], 0x11 ^ 0xFF);
+    assert_eq!(pin_var[0], 0x11);
+
+    let data_var = rust_bricks::crypto_dukpt::dukpt_derive_data_variant(&base_key);
+    assert_eq!(data_var[5], 0x11 ^ 0xFF);
+    assert_eq!(data_var[13], 0x11 ^ 0xFF);
+    assert_eq!(data_var[0], 0x11);
+}
+
+#[test]
+fn test_env_sensor_bricks() {
+    // 1. SHT3x CRC8 校驗 (Sensirion 官方驗證向量: 0xBEEF 的 CRC8 為 0x92)
+    let crc = rust_bricks::env_sensor::sht3x_crc8(&[0xBE, 0xEF]);
+    assert_eq!(crc, 0x92);
+
+    // 2. 露點溫度計算 (25°C, 50% RH -> 露點約 13.8°C ~ 14.0°C)
+    let dew_opt = rust_bricks::env_sensor::dew_point_magnus(25.0, 50.0);
+    assert!(dew_opt.is_some());
+    // @safety-proof: dew_opt 已驗證 is_some()
+    let dew = dew_opt.unwrap();
+    assert!((dew - 13.9).abs() < 0.5);
+
+    // 100% 濕度時露點等於環境溫度
+    let dew_sat = rust_bricks::env_sensor::dew_point_magnus(25.0, 100.0).unwrap();
+    // @safety-proof: dew_sat 已在有效域內
+    assert!((dew_sat - 25.0).abs() < 0.1);
+
+    // 3. AQI PM2.5 換算
+    // 12.0 ug/m3 -> AQI 50
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(12.0), 50);
+    // 35.4 ug/m3 -> AQI 100
+    assert_eq!(rust_bricks::env_sensor::aqi_pm25_us_standard(35.4), 100);
+}
+
+

@@ -58,6 +58,9 @@
 | [`thermal_palette`](src/thermal_palette.rs) | FLIR / MLX90640 攝氏度陣列 5 段式 Ironbow 與 Rainbow 偽彩色映射、矩陣統計 | 無人機電力設備巡檢、紅外線熱斑成像、消滅 Android JNI GC 掉幀 |
 | [`dsp_fixed_point`](src/dsp_fixed_point.rs) | Q15 定點數飽和乘法、FIR 濾波器步進卷積、增益調整、浮點互轉 | Cortex-M0/8051 無 FPU 單晶片信號處理、音訊邊緣濾波、整數秒算 |
 | [`crypto_kdf`](src/crypto_kdf.rs) | PKCS#7 區塊填充與常數時間去填充（防 Padding Oracle）、PBKDF 加鹽拉伸、KDF 工作密鑰衍生 | 金融 ATM/POS 刷卡機、硬體安全模組 (HSM)、加密通訊韌體 |
+| [`crypto_dukpt`](src/crypto_dukpt.rs) | ANSI X9.24 DUKPT 交易金鑰衍生、21-bit 交易計數器管理、PIN/Data 變體金鑰生成 | 金融刷卡機 POS、ATM 提款機每筆交易動態密鑰（防前向破解） |
+| [`motor_stepper`](src/motor_stepper.rs) | 步進馬達梯形加減速微秒延遲計算、正交 AB 編碼器 4x 倍頻狀態機、行程換算 | 3D 列印機、CNC 雕刻機、送錫機、工控滑台高精度運動控制 |
+| [`env_sensor`](src/env_sensor.rs) | SHT3x 溫濕度 CRC8 校驗、Magnus-Tetens 露點溫度計算、美國/台灣 EPA PM2.5 AQI 換算 | 恆溫恆濕環境試驗箱、防凝露結霜控制、智慧家庭環境儀 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 

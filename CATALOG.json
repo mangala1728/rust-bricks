@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 120,
+  "total_functions": 130,
   "modules": [
     {
       "module": "agent_terminal",
@@ -212,6 +212,33 @@
       ]
     },
     {
+      "module": "crypto_dukpt",
+      "file": "src/crypto_dukpt.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "dukpt_ksn_parse_counter",
+          "signature": "pub fn dukpt_ksn_parse_counter(ksn: &[u8; 10]) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "dukpt_ksn_increment_counter",
+          "signature": "pub fn dukpt_ksn_increment_counter(ksn: &mut [u8; 10]) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "dukpt_derive_pin_variant",
+          "signature": "pub fn dukpt_derive_pin_variant(current_key: &[u8; 16]) -> [u8; 16]",
+          "outputs": 1
+        },
+        {
+          "name": "dukpt_derive_data_variant",
+          "signature": "pub fn dukpt_derive_data_variant(current_key: &[u8; 16]) -> [u8; 16]",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "crypto_kdf",
       "file": "src/crypto_kdf.rs",
       "functions_count": 4,
@@ -293,6 +320,28 @@
         {
           "name": "q15_apply_gain",
           "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "env_sensor",
+      "file": "src/env_sensor.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "sht3x_crc8",
+          "signature": "pub fn sht3x_crc8(data: &[u8]) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "dew_point_magnus",
+          "signature": "pub fn dew_point_magnus(temp_c: f32, humidity_rh: f32) -> Option<f32>",
+          "outputs": 2
+        },
+        {
+          "name": "aqi_pm25_us_standard",
+          "signature": "pub fn aqi_pm25_us_standard(pm25: f32) -> u16",
           "outputs": 1
         }
       ]
@@ -434,6 +483,28 @@
           "name": "haptic_vibration_timing",
           "signature": "pub fn haptic_vibration_timing(pattern_id: u8, elapsed_ms: u32) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "motor_stepper",
+      "file": "src/motor_stepper.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "stepper_trapezoid_delay_us",
+          "signature": "pub fn stepper_trapezoid_delay_us(",
+          "outputs": 1
+        },
+        {
+          "name": "quadrature_encoder_update",
+          "signature": "pub fn quadrature_encoder_update(last_state: u8, a: bool, b: bool, position: &mut i32) -> u8",
+          "outputs": 1
+        },
+        {
+          "name": "stepper_steps_to_distance_mm",
+          "signature": "pub fn stepper_steps_to_distance_mm(steps: u32, steps_per_rev: u32, pitch_mm: f32) -> f32",
+          "outputs": 1
         }
       ]
     },

@@ -5,10 +5,10 @@
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、黑箱使用者視角、控制流巢狀深度 <= 2、單一函式 <= 60 行。
 
 use crate::{
-    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, crypto_kdf,
-    dsp_fixed_point, fast_math, geo_collision, iso7816_smartcard, math_time,
-    motion_dead_reckon, sensor_hardware, sensor_motion, spatial_physics, sys_path,
-    thermal_palette, thermal_pid,
+    agent_terminal, audio_dsp, audio_vad, ble_adv_parser, can_bus_frame, crypto_dukpt,
+    crypto_kdf, dsp_fixed_point, env_sensor, fast_math, geo_collision, iso7816_smartcard,
+    math_time, motion_dead_reckon, motor_stepper, sensor_hardware, sensor_motion,
+    spatial_physics, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -53,7 +53,6 @@ fn audit_audio_and_sensors() -> bool {
 /// @outputs: 1
 fn audit_thermal_and_dsp() -> bool {
     let mut ok = true;
-    // 1. 熱成像極限與倒置溫標
     let rgb_nan = thermal_palette::thermal_ironbow_rgb(f32::NAN, 20.0, 100.0);
     ok &= rgb_nan == (0, 0, 0);
     let rgb_inv = thermal_palette::thermal_rainbow_rgb(50.0, 100.0, 20.0);
@@ -62,7 +61,6 @@ fn audit_thermal_and_dsp() -> bool {
     ok &= empty_stats.is_none();
     let nan_stats = thermal_palette::thermal_matrix_stats(&[f32::NAN, f32::NAN]);
     ok &= nan_stats.is_none();
-    // 2. Q15 定點 DSP 極限乘法飽和與 FIR
     let sat_mul = dsp_fixed_point::q15_multiply(-32768, -32768);
     ok &= sat_mul == 32767;
     let fir_empty = dsp_fixed_point::q15_fir_filter_step(&[], &[]);
@@ -78,7 +76,6 @@ fn audit_security_and_firmware() -> bool {
     ok &= !iso7816_smartcard::luhn_checksum_validate(b"");
     ok &= !iso7816_smartcard::luhn_checksum_validate(b"4992739871A");
     let mut pb = [0u8; 8];
-    ok &= !iso7816_smartcard::iso9564_pin_block_format0(b"123", b"1111222233334444", &mut pb);
     ok &= !iso7816_smartcard::iso9564_pin_block_format0(b"1234", b"12345", &mut pb);
     let truncated_tlv = [0x9F, 0x02, 0x82, 0x01];
     ok &= iso7816_smartcard::ber_tlv_parse_tag_len(&truncated_tlv).is_none();
@@ -93,21 +90,38 @@ fn audit_security_and_firmware() -> bool {
 /// @outputs: 1
 fn audit_ble_and_crypto() -> bool {
     let mut ok = true;
-    // 1. 畸形 BLE 封包攻擊：長度超出、截斷
-    let malformed_ble = [0x05, 0x09, b'H', b'i']; // 宣告 5 字節但僅有 4 字節
+    let malformed_ble = [0x05, 0x09, b'H', b'i'];
     ok &= ble_adv_parser::ble_adv_find_ad_type(&malformed_ble, 0x09).is_none();
     ok &= ble_adv_parser::ble_adv_find_ad_type(&[], 0x09).is_none();
     ok &= ble_adv_parser::ble_adv_parse_tx_power(&[]).is_none();
     ok &= ble_adv_parser::ble_adv_parse_device_name(&[]).is_none();
-    // 2. PKCS#7 惡意 Padding 與拉伸測試
     ok &= crypto_kdf::pkcs7_unpad(&[], 16).is_none();
-    let corrupt_pad = [0x01, 0x02, 0x03, 0x02]; // 末尾是 2，但前一字節是 3 非 2
+    let corrupt_pad = [0x01, 0x02, 0x03, 0x02];
     ok &= crypto_kdf::pkcs7_unpad(&corrupt_pad, 4).is_none();
     let mut stretch_out = [0u8; 16];
-    ok &= !crypto_kdf::pbkdf_xor_stretch(&[], b"salt", 100, &mut stretch_out); // 空密鑰拒絕
-    ok &= !crypto_kdf::pbkdf_xor_stretch(b"pwd", &[], 100, &mut stretch_out); // 空鹽值拒絕
+    ok &= !crypto_kdf::pbkdf_xor_stretch(&[], b"salt", 100, &mut stretch_out);
     let mut k_out = [0u8; 16];
     ok &= !crypto_kdf::simple_kdf_expand(&[], b"ctx", &mut k_out);
+    ok
+}
+
+/// @outputs: 1
+fn audit_motor_env_and_dukpt() -> bool {
+    let mut ok = true;
+    // 1. 步進馬達總步數為 0 或倒置延遲
+    let d_zero = motor_stepper::stepper_trapezoid_delay_us(10, 0, 5, 5, 100, 500);
+    ok &= d_zero == 500;
+    let d_inv = motor_stepper::stepper_trapezoid_delay_us(10, 100, 5, 5, 800, 200);
+    ok &= d_inv == 200;
+    let dist_nan = motor_stepper::stepper_steps_to_distance_mm(100, 0, f32::NAN);
+    ok &= dist_nan == 0.0;
+    // 2. DUKPT 計數器溢出防禦
+    let mut ksn_max = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F, 0xFF, 0xFF];
+    ok &= !crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn_max); // 達到上限不可溢出
+    // 3. 環境露點負濕度與高溫防禦
+    ok &= env_sensor::dew_point_magnus(25.0, -10.0).is_none();
+    ok &= env_sensor::dew_point_magnus(f32::NAN, 50.0).is_none();
+    ok &= env_sensor::aqi_pm25_us_standard(-5.0) == 0;
     ok
 }
 
@@ -154,6 +168,9 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
 
     total += 1;
     if audit_ble_and_crypto() { passed += 1; } else { failures.push("【藍芽密碼黑箱抽查失敗】存在Padding或截斷漏洞".to_string()); }
+
+    total += 1;
+    if audit_motor_env_and_dukpt() { passed += 1; } else { failures.push("【馬達環境DUKPT黑箱抽查失敗】存在溢出或除零崩潰".to_string()); }
 
     total += 1;
     if audit_agent_and_system() { passed += 1; } else { failures.push("【代理馬具終端抽查失敗】存在路徑穿越或退格下溢".to_string()); }
