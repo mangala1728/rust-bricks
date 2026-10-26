@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 286,
+  "total_functions": 296,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1646,6 +1646,63 @@
         {
           "name": "spring_damper_step",
           "signature": "pub fn spring_damper_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "spc_six_sigma_msa",
+      "file": "src/spc_six_sigma_msa.rs",
+      "functions_count": 10,
+      "functions": [
+        {
+          "name": "spc_cp_index",
+          "signature": "pub fn spc_cp_index(usl: f64, lsl: f64, std_dev: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spc_cpk_index",
+          "signature": "pub fn spc_cpk_index(usl: f64, lsl: f64, mean: f64, std_dev: f64) -> Option<(f64, f64, f64)>",
+          "outputs": 3
+        },
+        {
+          "name": "spc_normal_cdf_phi",
+          "signature": "pub fn spc_normal_cdf_phi(z: f64) -> f64",
+          "outputs": 1
+        },
+        {
+          "name": "spc_spec_in_boundary_probability",
+          "signature": "pub fn spc_spec_in_boundary_probability(",
+          "outputs": 2
+        },
+        {
+          "name": "spc_truncated_normal_stats",
+          "signature": "pub fn spc_truncated_normal_stats(",
+          "outputs": 3
+        },
+        {
+          "name": "spc_truncated_normal_pdf",
+          "signature": "pub fn spc_truncated_normal_pdf(",
+          "outputs": 1
+        },
+        {
+          "name": "msa_gage_rr_ev_av",
+          "signature": "pub fn msa_gage_rr_ev_av(repeatability_ev: f64, reproducibility_av: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "msa_gage_rr_percent_grr",
+          "signature": "pub fn msa_gage_rr_percent_grr(grr: f64, pv: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "msa_precision_to_tolerance_ratio",
+          "signature": "pub fn msa_precision_to_tolerance_ratio(grr_sigma: f64, usl: f64, lsl: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "msa_number_of_distinct_categories_ndc",
+          "signature": "pub fn msa_number_of_distinct_categories_ndc(pv: f64, grr: f64) -> Option<u32>",
           "outputs": 1
         }
       ]

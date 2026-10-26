@@ -11,7 +11,7 @@ use crate::{
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper,
     net_ethernet, net_tsn_macsec, office_calc_layout, pcb_cad_fem, physics_raycast_3d,
     radar_biomed_dsp, radar_cfar_doppler, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, sys_path, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, thermal_palette, thermal_pid,
 };
 
 pub struct AuditSummary {
@@ -449,6 +449,22 @@ fn audit_cad_geom_model() -> bool {
 }
 
 /// @outputs: 1
+fn audit_spc_six_sigma_msa() -> bool {
+    let mut ok = true;
+    ok &= spc_six_sigma_msa::spc_cp_index(10.0, 10.0, 1.0).is_none();
+    ok &= spc_six_sigma_msa::spc_cpk_index(10.0, 10.0, 10.0, 1.0).is_none();
+    ok &= (spc_six_sigma_msa::spc_normal_cdf_phi(f64::NEG_INFINITY) - 0.0).abs() < 1e-6;
+    ok &= spc_six_sigma_msa::spc_spec_in_boundary_probability(10.0, 12.0, 11.0, 1.0).is_none();
+    ok &= spc_six_sigma_msa::spc_truncated_normal_stats(5.0, 5.0, 0.0, 1.0).is_none();
+    ok &= spc_six_sigma_msa::spc_truncated_normal_pdf(0.0, 1.0, 2.0, 0.0, 1.0).is_none();
+    ok &= spc_six_sigma_msa::msa_gage_rr_ev_av(-1.0, 1.0).is_none();
+    ok &= spc_six_sigma_msa::msa_gage_rr_percent_grr(0.0, 0.0).is_none();
+    ok &= spc_six_sigma_msa::msa_precision_to_tolerance_ratio(1.0, 10.0, 10.0).is_none();
+    ok &= spc_six_sigma_msa::msa_number_of_distinct_categories_ndc(10.0, 0.0).is_none();
+    ok
+}
+
+/// @outputs: 1
 fn check_audit_domain(ok: bool, fail_msg: &str, total: &mut usize, passed: &mut usize, failures: &mut Vec<String>) {
     *total += 1;
     if ok {
@@ -495,6 +511,7 @@ pub fn run_chaos_audit(dummy_level: u8) -> Result<AuditSummary, Vec<String>> {
     check_audit_domain(audit_radar_biomed_dsp(), "【雷達生醫與FMCW測距抽查失敗】存在除零溢出或無效頻寬", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_instrument_industrial(), "【工控與儀器協議抽查失敗】存在除零溢出或無效浮點", &mut total, &mut passed, &mut failures);
     check_audit_domain(audit_cad_geom_model(), "【CAD與PCB機構幾何抽查失敗】存在除零溢出或倒置包圍盒", &mut total, &mut passed, &mut failures);
+    check_audit_domain(audit_spc_six_sigma_msa(), "【六標準差與車用MSA抽查失敗】存在除零溢出或無效規格", &mut total, &mut passed, &mut failures);
 
     if !failures.is_empty() {
         return Err(failures);

@@ -11,7 +11,7 @@ use rust_bricks::{
     iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d,
     radar_biomed_dsp, radar_cfar_doppler, ring_buffer, rpa_screen_control, sensor_baro_als, sensor_hardware, sensor_motion,
-    sensor_power_meter, spatial_physics, sys_path, text_cleaner, thermal_palette, thermal_pid,
+    sensor_power_meter, spatial_physics, spc_six_sigma_msa, sys_path, text_cleaner, thermal_palette, thermal_pid,
     touch_control, vision_feature, vision_yuv,
 };
 use std::env;
@@ -303,6 +303,17 @@ fn verify_cad_geom_model() -> bool {
 }
 
 /// @outputs: 1
+fn verify_spc_six_sigma_msa() -> bool {
+    let cpk_res = spc_six_sigma_msa::spc_cpk_index(14.0, 6.0, 10.0, 1.0);
+    let ok_cpk = matches!(cpk_res, Some((cpk, _, _)) if (cpk - 1.3333).abs() < 1e-3);
+    let phi = spc_six_sigma_msa::spc_normal_cdf_phi(0.0);
+    let ok_phi = (phi - 0.5).abs() < 1e-4;
+    let grr = spc_six_sigma_msa::msa_gage_rr_ev_av(3.0, 4.0);
+    let ok_grr = matches!(grr, Some(v) if (v - 5.0).abs() < 1e-4);
+    ok_cpk && ok_phi && ok_grr
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -330,6 +341,7 @@ fn verify_all_subsystems() -> bool {
         && verify_radar_biomed_dsp()
         && verify_instrument_industrial()
         && verify_cad_geom_model()
+        && verify_spc_six_sigma_msa()
 }
 
 /// @outputs: 1

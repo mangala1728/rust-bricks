@@ -1995,3 +1995,59 @@ fn test_cad_geom_model_bricks() {
     let zeta = cad_geom_model::remotion_spring_damping_ratio(1.0, 100.0, 20.0).unwrap();
     assert!((zeta - 1.0).abs() < 1e-4); // 臨界阻尼
 }
+
+#[test]
+fn test_spc_six_sigma_msa_bricks() {
+    use rust_bricks::spc_six_sigma_msa;
+
+    // 1. 製程潛在能力 Cp (USL=16, LSL=4, sigma=1 -> Cp = 12 / 6 = 2.0)
+    let cp = spc_six_sigma_msa::spc_cp_index(16.0, 4.0, 1.0).unwrap();
+    assert_eq!(cp, 2.0);
+
+    // 2. 六標準差實際製程能力 Cpk (USL=14, LSL=6, mean=10, sigma=1 -> Cpk = 4 / 3 = 1.3333)
+    let (cpk, cpu, cpl) = spc_six_sigma_msa::spc_cpk_index(14.0, 6.0, 10.0, 1.0).unwrap();
+    assert!((cpk - 1.3333).abs() < 1e-3);
+    assert!((cpu - 1.3333).abs() < 1e-3);
+    assert!((cpl - 1.3333).abs() < 1e-3);
+
+    // 偏心製程: mean=11 (偏向 USL) -> Cpk = (14-11)/3 = 1.0
+    let (cpk_shift, _, _) = spc_six_sigma_msa::spc_cpk_index(14.0, 6.0, 11.0, 1.0).unwrap();
+    assert_eq!(cpk_shift, 1.0);
+
+    // 3. 常態分佈累積概率 CDF Phi(0) = 0.5, Phi(1.96) ~ 0.975
+    let phi_0 = spc_six_sigma_msa::spc_normal_cdf_phi(0.0);
+    assert!((phi_0 - 0.5).abs() < 1e-4);
+    let phi_196 = spc_six_sigma_msa::spc_normal_cdf_phi(1.96);
+    assert!((phi_196 - 0.975).abs() < 1e-3);
+
+    // 4. 規格內概率與不良率 DPPM (4-sigma 雙邊不良率約 63 PPM)
+    let (in_spec, dppm) = spc_six_sigma_msa::spc_spec_in_boundary_probability(14.0, 6.0, 10.0, 1.0).unwrap();
+    assert!(in_spec > 0.9999);
+    assert!(dppm < 70.0 && dppm > 50.0);
+
+    // 5. 截斷常態分佈統計值 (對稱截斷 [-2, 2], mean=0 -> 截斷均值恆為 0, 方差縮小)
+    let (t_mean, t_std, shift) = spc_six_sigma_msa::spc_truncated_normal_stats(-2.0, 2.0, 0.0, 1.0).unwrap();
+    assert!(t_mean.abs() < 1e-5);
+    assert!(shift.abs() < 1e-5);
+    assert!(t_std < 1.0 && t_std > 0.8);
+
+    // 6. 截斷機率密度函數 PDF
+    let pdf_center = spc_six_sigma_msa::spc_truncated_normal_pdf(0.0, -2.0, 2.0, 0.0, 1.0).unwrap();
+    assert!(pdf_center > 0.39);
+
+    // 7. AIAG 車用 MSA: Gage R&R = sqrt(EV^2 + AV^2) (EV=3, AV=4 -> GRR=5)
+    let grr = spc_six_sigma_msa::msa_gage_rr_ev_av(3.0, 4.0).unwrap();
+    assert_eq!(grr, 5.0);
+
+    // 8. %GRR (GRR=5, PV=12 -> TV=13 -> %GRR = 5/13 = 38.46%)
+    let pct_grr = spc_six_sigma_msa::msa_gage_rr_percent_grr(5.0, 12.0).unwrap();
+    assert!((pct_grr - (5.0 / 13.0 * 100.0)).abs() < 1e-4);
+
+    // 9. Precision-to-Tolerance (P/T Ratio, GRR=1, Tol=30 -> 6*1/30 = 20% < 30% 合格)
+    let pt = spc_six_sigma_msa::msa_precision_to_tolerance_ratio(1.0, 130.0, 100.0).unwrap();
+    assert_eq!(pt, 20.0);
+
+    // 10. 零件有效區分度分類數 ndc = floor(1.414 * PV / GRR) (PV=10, GRR=2 -> ndc=7 >= 5 合格)
+    let ndc = spc_six_sigma_msa::msa_number_of_distinct_categories_ndc(10.0, 2.0).unwrap();
+    assert_eq!(ndc, 7);
+}
