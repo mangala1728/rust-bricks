@@ -2941,5 +2941,61 @@ fn test_quant_orderbook_l2_bricks() {
     assert!((twap.unwrap() - 100.0).abs() < 1e-4);
 }
 
+#[test]
+fn test_doc_layout_typography_bricks() {
+    use rust_bricks::doc_layout_typography::*;
+
+    // 1. 點數 (pt) 與 Twips 雙向換算 (1 pt = 20 twips)
+    assert_eq!(doc_pt_to_twips(12.0), 240);
+    assert_eq!(doc_pt_to_twips(0.5), 10);
+    assert_eq!(doc_twips_to_pt(240), 12.0);
+    assert_eq!(doc_twips_to_pt(1440), 72.0);
+
+    // 2. 字體 UPM 像素換算 (1000 UPM, 72 pt, 72 dpi -> 1000 units = 72 px)
+    let px = doc_font_scale_em_px(1000.0, 1000, 72.0, 72.0);
+    assert!((px - 72.0).abs() < 1e-4);
+
+    // 3. 段落縮排換算
+    let (first, left, right) = doc_paragraph_indentation_twips(24.0, 18.0, 18.0);
+    assert_eq!(first, 480);
+    assert_eq!(left, 360);
+    assert_eq!(right, 360);
+
+    // 4. 精確行距換算 (12 pt * 1.5 倍行距 = 18 pt = 360 twips)
+    assert_eq!(doc_line_spacing_exact_twips(12.0, 1.5), 360);
+
+    // 5. 齊行 (Justified) 剩餘空白寬度均勻分攤 (寬 500, 內容 440, 3 個空格 -> 20 px/格)
+    let dist = doc_text_justified_space_distribution(500.0, 440.0, 3);
+    assert!(dist.is_some());
+    assert!((dist.unwrap() - 20.0).abs() < 1e-4);
+
+    // 6. Knuth-Plass 排版折行惡化度評分
+    let badness_perfect = doc_knuth_plass_badness(500.0, 500.0);
+    assert_eq!(badness_perfect, 0);
+    let badness_over = doc_knuth_plass_badness(500.0, 520.0);
+    assert_eq!(badness_over, 100_000);
+
+    // 7. 表格欄寬依內容等比分配 (總寬 300, 內容寬 [10, 20, 30] -> 分配 [50, 100, 150])
+    let mut col_out = [0.0f64; 3];
+    let fit_ok = doc_table_column_proportional_width(&[10.0, 20.0, 30.0], 300.0, &mut col_out);
+    assert!(fit_ok);
+    assert!((col_out[0] - 50.0).abs() < 1e-4);
+    assert!((col_out[1] - 100.0).abs() < 1e-4);
+    assert!((col_out[2] - 150.0).abs() < 1e-4);
+
+    // 8. PPT 幻燈片母片物件等比自適應居中 (4:3 放入 16:9 1920x1080)
+    let (tx, ty, tw, th) = doc_ppt_slide_fit_aspect_ratio(4.0, 3.0, 1920.0, 1080.0);
+    assert!((th - 1080.0).abs() < 1e-4);
+    assert!((tw - 1440.0).abs() < 1e-4);
+    assert!((tx - 240.0).abs() < 1e-4); // (1920 - 1440)/2 = 240
+    assert!(ty.abs() < 1e-4);
+
+    // 9. 斷字連字號懲罰估算
+    let cost_mid = doc_hyphenation_break_cost(10, 5, true);
+    let cost_side = doc_hyphenation_break_cost(10, 2, false);
+    assert!(cost_mid < cost_side);
+}
+
+
 
 

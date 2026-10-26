@@ -80,6 +80,7 @@
 | [`net_ethernet`](src/net_ethernet.rs) | Ethernet II 訊框解析、802.1Q VLAN Tag 識別、單播/組播/廣播 MAC 位址分類 | 嵌入式網路驅動、以太網閘道器、跨交換機 VLAN 標籤隔離 |
 | [`net_tsn_macsec`](src/net_tsn_macsec.rs) | IEEE 802.1AS gPTP 時鐘事件訊息判定、Pdelay 鏈路納秒延遲解算、IEEE 802.1AE MACsec SecTAG 解析與防重放滑動視窗驗證 | 車載時間敏感網路 (TSN / DoIP / SOME/IP)、ADAS 感測器時鐘同步、金融資料中心 Layer 2 硬體加密防禦 |
 | [`office_calc_layout`](src/office_calc_layout.rs) | Excel XLOOKUP 查表、PMT 貸款等額本息、NPV 淨現值、PERCENTILE 線性插值、Word Twips/EMUs 換算、貪婪文字折行、PPT 元素等距對齊 | 辦公試算表引擎 (Excel 代碼重現)、Word/PPT 跨平台排版佈局、報表財務精算 |
+| [`doc_layout_typography`](src/doc_layout_typography.rs) | 點數 (pt) 與 Twips 雙向換算、TrueType/OpenType UPM 字體單元像素縮放、Word 段落首行縮排/左右邊距、精確行距換算、齊行 (Justified) 空格分攤、Knuth-Plass 排版折行惡化度、表格欄寬等比自動配額、PPT 幻燈片等比自適應居中、斷字連字號懲罰估算 | 專業排版渲染引擎 (Word/PPT 替代)、向量字體度量縮放、雜誌級齊行斷字排版、投影片投映佈局 |
 | [`spc_six_sigma_msa`](src/spc_six_sigma_msa.rs) | 六標準差製程能力 (Cp/Cpk)、常態分佈累積概率 (Phi/erf)、規格內良率與 DPPM、雙邊截斷高斯分佈 (Truncated Normal) 統計值與 PDF、AIAG 車規 MSA 量測系統分析 (Gage R&R EV/AV, %GRR, P/T Ratio, ndc 區分度) | 半導體/電子工廠 SPC 品質管制、車用 IATF 16949 / AIAG MSA 量產放行、精密公差不良率精算 |
 | [`spc_msa_advanced`](src/spc_msa_advanced.rs) | 長期性能指標 (Pp/Ppk)、樣本偏度與超額峰度、Box-Cox 冪變換、Shewhart X-bar/R 管制界限、Durbin-Watson 自相關、Weibull 可靠度、Anderson-Darling A² 常態檢定、卡方累積概率近似與 %PV 變異佔比 | 車規半導體良率分析、非高斯長尾製程正態轉換、SPC 管制圖即時監控、產品可靠度壽命預估 |
 | [`quant_finance_market`](src/quant_finance_market.rs) | 技術面 EMA 步進/RSI 強弱/布林通道三軌/MACD、基本面 PE/PB/ROE/FCF Yield、籌碼面 VWAP/大單淨流入率、指數期貨基差 (Contango/Backwardation)/年化持有成本殖利率、匯率調整報酬率 | 量化高頻交易、股市籌碼與基本面精算、期現套利 (Cash & Carry)、跨市場匯率對沖 |

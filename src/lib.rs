@@ -30,6 +30,7 @@ pub mod crypto_modern_wire;
 pub mod crypto_vault;
 pub mod curve_fit_trend;
 pub mod decision_mcts;
+pub mod doc_layout_typography;
 pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;
 pub mod env_sensor;

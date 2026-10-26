@@ -6,7 +6,7 @@
 
 use rust_bricks::{
     agent_terminal, ai_autograd_train, ai_tensor_gemm, ai_tensor_train, audio_mfcc_pitch, audio_vad, bezier_curve, ble_adv_parser, cad_geom_model, can_bus_frame, can_lin_bus, catalog,
-    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, dsp_fft_radix2,
+    clock_pll_rtc, comm_controller, comm_phy_bus, crypto_dukpt, crypto_kdf, crypto_modern_wire, crypto_vault, curve_fit_trend, decision_mcts, doc_layout_typography, dsp_fft_radix2,
     dsp_fixed_point, env_sensor, fast_math, fieldbus_industrial_eth, fin_apdu_track, geo_collision, gnss_nmea_geodesy, guard, instrument_industrial, instrument_lxi_hislip, instrument_scpi_vna,
     iot_wire_protocol, iso7816_smartcard, math_time, motion_dead_reckon, motion_render_timeline, motor_stepper, net_ethernet,
     net_telemetry, net_tsn_macsec, office_calc_layout, packet_checksum, pcb_cad_fem, physics_raycast_3d, quant_finance_market, quant_orderbook_l2,
@@ -484,6 +484,17 @@ fn verify_quant_orderbook_l2() -> bool {
 }
 
 /// @outputs: 1
+fn verify_doc_layout_typography() -> bool {
+    let twips = doc_layout_typography::doc_pt_to_twips(12.0);
+    let ok_twips = twips == 240 && doc_layout_typography::doc_twips_to_pt(240) == 12.0;
+    let badness = doc_layout_typography::doc_knuth_plass_badness(500.0, 480.0);
+    let ok_badness = badness < 100;
+    let (tx, ty, tw, th) = doc_layout_typography::doc_ppt_slide_fit_aspect_ratio(4.0, 3.0, 1920.0, 1080.0);
+    let ok_ppt = tw > 0.0 && th > 0.0 && tx >= 0.0 && ty >= 0.0;
+    ok_twips && ok_badness && ok_ppt
+}
+
+/// @outputs: 1
 fn verify_all_subsystems() -> bool {
     verify_edge_sensors_and_packets()
         && verify_new_kinematics_and_math()
@@ -527,6 +538,7 @@ fn verify_all_subsystems() -> bool {
         && verify_vision_optical_flow_homography()
         && verify_gnss_nmea_geodesy()
         && verify_quant_orderbook_l2()
+        && verify_doc_layout_typography()
 }
 
 /// @outputs: 1
