@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 737,
+  "total_functions": 738,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2449,6 +2449,18 @@
         {
           "name": "iso8583_bitmap_is_present",
           "signature": "pub fn iso8583_bitmap_is_present(bitmap: &[u8; 8], field_num: u8) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "math_golden_section",
+      "file": "src/math_golden_section.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "golden_section_search_min<F>",
+          "signature": "pub fn golden_section_search_min<F>(",
           "outputs": 2
         }
       ]

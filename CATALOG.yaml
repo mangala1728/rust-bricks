@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 737
+total_functions: 738
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2310,6 +2310,21 @@ modules:
         outputs: 2
         domains:
           field_num: "[1..64]"
+  - module: "math_golden_section"
+    file: "src/math_golden_section.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: One-dimensional Golden-Section Search for unimodal function minimization."
+      - "Inputs: Interval bounds `a` and `b`, tolerance `tol`, max iterations `max_iter`, target function `f`."
+      - "Outputs: Option containing tuple `(x_min, f(x_min))` for estimated minimum point and value."
+      - "Invariants: `a < b`, `tol` in [1.0e-12, 1.0], `max_iter` in [1, 1000], zero external dependencies, nesting depth <= 2."
+    functions:
+      - name: "golden_section_search_min<F>"
+        signature: "pub fn golden_section_search_min<F>("
+        outputs: 2
+        domains:
+          tol: "[1.0e-12..1.0]"
+          max_iter: "[1..1000]"
   - module: "math_rk4_ode"
     file: "src/math_rk4_ode.rs"
     functions_count: 2
