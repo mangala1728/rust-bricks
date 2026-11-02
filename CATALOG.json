@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 767,
+  "total_functions": 768,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2195,6 +2195,18 @@
           "name": "kelly_optimal_fraction",
           "signature": "pub fn kelly_optimal_fraction(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_macaulay_duration",
+      "file": "src/fin_macaulay_duration.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "bond_duration",
+          "signature": "pub fn bond_duration(cash_flows: &[f64], ytm: f64) -> Option<(f64, f64)>",
+          "outputs": 2
         }
       ]
     },
