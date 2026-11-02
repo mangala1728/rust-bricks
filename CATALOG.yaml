@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 759
+total_functions: 760
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3846,6 +3846,23 @@ modules:
         outputs: 2
         domains:
           unit_ms: "[10..2000]"
+  - module: "sensor_hrv_time_domain"
+    file: "src/sensor_hrv_time_domain.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Sensor HRV Time-Domain Metrics Processor"
+      - "Inputs: rr_intervals_ms (&[f64]) - RR interval values in milliseconds."
+      - "Outputs: Option<(f64, f64, f64, f64)> - Tuple containing (Mean RR, SDNN, RMSSD, pNN50)."
+      - "Invariants:"
+      - "- Input slice length must be >= 2."
+      - "- All RR intervals must strictly lie within [200.0, 3000.0]."
+      - "- Arithmetic calculations must maintain f64 precision without panics or undefined behavior."
+    functions:
+      - name: "hrv_time_domain_metrics"
+        signature: "pub fn hrv_time_domain_metrics(rr_intervals_ms: &[f64]) -> Option<(f64, f64, f64, f64)>"
+        outputs: 4
+        domains:
+          rr_intervals_ms: "[200.0..3000.0]"
   - module: "sensor_mahony_ahrs"
     file: "src/sensor_mahony_ahrs.rs"
     functions_count: 2

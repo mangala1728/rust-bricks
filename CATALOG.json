@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 759,
+  "total_functions": 760,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3991,6 +3991,18 @@
           "name": "sos_morse_signal",
           "signature": "pub fn sos_morse_signal(time_ms: u32, unit_ms: u32) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "sensor_hrv_time_domain",
+      "file": "src/sensor_hrv_time_domain.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "hrv_time_domain_metrics",
+          "signature": "pub fn hrv_time_domain_metrics(rr_intervals_ms: &[f64]) -> Option<(f64, f64, f64, f64)>",
+          "outputs": 4
         }
       ]
     },
