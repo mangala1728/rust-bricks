@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 733
+total_functions: 735
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1489,6 +1489,32 @@ modules:
         outputs: 1
         domains:
           distance_pt: "[0.0, 1000.0], angle_rad [-100.0, 100.0]"
+  - module: "dsp_biquad_notch"
+    file: "src/dsp_biquad_notch.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DSP Biquad Notch Filter (zero‑external‑dependency, std only)"
+      - "Inputs: sample_rate_hz, center_freq_hz, q_factor, input, state, coeffs"
+      - "Outputs: coefficients array ([f64;5]), filtered sample (f64)"
+      - "Invariants:"
+      - "- All numeric parameters must be finite (no NaN/Inf)"
+      - "- sample_rate_hz ∈ [1.0 .. 1_000_000.0]"
+      - "- center_freq_hz ∈ [0.1 .. sample_rate_hz/2.0)"
+      - "- q_factor ∈ [0.01 .. 1000.0]"
+      - "- input ∈ [-1.0e9 .. 1.0e9]"
+    functions:
+      - name: "biquad_notch_coefficients"
+        signature: "pub fn biquad_notch_coefficients("
+        outputs: 5
+        domains:
+          sample_rate_hz: "[1.0..1000000.0]"
+          center_freq_hz: "[0.1..sample_rate_hz/2.0]"
+          q_factor: "[0.01..1000.0]"
+      - name: "biquad_notch_step"
+        signature: "pub fn biquad_notch_step("
+        outputs: 1
+        domains:
+          input: "[-1.0e9..1.0e9]"
   - module: "dsp_ema_smoother"
     file: "src/dsp_ema_smoother.rs"
     functions_count: 2

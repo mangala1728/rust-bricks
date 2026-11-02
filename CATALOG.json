@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 733,
+  "total_functions": 735,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1613,6 +1613,23 @@
         {
           "name": "doc_drop_shadow_offset",
           "signature": "pub fn doc_drop_shadow_offset(distance_pt: f64, angle_rad: f64) -> (f64, f64)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_biquad_notch",
+      "file": "src/dsp_biquad_notch.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "biquad_notch_coefficients",
+          "signature": "pub fn biquad_notch_coefficients(",
+          "outputs": 5
+        },
+        {
+          "name": "biquad_notch_step",
+          "signature": "pub fn biquad_notch_step(",
           "outputs": 1
         }
       ]
