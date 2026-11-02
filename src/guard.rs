@@ -554,7 +554,7 @@ fn check_function_deduplication(repo_root: &Path) -> Vec<String> {
 /// @outputs: 2
 fn run_unit_tests(repo_root: &Path) -> Result<(), String> {
     let output = match Command::new("cargo")
-        .arg("test")
+        .args(["test", "--target-dir", "target/guard_check"])
         .current_dir(repo_root)
         .output()
     {

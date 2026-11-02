@@ -124,11 +124,37 @@ pub fn insert_mod_alphabetically(lib_content: &str, module_name: &str) -> String
 
 /// @outputs: 1
 fn unescape_json_snippet(raw: &str) -> String {
-    raw.replace("\\n", "\n")
-        .replace("\\r", "\r")
-        .replace("\\t", "\t")
-        .replace("\\\x22", "\x22")
-        .replace("\\\\", "\\")
+    let mut out = String::with_capacity(raw.len());
+    let chars: Vec<char> = raw.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            match chars[i + 1] {
+                'n' => { out.push('\n'); i += 2; }
+                'r' => { out.push('\r'); i += 2; }
+                't' => { out.push('\t'); i += 2; }
+                '"' => { out.push('"'); i += 2; }
+                '\\' => { out.push('\\'); i += 2; }
+                'u' if i + 5 < chars.len() => {
+                    let hex: String = chars[i + 2..=i + 5].iter().collect();
+                    if let Ok(code) = u32::from_str_radix(&hex, 16) {
+                        if let Some(ch) = char::from_u32(code) {
+                            out.push(ch);
+                            i += 6;
+                            continue;
+                        }
+                    }
+                    out.push('\\');
+                    i += 1;
+                }
+                _ => { out.push('\\'); i += 1; }
+            }
+        } else {
+            out.push(chars[i]);
+            i += 1;
+        }
+    }
+    out
 }
 
 /// @outputs: 2
@@ -177,7 +203,7 @@ fn call_curl_json(url: &str, headers: &[String], body_json: &str, repo_root: &Pa
     fs::write(&payload_path, body_json).map_err(|e| format!("寫入請求暫存檔失敗: {}", e))?;
 
     let mut cmd = Command::new("curl");
-    cmd.args(["-s", "-S", "-X", "POST", url]);
+    cmd.args(["-s", "-S", "-X", "POST", url, "-H", "User-Agent: rust-bricks/1.0"]);
     for h in headers {
         cmd.args(["-H", h]);
     }
@@ -218,7 +244,7 @@ pub fn resolve_key_pool_strings(repo_root: &Path, env_plural: &str, env_single: 
 
 /// @outputs: 2
 fn call_gemini_endpoint(gkey: &str, escaped_prompt: &str, repo_root: &Path) -> Result<(String, String), String> {
-    let model = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
+    let model = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.5-flash".to_string());
     let url = format!(
         "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
         model, gkey
@@ -291,7 +317,7 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<
     if !groq_pool.is_empty() {
         let qkey = &groq_pool[idx % groq_pool.len()];
         let url = "https://api.groq.com/openai/v1/chat/completions";
-        if let Ok(res) = call_openai_compatible_endpoint(url, qkey, "llama-3.3-70b-versatile", &escaped, repo_root) {
+        if let Ok(res) = call_openai_compatible_endpoint(url, qkey, "openai/gpt-oss-120b", &escaped, repo_root) {
             return Ok(res);
         }
     }
@@ -307,7 +333,7 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<
 /// @outputs: 2
 fn verify_farmed_module(repo_root: &Path, test_target: &str) -> Result<(), String> {
     let test_out = Command::new("cargo")
-        .args(["test", "--test", test_target])
+        .args(["test", "--target-dir", "target/farmer_check", "--test", test_target])
         .current_dir(repo_root)
         .output()
         .map_err(|e| format!("執行 cargo test 失敗: {}", e))?;

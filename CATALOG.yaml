@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 720
+total_functions: 722
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1489,6 +1489,30 @@ modules:
         outputs: 1
         domains:
           distance_pt: "[0.0, 1000.0], angle_rad [-100.0, 100.0]"
+  - module: "dsp_ema_smoother"
+    file: "src/dsp_ema_smoother.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Hardware-grade zero-allocation Exponential Moving Average (EMA) and signal smoother for DSP/sensor pipelines."
+      - "Inputs: Current signal sample (f64), previous filtered value (f64), smoothing factor alpha (f64)."
+      - "Outputs: Filtered signal value (Option<f64> or Option<(f64, f64, f64)>)."
+      - "Invariants: Deterministic execution, zero memory allocation, strict first-line domain validation."
+    functions:
+      - name: "ema_step_f64"
+        signature: "pub fn ema_step_f64(current: f64, prev: f64, alpha: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          current: "[-1000000.0..1000000.0]"
+          prev: "[-1000000.0..1000000.0]"
+          alpha: "[0.0001..1.0]"
+      - name: "dema_step_f64"
+        signature: "pub fn dema_step_f64("
+        outputs: 3
+        domains:
+          current: "[-1000000.0..1000000.0]"
+          ema1_prev: "[-1000000.0..1000000.0]"
+          ema2_prev: "[-1000000.0..1000000.0]"
+          alpha: "[0.0001..1.0]"
   - module: "dsp_fft_multirate_2d"
     file: "src/dsp_fft_multirate_2d.rs"
     functions_count: 8

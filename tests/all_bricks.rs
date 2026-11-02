@@ -1359,11 +1359,29 @@ fn test_ai_tensor_train_adamw_loss_gelu() {
 
 #[test]
 fn test_audio_dsp_biquad_apply() {
-    let samples = vec![1000i16; 100];
-    let coeffs = [1.0, 0.0, 0.0, 0.0, 0.0]; // 直通濾波 (Pass-through)
-    let filtered = rust_bricks::audio_dsp::biquad_filter_apply(&samples, coeffs);
-    assert_eq!(filtered.len(), 100);
-    assert_eq!(filtered[0], 1000);
+    // 1. 直通濾波 (Pass-through 基準響應)
+    let passthrough = [1.0, 0.0, 0.0, 0.0, 0.0];
+    let samples = vec![100i16, 200, -300, 400];
+    let filtered = rust_bricks::audio_dsp::biquad_filter_apply(&samples, passthrough);
+    assert_eq!(filtered, samples);
+
+    let const_samples = vec![1000i16; 100];
+    let filtered_const = rust_bricks::audio_dsp::biquad_filter_apply(&const_samples, passthrough);
+    assert_eq!(filtered_const.len(), 100);
+    assert_eq!(filtered_const[0], 1000);
+
+    // 2. 空切片邊界守衛
+    assert_eq!(rust_bricks::audio_dsp::biquad_filter_apply(&[], passthrough), Vec::<i16>::new());
+
+    // 3. NaN 係數安全降級為原始取樣
+    let nan_coeffs = [f64::NAN, 0.0, 0.0, 0.0, 0.0];
+    assert_eq!(rust_bricks::audio_dsp::biquad_filter_apply(&samples, nan_coeffs), samples);
+
+    // 4. 飽和溢位夾止測試 (Clamp to i16)
+    let boost_coeffs = [10.0, 0.0, 0.0, 0.0, 0.0];
+    let loud = vec![10000i16, -10000];
+    let clamped = rust_bricks::audio_dsp::biquad_filter_apply(&loud, boost_coeffs);
+    assert_eq!(clamped, vec![32767, -32768]);
 }
 
 
