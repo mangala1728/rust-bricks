@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 764
+total_functions: 765
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2578,6 +2578,17 @@ modules:
         outputs: 2
         domains:
           dt: "[1.0e-9..1000.0]"
+  - module: "math_simpson_integral"
+    file: "src/math_simpson_integral.rs"
+    functions_count: 1
+    architecture_map:
+      - "Outputs=[Option<f64>], Invariants=[a<b, intervals∈[2..100000], intervals even after adjustment]"
+    functions:
+      - name: "simpson_integral_1d<F>"
+        signature: "pub fn simpson_integral_1d<F>(a: f64, b: f64, intervals: usize, f: F) -> Option<f64>"
+        outputs: 1
+        domains:
+          intervals: "[2..100000]"
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5

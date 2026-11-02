@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 764,
+  "total_functions": 765,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2644,6 +2644,18 @@
           "name": "rk4_step_2d<F>",
           "signature": "pub fn rk4_step_2d<F>(t: f64, y: (f64, f64), dt: f64, derivative_fn: F) -> Option<(f64, f64)>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "math_simpson_integral",
+      "file": "src/math_simpson_integral.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "simpson_integral_1d<F>",
+          "signature": "pub fn simpson_integral_1d<F>(a: f64, b: f64, intervals: usize, f: F) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },
