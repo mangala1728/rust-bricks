@@ -1,11 +1,11 @@
 # 48小時無人值守雲端農夫宏觀作戰藍圖 (48-Hour Cloud Farmer Grand Backlog)
 
 > 本文件為 `rust-bricks` 專案之「雲端農夫 (Cloud Farmer)」與「本地精工 (Local Crafting)」雙軌並進作戰大綱。
-> 涵蓋橫向五大尖端工業領域（廣度）與三大串接管線（深度），目標在 48 小時內提供無間斷之規格餵料，產出符合 09 合約、NASA JPL 60 行規範與 14 大鐵律的純 Rust 微積木。
+> 涵蓋橫向五大尖端工業領域（廣度）與三大串接管線（深度），提供無間斷之規格餵料，產出符合 09 合約、NASA JPL 60 行規範與 14 大工程鐵律的純 Rust 微積木。
 
 ---
 
-## 一、宏觀架構與雙軌分工 (Phase 1: 已全面 100% 竣工入庫 🎉)
+## 一、Phase 1 基礎工程（18 模組全部 100% 竣工入庫 🎉）
 
 | 領域代號 | 領域名稱 | 核心工程價值 | 規格書路徑 | 目標模組名 | 狀態 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -30,29 +30,56 @@
 
 ---
 
-## 二、Phase 2 拓展工程（48 小時深耕計畫）
+## 二、Phase 2 拓展工程（22 模組全部 100% 竣工入庫 🎉）
 
-| 領域代號 | 領域名稱 | 核心工程價值 | 規格書路徑 | 目標模組名 |
-| :--- | :--- | :--- | :--- | :--- |
-| **DSP-07** | Goertzel 單頻率 DFT 檢波 | DTMF 雙音多頻電話撥號與特定頻率微秒級偵測 | `specs/dsp_goertzel.md` | `dsp_goertzel` |
-| **DSP-08** | 有理分數線性插值重採樣 | 聲學音訊取樣率轉換 (如 44.1kHz 轉 48kHz) | `specs/dsp_resample_linear.md` | `dsp_resample_linear` |
-| **DSP-09** | 峰值檢波與包絡線跟隨器 | 音量壓縮器、AGC 與語音包絡提取 (Attack/Release) | `specs/dsp_envelope_peak_hold.md` | `dsp_envelope_peak_hold` |
-| **BUS-04** | SAE J1939 PGN 解包器 | 重型商用車、工程機械 CAN J1939 參數群解包 | `specs/j1939_pgn_parser.md` | `j1939_pgn_parser` |
-| **BUS-05** | NMEA 0183 GPRMC GPS 解析 | 船載與車載 GPS 語句校驗和驗證與經緯度解析 | `specs/nmea0183_gprmc.md` | `nmea0183_gprmc` |
-| **BUS-06** | AUTOSAR DLT 診斷日誌標頭 | 車用控制器標準診斷記錄與追蹤協定解包 | `specs/dlt_protocol_header.md` | `dlt_protocol_header` |
-| **BIO-04** | 心率變異度 (HRV) 時域指標 | 穿戴健康監測 SDNN, RMSSD, pNN50 自律神經指標 | `specs/sensor_hrv_time_domain.md` | `sensor_hrv_time_domain` |
-| **BIO-05** | 一維自適應卡爾曼濾波器 | 氣壓高度計與 GPS 高度即時最優估計 | `specs/sensor_kalman_1d.md` | `sensor_kalman_1d` |
-| **BIO-06** | 三軸加速度計動態閾值計步 | 穿戴手環運動步伐即時辨識與步頻計算 | `specs/sensor_step_counter.md` | `sensor_step_counter` |
-| **NUM-04** | 辛普森自適應數值積分法 | 物理模擬與高精度平滑曲線數值面積計算 | `specs/math_simpson_integral.md` | `math_simpson_integral` |
-| **NUM-05** | 射線交叉法任意多邊形內外判別 | 地理資訊圍欄 (Geofencing) 與點在多邊形判定 | `specs/geo_point_in_polygon_ray.md` | `geo_point_in_polygon_ray` |
-| **NUM-06** | 一維牛頓-拉夫森求根演算法 | 隱式方程、物理平衡態非線性方程快速求根 | `specs/math_newton_raphson_1d.md` | `math_newton_raphson_1d` |
-| **FIN-04** | 歷史模擬法與常態法 VaR | 風險價值 (Value at Risk 95% / 99%) 分位數評估 | `specs/fin_var_historical.md` | `fin_var_historical` |
-| **FIN-05** | 債券麥考利久期與修正久期 | 利率敏感度、固定收益債券資產負債配對 | `specs/fin_macaulay_duration.md` | `fin_macaulay_duration` |
-| **FIN-06** | 凱利準則最佳資金管理分配 | 投資組合最優部位配置與分數凱利 (Fractional Kelly) | `specs/fin_kelly_criterion.md` | `fin_kelly_criterion` |
+| 領域代號 | 領域名稱 | 核心工程價值 | 規格書路徑 | 目標模組名 | 狀態 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **DSP-07** | Goertzel 單頻率 DFT 檢波 | DTMF 雙音多頻電話撥號與特定頻率微秒級偵測 | `specs/dsp_goertzel.md` | `dsp_goertzel` | ✅ 已入庫 (756c426) |
+| **DSP-08** | 有理分數線性插值重採樣 | 聲學音訊取樣率轉換 (如 44.1kHz 轉 48kHz) | `specs/dsp_resample_linear.md` | `dsp_resample_linear` | ✅ 已入庫 (d4aad6e) |
+| **DSP-09** | 峰值檢波與包絡線跟隨器 | 音量壓縮器、AGC 與語音包絡提取 (Attack/Release) | `specs/dsp_envelope_peak_hold.md` | `dsp_envelope_peak_hold` | ✅ 已入庫 (ce84618) |
+| **DSP-10** | 滑動視窗均方根 (Moving RMS) | 交流能量、真有效值 True-RMS 實時功率量測 | `specs/dsp_moving_rms.md` | `dsp_moving_rms` | ✅ 已入庫 (f59a163) |
+| **DSP-11** | 回授與前饋梳狀濾波器 | Schroeder 經典混響與物理建模音色諧波延遲線 | `specs/dsp_comb_filter.md` | `dsp_comb_filter` | ✅ 已入庫 (e42aae5) |
+| **BUS-04** | SAE J1939 PGN 解包器 | 重型商用車、工程機械 CAN J1939 參數群解包 | `specs/j1939_pgn_parser.md` | `j1939_pgn_parser` | ✅ 已入庫 (1cbab94) |
+| **BUS-05** | NMEA 0183 GPRMC GPS 解析 | 船載與車載 GPS 語句校驗和驗證與經緯度解析 | `specs/nmea0183_gprmc.md` | `nmea0183_gprmc` | ✅ 已入庫 (811e206) |
+| **BUS-06** | AUTOSAR DLT 診斷日誌標頭 | 車用控制器標準診斷記錄與追蹤協定解包 | `specs/dlt_protocol_header.md` | `dlt_protocol_header` | ✅ 已入庫 (ce84618) |
+| **BIO-04** | 心率變異度 (HRV) 時域指標 | 穿戴健康監測 SDNN, RMSSD, pNN50 自律神經指標 | `specs/sensor_hrv_time_domain.md` | `sensor_hrv_time_domain` | ✅ 已入庫 (a01cc1a) |
+| **BIO-05** | 一維自適應卡爾曼濾波器 | 氣壓高度計與 GPS 高度即時最優估計 | `specs/sensor_kalman_1d.md` | `sensor_kalman_1d` | ✅ 已入庫 (58d3c7a) |
+| **BIO-06** | 三軸加速度計動態遲滯計步 | 穿戴手環運動步伐即時辨識與雙門檻遲滯防抖 | `specs/sensor_step_counter.md` | `sensor_step_counter` | ✅ 已入庫 (ce84618) |
+| **BIO-07** | 訊號模長面積 (SMA) 活動分類 | 穿戴活動量估算、久坐/輕度/劇烈運動三級分類 | `specs/sensor_activity_intensity.md` | `sensor_activity_intensity` | ✅ 已入庫 (f59a163) |
+| **NUM-04** | 辛普森複合 1/3 數值積分 | 物理模擬與高精度平滑曲線數值面積計算 | `specs/math_simpson_integral.md` | `math_simpson_integral` | ✅ 已入庫 (305f7e6) |
+| **NUM-05** | 射線交叉法任意多邊形內外判別 | 地理資訊圍欄 (Geofencing) 與點在多邊形判定 | `specs/geo_point_in_polygon_ray.md` | `geo_point_in_polygon_ray` | ✅ 已入庫 (01a147a) |
+| **NUM-06** | 一維牛頓-拉夫森求根演算法 | 隱式方程、物理平衡態非線性方程快速求根 | `specs/math_newton_raphson_1d.md` | `math_newton_raphson_1d` | ✅ 已入庫 (dec31b2) |
+| **NUM-07** | 柴比雪夫多項式與 Clenshaw | 最佳一致逼近多項式與數值穩定求和 | `specs/math_chebyshev_poly.md` | `math_chebyshev_poly` | ✅ 已入庫 (f59a163) |
+| **GEO-01** | Geohash 二進位位元交錯編解碼 | 地理空間前綴聚集索引與區域範圍搜尋 | `specs/geo_geohash.md` | `geo_geohash` | ✅ 已入庫 (35e287b) |
+| **GEO-02** | 球面大圓航法目標點推算 (Direct) | 給定起點、方位角與距離，求目標經緯度 | `specs/geo_haversine_destination.md` | `geo_haversine_destination` | ✅ 已入庫 (e42aae5) |
+| **FIN-04** | 歷史模擬法 VaR 與 CVaR | 尾端風險評估與預期損失 Expected Shortfall | `specs/fin_var_historical.md` | `fin_var_historical` | ✅ 已入庫 (35e287b) |
+| **FIN-05** | 債券麥考利久期與修正久期 | 利率敏感度、固定收益債券資產負債配對 | `specs/fin_macaulay_duration.md` | `fin_macaulay_duration` | ✅ 已入庫 (95afdbc) |
+| **FIN-06** | 凱利準則最佳資金管理分配 | 投資組合最優部位配置與分數凱利 (Fractional Kelly) | `specs/fin_kelly_criterion.md` | `fin_kelly_criterion` | ✅ 已入庫 (eab858c) |
+| **FIN-07** | 年化夏普比率與資訊比率 | 風險調整後超額收益與主動投資追蹤指標 | `specs/fin_sharpe_ratio.md` | `fin_sharpe_ratio` | ✅ 已入庫 (f59a163) |
 
 ---
 
-## 二、縱向深度管線設計 (Pipeline Depth)
+## 三、Phase 3 下一波 48 小時深耕計畫（待餵料規格候選庫）
+
+| 領域代號 | 領域名稱 | 核心工程價值 | 預計規格書路徑 | 預計模組名 |
+| :--- | :--- | :--- | :--- | :--- |
+| **DSP-12** | DTMF 雙音多頻電話解碼狀態機 | 結合 Goertzel 的標準電話鍵盤 (0-9,*,#,A-D) 8 頻率解碼 | `specs/dsp_dtmf_decoder.md` | `dsp_dtmf_decoder` |
+| **DSP-13** | 一階直流阻斷濾波器 (DC Blocker) | 消除音訊與生物感測器訊號中的漂移直流偏置 | `specs/dsp_dc_blocker.md` | `dsp_dc_blocker` |
+| **DSP-14** | 粉紅雜訊生成濾波器 (Voss-McCartney) | 聲學測試 1/f 功率頻譜密度均勻分佈雜訊產生 | `specs/dsp_pink_noise.md` | `dsp_pink_noise` |
+| **BUS-07** | CAN-FD CRC-17 / CRC-21 校驗 | 支援 ISO CAN-FD 擴展訊框高可靠度 CRC 校驗 | `specs/canfd_crc.md` | `canfd_crc` |
+| **BUS-08** | NMEA 2000 快速封包傳輸協議 | 航海與戶外 CAN 網路大資料長度訊框重組 | `specs/nmea2000_fast_packet.md` | `nmea2000_fast_packet` |
+| **BIO-08** | 基於 SVM 模長之跌倒檢測特徵 | 穿戴照護老年人突發跌倒撞擊即時警報檢測 | `specs/sensor_fall_detection.md` | `sensor_fall_detection` |
+| **BIO-09** | ECG 導出呼吸率 (EDR) 計算 | 利用 QRS 振幅調變估算每分鐘呼吸次數 | `specs/sensor_ecg_derived_resp.md` | `sensor_ecg_derived_resp` |
+| **GEO-03** | Vincenty 逆算大圓測地距離與航向 | 橢球體高精度距離與正反方位角解析 | `specs/geo_vincenty_inverse.md` | `geo_vincenty_inverse` |
+| **NUM-08** | 2x2 對稱矩陣奇異值分解 (SVD) | 即時慣性橢球主軸提取與幾何主成分分析 | `specs/math_svd_2x2.md` | `math_svd_2x2` |
+| **NUM-09** | 三次自然樣條插值單步求值 | 軌跡規劃與平滑路徑生成 | `specs/math_cubic_spline.md` | `math_cubic_spline` |
+| **FIN-08** | GARCH(1,1) 動態波動率步進更新 | 金融時序波動率聚類效應即時預測 | `specs/fin_garch11.md` | `fin_garch11` |
+| **FIN-09** | 二分法反推 Black-Scholes 隱含波動率 | 衍生性金融商品市場隱含波動率 (IV) 快速收斂 | `specs/fin_implied_volatility.md` | `fin_implied_volatility` |
+| **FIN-10** | 卡瑪比率與最大回撤評估 (Calmar) | 避險基金與CTA量化策略回撤風險調整收益 | `specs/fin_calmar_ratio.md` | `fin_calmar_ratio` |
+
+---
+
+## 四、縱向深度管線設計 (Pipeline Depth)
 
 ### 管線一：邊緣語音特徵提取全鏈條 (Acoustic Feature Extraction Pipeline)
 ```
@@ -65,6 +92,9 @@
 [DSP-01: Biquad Notch 濾除 50/60Hz 工頻干擾]
        │
        ▼
+[DSP-10: Moving RMS 能量偵測 / 語音活動檢測 VAD]
+       │
+       ▼
 [DSP-05: Spectral Centroid & Rolloff 頻譜質心提取]
        │
        ▼
@@ -74,8 +104,9 @@
 ### 管線二：智慧手環穿戴生醫監測管線 (Biomedical Wearable Pipeline)
 ```
 [PPG Dual-Wavelength Photodiode] ──▶ [BIO-03: SpO2 Ratio-of-Ratios 血氧估算]
-[ECG Dry Electrode Lead-I]       ──▶ [BIO-02: Pan-Tompkins QRS 波峰與心率檢測]
-[6-DOF IMU Accel + Gyro]        ──▶ [BIO-01: Mahony AHRS 四元數實時姿態解算]
+[ECG Dry Electrode Lead-I]       ──▶ [BIO-02: Pan-Tompkins QRS 波峰與心率檢測] ──▶ [BIO-04: HRV 自律神經指標]
+[3-Axis Accel + Gyro IMU]        ──▶ [BIO-01: Mahony AHRS 四元數實時姿態解算]
+[3-Axis Accel]                   ──▶ [BIO-06: Step Counter 計步器] ──▶ [BIO-07: SMA 活動強度分類]
 ```
 
 ### 管線三：工業與車用實時總線網關 (Fieldbus Gateway Pipeline)
@@ -83,11 +114,14 @@
 [CANopen SDO 請求訊框] ──▶ [BUS-01: canopen_sdo_handler 零拷貝解析]
 [Modbus 儀表讀取]      ──▶ [BUS-02: modbus_rtu_frame CRC-16 檢驗與封裝]
 [車門/車窗 LIN 節點]   ──▶ [BUS-03: lin_frame_validator 同位元與 Checksum 驗收]
+[商用車 J1939 引擎]    ──▶ [BUS-04: j1939_pgn_parser 29-bit CAN 標識符與 PGN 解析]
+[車載控制器日誌]       ──▶ [BUS-06: dlt_protocol_header AUTOSAR DLT 診斷標頭解析]
+[車載 GPS 接收機]      ──▶ [BUS-05: nmea0183_gprmc NMEA0183 語句與經緯度解析] ──▶ [GEO-02: 大圓目標點正算]
 ```
 
 ---
 
-## 三、48小時巡邏與收割作戰指引
+## 五、48小時巡邏與收割作戰指引
 
 1. **雲端農夫運作**：
    - GitHub Actions 透過 `cloud_farmer.yml` 手動觸發或定時排程。
