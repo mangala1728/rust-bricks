@@ -3,3 +3,7 @@ Cargo.lock
 *.exe
 .DS_Store
 *.swp
+keys.local.json
+*.local.json
+.env
+.env.*

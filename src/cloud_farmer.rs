@@ -193,6 +193,72 @@ fn call_curl_json(url: &str, headers: &[String], body_json: &str, repo_root: &Pa
     extract_llm_response_text(&resp_str).ok_or_else(|| format!("無法解析 API 回應內容: {}", resp_str))
 }
 
+/// @outputs: 1
+pub fn resolve_key_pool_strings(repo_root: &Path, env_plural: &str, env_single: &str, json_keys: &[&str]) -> Vec<String> {
+    let env_val = env::var(env_plural).or_else(|_| env::var(env_single)).unwrap_or_default();
+    let from_env: Vec<String> = parse_api_key_pool(&env_val).into_iter().map(|s| s.to_string()).collect();
+    if !from_env.is_empty() {
+        return from_env;
+    }
+    let p1 = repo_root.join("keys.local.json");
+    let p2 = repo_root.join("..").join("工作流").join("keys.local.json");
+    let raw = fs::read_to_string(&p1).or_else(|_| fs::read_to_string(&p2)).unwrap_or_default();
+    if raw.is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    for k in json_keys {
+        let marker = ["\x22", k, "\x22:"].concat();
+        if let Some(val) = extract_field_by_marker(&raw, &marker) {
+            out.push(val);
+        }
+    }
+    out
+}
+
+/// @outputs: 2
+fn call_gemini_endpoint(gkey: &str, escaped_prompt: &str, repo_root: &Path) -> Result<(String, String), String> {
+    let model = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+        model, gkey
+    );
+    let body = [
+        "\x7B\x22contents\x22:[\x7B\x22parts\x22:[\x7B\x22text\x22:\x22",
+        escaped_prompt,
+        "\x22\x7D]\x7D],\x22generationConfig\x22:\x7B\x22temperature\x22:0.1\x7D\x7D",
+    ]
+    .concat();
+    let headers = vec!["Content-Type: application/json".to_string()];
+    let text = call_curl_json(&url, &headers, &body, repo_root)?;
+    Ok((format!("gemini:{}", model), text))
+}
+
+/// @outputs: 2
+fn call_openai_compatible_endpoint(
+    url: &str,
+    token: &str,
+    default_model: &str,
+    escaped_prompt: &str,
+    repo_root: &Path,
+) -> Result<(String, String), String> {
+    let model = env::var("FARMER_OPENAI_MODEL").unwrap_or_else(|_| default_model.to_string());
+    let body = [
+        "\x7B\x22model\x22:\x22",
+        &model,
+        "\x22,\x22temperature\x22:0.1,\x22messages\x22:[\x7B\x22role\x22:\x22user\x22,\x22content\x22:\x22",
+        escaped_prompt,
+        "\x22\x7D]\x7D",
+    ]
+    .concat();
+    let headers = vec![
+        "Content-Type: application/json".to_string(),
+        format!("Authorization: Bearer {}", token),
+    ];
+    let text = call_curl_json(url, &headers, &body, repo_root)?;
+    Ok((format!("cloud:{}", model), text))
+}
+
 /// @outputs: 2
 /// @domain: attempt [1..20]
 fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<(String, String), String> {
@@ -200,60 +266,42 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<
         return Err("嘗試次數超出定義域 [1..20]".to_string());
     }
     let escaped = escape_json_string(prompt);
-    let gemini_raw = env::var("GEMINI_API_KEYS")
-        .or_else(|_| env::var("GEMINI_API_KEY"))
-        .unwrap_or_default();
-    let gemini_pool = parse_api_key_pool(&gemini_raw);
-    let node_offset: usize = env::var("FARMER_NODE_ID")
-        .ok()
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(0);
-    let sharded_attempt = ((attempt - 1 + node_offset) % 100) + 1;
+    let node_offset: usize = env::var("FARMER_NODE_ID").ok().and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
+    let idx = (attempt - 1) + node_offset;
 
-    if let Some(gkey) = select_rotating_key(&gemini_pool, sharded_attempt) {
-        let model = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
-        let url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-            model, gkey
-        );
-        let body = [
-            "\x7B\x22contents\x22:[\x7B\x22parts\x22:[\x7B\x22text\x22:\x22",
-            &escaped,
-            "\x22\x7D]\x7D],\x22generationConfig\x22:\x7B\x22temperature\x22:0.1\x7D\x7D",
-        ]
-        .concat();
-        let headers = vec!["Content-Type: application/json".to_string()];
-        let text = call_curl_json(&url, &headers, &body, repo_root)?;
-        return Ok((format!("gemini:{}", model), text));
+    let gemini_pool = resolve_key_pool_strings(
+        repo_root,
+        "GEMINI_API_KEYS",
+        "GEMINI_API_KEY",
+        &["gemini", "gemini2", "gemini3", "gemini4"],
+    );
+    if !gemini_pool.is_empty() {
+        let gkey = &gemini_pool[idx % gemini_pool.len()];
+        if let Ok(res) = call_gemini_endpoint(gkey, &escaped, repo_root) {
+            return Ok(res);
+        }
     }
 
-    let gh_or_groq = env::var("GROQ_API_KEY")
-        .map(|k| ("https://api.groq.com/openai/v1/chat/completions", k, "llama-3.3-70b-versatile"))
-        .or_else(|_| {
-            env::var("GITHUB_TOKEN").map(|k| {
-                ("https://models.inference.ai.azure.com/chat/completions", k, "gpt-4o-mini")
-            })
-        });
-
-    if let Ok((url, token, default_model)) = gh_or_groq {
-        let model = env::var("FARMER_OPENAI_MODEL").unwrap_or_else(|_| default_model.to_string());
-        let body = [
-            "\x7B\x22model\x22:\x22",
-            &model,
-            "\x22,\x22temperature\x22:0.1,\x22messages\x22:[\x7B\x22role\x22:\x22user\x22,\x22content\x22:\x22",
-            &escaped,
-            "\x22\x7D]\x7D",
-        ]
-        .concat();
-        let headers = vec![
-            "Content-Type: application/json".to_string(),
-            format!("Authorization: Bearer {}", token),
-        ];
-        let text = call_curl_json(url, &headers, &body, repo_root)?;
-        return Ok((format!("cloud:{}", model), text));
+    let groq_pool = resolve_key_pool_strings(
+        repo_root,
+        "GROQ_API_KEYS",
+        "GROQ_API_KEY",
+        &["groq", "groq2", "groq3", "groq4"],
+    );
+    if !groq_pool.is_empty() {
+        let qkey = &groq_pool[idx % groq_pool.len()];
+        let url = "https://api.groq.com/openai/v1/chat/completions";
+        if let Ok(res) = call_openai_compatible_endpoint(url, qkey, "llama-3.3-70b-versatile", &escaped, repo_root) {
+            return Ok(res);
+        }
     }
 
-    Err("未偵測到免費 API 金鑰！請設定 GEMINI_API_KEY、GEMINI_API_KEYS、GROQ_API_KEY 或 GITHUB_TOKEN".to_string())
+    if let Ok(gh_token) = env::var("GITHUB_TOKEN") {
+        let url = "https://models.inference.ai.azure.com/chat/completions";
+        return call_openai_compatible_endpoint(url, &gh_token, "gpt-4o-mini", &escaped, repo_root);
+    }
+
+    Err("所有免費 API 金鑰池 (Gemini 4x / Groq 4x / GitHub Models) 皆無法連線或未設定！".to_string())
 }
 
 /// @outputs: 2
