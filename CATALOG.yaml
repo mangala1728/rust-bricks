@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 740
+total_functions: 742
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1977,6 +1977,28 @@ modules:
           rate: "[-0.5..1.0]"
           sigma: "[0.001..10.0]"
           t_years: "[0.001..100.0]"
+  - module: "fin_ewma_volatility"
+    file: "src/fin_ewma_volatility.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: RiskMetrics EWMA dynamic volatility single-step and annualization calculator."
+      - "Inputs: Previous variance, current return, decay factor (lambda), daily variance, trading days per year."
+      - "Outputs: EWMA updated conditional variance or annualized volatility wrapped in Option<f64>."
+      - "Invariants: Pure std, zero dependencies, no panic/unwrap/unsafe, max nesting depth <= 2, function length <= 60 lines."
+    functions:
+      - name: "ewma_variance_step"
+        signature: "pub fn ewma_variance_step("
+        outputs: 1
+        domains:
+          prev_variance: "[0.0..1.0e12]"
+          current_return: "[-1.0..10.0]"
+          lambda: "[0.5..0.999]"
+      - name: "ewma_annualized_volatility"
+        signature: "pub fn ewma_annualized_volatility("
+        outputs: 1
+        domains:
+          daily_variance: "[0.0..1.0e12]"
+          trading_days_per_year: "[200.0..365.0]"
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3

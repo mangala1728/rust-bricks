@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 740,
+  "total_functions": 742,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2081,6 +2081,23 @@
           "name": "black_scholes_european",
           "signature": "pub fn black_scholes_european(",
           "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "fin_ewma_volatility",
+      "file": "src/fin_ewma_volatility.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "ewma_variance_step",
+          "signature": "pub fn ewma_variance_step(",
+          "outputs": 1
+        },
+        {
+          "name": "ewma_annualized_volatility",
+          "signature": "pub fn ewma_annualized_volatility(",
+          "outputs": 1
         }
       ]
     },
