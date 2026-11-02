@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 760,
+  "total_functions": 761,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2226,6 +2226,18 @@
         {
           "name": "convex_hull_2d",
           "signature": "pub fn convex_hull_2d(mut points: Vec<(f64, f64)>) -> Option<Vec<(f64, f64)>>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "geo_point_in_polygon_ray",
+      "file": "src/geo_point_in_polygon_ray.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "point_in_polygon_ray",
+          "signature": "pub fn point_in_polygon_ray(",
           "outputs": 1
         }
       ]

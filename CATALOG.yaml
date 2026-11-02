@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 760
+total_functions: 761
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2179,6 +2179,24 @@ modules:
         domains:
           points: "[i].x [MIN..MAX] (checked for every point)"
           points: "[i].y [MIN..MAX] (checked for every point)"
+  - module: "geo_point_in_polygon_ray"
+    file: "src/geo_point_in_polygon_ray.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role:   point‑in‑polygon (ray‑casting)"
+      - "Inputs: point: (f64, f64), polygon: &[(f64, f64)]"
+      - "Outputs: Option<bool> – Some(true) if inside, Some(false) if outside, None on error"
+      - "Invariants:"
+      - "- polygon must contain at least 3 vertices"
+      - "- all coordinates must be finite numbers (no NaN / ±∞)"
+      - "- algorithm follows the classic even‑odd rule"
+    functions:
+      - name: "point_in_polygon_ray"
+        signature: "pub fn point_in_polygon_ray("
+        outputs: 1
+        domains:
+          px: "[-1.0e308..1.0e308]"
+          py: "[-1.0e308..1.0e308]"
   - module: "geo_spatial_projection"
     file: "src/geo_spatial_projection.rs"
     functions_count: 10
