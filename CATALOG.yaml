@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 754
+total_functions: 757
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1690,6 +1690,38 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "dsp_mel_filterbank"
+    file: "src/dsp_mel_filterbank.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role:   DSP – Mel‑scale utilities (pure Rust, std only)"
+      - "Inputs: hz  [0.0 .. 100000.0]   (f64)"
+      - "mel [0.0 .. 10000.0]    (f64)"
+      - "num_filters [2 .. 128] (usize)"
+      - "min_hz [0.0 .. 10000.0] (f64)"
+      - "max_hz [100.0 .. 100000.0] (f64)"
+      - "Outputs: mel (f64) , hz (f64) , Vec<f64> (centers)"
+      - "Invariants:"
+      - "• All public functions return `Option` – `None` on out‑of‑range or non‑finite input."
+      - "• No external crates, no `unsafe`, no recursion, and control‑flow nesting ≤ 2."
+    functions:
+      - name: "hz_to_mel"
+        signature: "pub fn hz_to_mel(hz: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          hz: "[0.0..100000.0]"
+      - name: "mel_to_hz"
+        signature: "pub fn mel_to_hz(mel: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          mel: "[0.0..10000.0]"
+      - name: "mel_filterbank_centers_hz"
+        signature: "pub fn mel_filterbank_centers_hz("
+        outputs: 1
+        domains:
+          num_filters: "[2..128]"
+          min_hz: "[0.0..10000.0]"
+          max_hz: "[100.0..100000.0]"
   - module: "dsp_spectral_features"
     file: "src/dsp_spectral_features.rs"
     functions_count: 2

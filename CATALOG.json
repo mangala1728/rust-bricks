@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 754,
+  "total_functions": 757,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1787,6 +1787,28 @@
         {
           "name": "q15_apply_gain",
           "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_mel_filterbank",
+      "file": "src/dsp_mel_filterbank.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "hz_to_mel",
+          "signature": "pub fn hz_to_mel(hz: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "mel_to_hz",
+          "signature": "pub fn mel_to_hz(mel: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "mel_filterbank_centers_hz",
+          "signature": "pub fn mel_filterbank_centers_hz(",
           "outputs": 1
         }
       ]
