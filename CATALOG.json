@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 757,
+  "total_functions": 759,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1788,6 +1788,23 @@
           "name": "q15_apply_gain",
           "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_goertzel",
+      "file": "src/dsp_goertzel.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "goertzel_coeff",
+          "signature": "pub fn goertzel_coeff(target_freq_hz: f64, sample_rate_hz: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "goertzel_detect",
+          "signature": "pub fn goertzel_detect(samples: &[f64], coeff: f64) -> Option<(f64, f64)>",
+          "outputs": 2
         }
       ]
     },

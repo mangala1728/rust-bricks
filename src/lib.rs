@@ -51,6 +51,7 @@ pub mod dsp_ema_smoother;
 pub mod dsp_fft_multirate_2d;
 pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;
+pub mod dsp_goertzel;
 pub mod dsp_mel_filterbank;
 pub mod dsp_spectral_features;
 pub mod dsp_window_blackman;

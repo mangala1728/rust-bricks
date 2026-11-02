@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 757
+total_functions: 759
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1690,6 +1690,30 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "dsp_goertzel"
+    file: "src/dsp_goertzel.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   DSP Goertzel single‑tone detector (pure Rust, no external crates)"
+      - "Inputs: target_freq_hz: f64, sample_rate_hz: f64, samples: &[f64], coeff: f64"
+      - "Outputs: Option<f64> (coeff), Option<(f64, f64)> (power, magnitude)"
+      - "Invariants:"
+      - "- 0.0 < target_freq_hz < sample_rate_hz / 2.0"
+      - "- |coeff| ≤ 2.0  (derived from cosine bound)"
+      - "- samples length may be any non‑zero size"
+      - "- power ≥ 0.0, magnitude = sqrt(power)"
+    functions:
+      - name: "goertzel_coeff"
+        signature: "pub fn goertzel_coeff(target_freq_hz: f64, sample_rate_hz: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          target_freq_hz: "[1.0..500000.0]"
+          sample_rate_hz: "[2.0..1000000.0]"
+      - name: "goertzel_detect"
+        signature: "pub fn goertzel_detect(samples: &[f64], coeff: f64) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          coeff: "[-2.0..2.0]"
   - module: "dsp_mel_filterbank"
     file: "src/dsp_mel_filterbank.rs"
     functions_count: 3
