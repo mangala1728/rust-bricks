@@ -61,6 +61,7 @@ pub mod fieldbus_motion_cia402;
 pub mod fin_apdu_track;
 pub mod fin_black_scholes;
 pub mod fin_ewma_volatility;
+pub mod fin_sortino_ratio;
 pub mod geo_collision;
 pub mod geo_spatial_projection;
 pub mod gnss_nmea_geodesy;

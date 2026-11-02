@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 742
+total_functions: 744
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1999,6 +1999,35 @@ modules:
         domains:
           daily_variance: "[0.0..1.0e12]"
           trading_days_per_year: "[200.0..365.0]"
+  - module: "fin_sortino_ratio"
+    file: "src/fin_sortino_ratio.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Compute downside deviation and Sortino ratio for a series of returns."
+      - "Inputs: returns: &[f64], target_return: f64, risk_free_rate: f64"
+      - "Outputs: Option<f64> (Some(value) when calculation is defined, None otherwise)"
+      - "Invariants: target_return ∈ [-1.0, 10.0], risk_free_rate ∈ [-1.0, 10.0],"
+      - "returns.len() > 0 for a defined result,"
+      - "Compute the downside deviation (semi‑deviation) of a return series."
+      - "# Parameters"
+      - "- `returns`: slice of periodic returns (e.g. monthly returns)."
+      - "- `target_return`: the benchmark return used to separate “down‑side” from “up‑side”."
+      - "# Returns"
+      - "- `Some(D)` where `D` is the downside deviation, if `returns` is non‑empty."
+      - "- `None` if `returns` is empty or `target_return` is out of the allowed domain."
+      - "@outputs: 1"
+      - "@domain: target_return [-1.0..10.0]"
+    functions:
+      - name: "downside_deviation"
+        signature: "pub fn downside_deviation(returns: &[f64], target_return: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          target_return: "[-1.0..10.0]"
+      - name: "sortino_ratio"
+        signature: "pub fn sortino_ratio(returns: &[f64], risk_free_rate: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          risk_free_rate: "[-1.0..10.0]"
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3

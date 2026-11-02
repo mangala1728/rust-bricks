@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 742,
+  "total_functions": 744,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2097,6 +2097,23 @@
         {
           "name": "ewma_annualized_volatility",
           "signature": "pub fn ewma_annualized_volatility(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_sortino_ratio",
+      "file": "src/fin_sortino_ratio.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "downside_deviation",
+          "signature": "pub fn downside_deviation(returns: &[f64], target_return: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "sortino_ratio",
+          "signature": "pub fn sortino_ratio(returns: &[f64], risk_free_rate: f64) -> Option<f64>",
           "outputs": 1
         }
       ]
