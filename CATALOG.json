@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 765,
+  "total_functions": 766,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1826,6 +1826,18 @@
         {
           "name": "mel_filterbank_centers_hz",
           "signature": "pub fn mel_filterbank_centers_hz(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_resample_linear",
+      "file": "src/dsp_resample_linear.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "resample_linear_1d",
+          "signature": "pub fn resample_linear_1d(",
           "outputs": 1
         }
       ]
