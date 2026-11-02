@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 744
+total_functions: 746
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2053,6 +2053,31 @@ modules:
         domains:
           px: "[-10000.0..10000.0]"
           py: "[-10000.0..10000.0]"
+  - module: "geo_convex_hull_2d"
+    file: "src/geo_convex_hull_2d.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 2D geometry primitive – convex‑hull construction."
+      - "Inputs: Vec<(f64,f64)> – a set of planar points."
+      - "Outputs: Option<Vec<(f64,f64)>> – vertices of the convex hull in CCW order, or None."
+      - "Invariants: all coordinates lie inside the closed interval [MIN..MAX] (no NaN)."
+    functions:
+      - name: "cross_product_2d"
+        signature: "pub fn cross_product_2d(p0: (f64, f64), p1: (f64, f64), p2: (f64, f64)) -> f64"
+        outputs: 1
+        domains:
+          p0.x: "[MIN..MAX]"
+          p0.y: "[MIN..MAX]"
+          p1.x: "[MIN..MAX]"
+          p1.y: "[MIN..MAX]"
+          p2.x: "[MIN..MAX]"
+          p2.y: "[MIN..MAX]"
+      - name: "convex_hull_2d"
+        signature: "pub fn convex_hull_2d(mut points: Vec<(f64, f64)>) -> Option<Vec<(f64, f64)>>"
+        outputs: 1
+        domains:
+          points: "[i].x [MIN..MAX] (checked for every point)"
+          points: "[i].y [MIN..MAX] (checked for every point)"
   - module: "geo_spatial_projection"
     file: "src/geo_spatial_projection.rs"
     functions_count: 10
