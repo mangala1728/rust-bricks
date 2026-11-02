@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 748
+total_functions: 750
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3766,6 +3766,25 @@ modules:
         outputs: 2
         domains:
           unit_ms: "[10..2000]"
+  - module: "sensor_mahony_ahrs"
+    file: "src/sensor_mahony_ahrs.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Mahony 6‑DOF AHRS core – pure‑Rust, zero external dependencies."
+      - "Inputs:  q (unit quaternion), gyro_rps (rad/s), accel_g (g), integral_err (bias accumulator), kp, ki, dt."
+      - "Outputs:  gravity error (3), updated quaternion (4) wrapped in Option."
+      - "Invariants:  q is normalized, dt ∈ [0.0001, 1.0], kp, ki ∈ [0.0, 100.0], integral_err components stay in [‑1.0, 1.0]."
+    functions:
+      - name: "mahony_compute_gravity_error"
+        signature: "pub fn mahony_compute_gravity_error("
+        outputs: 3
+      - name: "mahony_ahrs_update_6dof"
+        signature: "pub fn mahony_ahrs_update_6dof("
+        outputs: 4
+        domains:
+          dt: "[0.0001..1.0]"
+          kp: "[0.0..100.0]"
+          ki: "[0.0..100.0]"
   - module: "sensor_motion"
     file: "src/sensor_motion.rs"
     functions_count: 4

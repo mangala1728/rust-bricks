@@ -108,6 +108,7 @@ pub mod rpa_mobile_touch_macro;
 pub mod rpa_screen_control;
 pub mod sensor_baro_als;
 pub mod sensor_hardware;
+pub mod sensor_mahony_ahrs;
 pub mod sensor_motion;
 pub mod sensor_pan_tompkins;
 pub mod sensor_power_meter;

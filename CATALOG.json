@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 748,
+  "total_functions": 750,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3935,6 +3935,23 @@
           "name": "sos_morse_signal",
           "signature": "pub fn sos_morse_signal(time_ms: u32, unit_ms: u32) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "sensor_mahony_ahrs",
+      "file": "src/sensor_mahony_ahrs.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "mahony_compute_gravity_error",
+          "signature": "pub fn mahony_compute_gravity_error(",
+          "outputs": 3
+        },
+        {
+          "name": "mahony_ahrs_update_6dof",
+          "signature": "pub fn mahony_ahrs_update_6dof(",
+          "outputs": 4
         }
       ]
     },
