@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 723
+total_functions: 725
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1616,6 +1616,24 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "dsp_window_blackman"
+    file: "src/dsp_window_blackman.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DSP windowing"
+      - "Inputs: index usize, window_len usize, buffer &mut [f64]"
+      - "Outputs: Option<f64>, bool"
+      - "Invariants: 0 ≤ index < window_len, window_len ≥ 2, buffer.len() ≥ 2"
+    functions:
+      - name: "blackman_window_coeff"
+        signature: "pub fn blackman_window_coeff(index: usize, window_len: usize) -> Option<f64>"
+        outputs: 1
+        domains:
+          index: "[0..usize::MAX]"
+          window_len: "[2..1048576]"
+      - name: "apply_blackman_window"
+        signature: "pub fn apply_blackman_window(buffer: &mut [f64]) -> bool"
+        outputs: 1
   - module: "dsp_window_hann"
     file: "src/dsp_window_hann.rs"
     functions_count: 1

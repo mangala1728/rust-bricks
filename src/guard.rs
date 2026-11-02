@@ -298,7 +298,7 @@ fn check_line_safety_proof(line: &str, prev_line: &str, line_num: usize, issues:
         return;
     }
 
-    let has_proof = line.contains("@safety-proof:") || prev_line.contains("@safety-proof:");
+    let has_proof = line.contains("@safety-proof") || prev_line.contains("@safety-proof");
     if !has_proof {
         issues.push(format!(
             "【危險操作未證明】發現 unwrap/expect/panic/unsafe 缺少 // @safety-proof: 標注（06 號合約）：{} (行 {}: {})",

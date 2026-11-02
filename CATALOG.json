@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 723,
+  "total_functions": 725,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1736,6 +1736,23 @@
         {
           "name": "q15_apply_gain",
           "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_window_blackman",
+      "file": "src/dsp_window_blackman.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "blackman_window_coeff",
+          "signature": "pub fn blackman_window_coeff(index: usize, window_len: usize) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "apply_blackman_window",
+          "signature": "pub fn apply_blackman_window(buffer: &mut [f64]) -> bool",
           "outputs": 1
         }
       ]

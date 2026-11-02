@@ -1110,6 +1110,7 @@ fn auto_commit_and_push_farm(module_name: &str, spec_file: &str) {
     let _ = Command::new("git")
         .args(["push", "-u", "origin", &branch_name, "--force-with-lease"])
         .status();
+    let _ = Command::new("git").args(["checkout", "main"]).status();
 }
 
 /// @outputs: 1

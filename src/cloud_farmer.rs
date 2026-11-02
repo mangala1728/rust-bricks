@@ -78,13 +78,37 @@ pub fn build_farmer_prompt(module_name: &str, spec_text: &str, error_feedback: &
 
 /// @outputs: 2
 pub fn extract_fenced_block(raw_text: &str, tag: &str) -> Option<String> {
-    let marker = format!("```{}", tag);
-    let start_pos = raw_text.find(&marker)?;
-    let after_marker = &raw_text[start_pos + marker.len()..];
-    let newline_pos = after_marker.find('\n')?;
-    let body_start = &after_marker[newline_pos + 1..];
-    let end_pos = body_start.find("```")?;
-    let extracted = body_start[..end_pos].trim();
+    let markers = [format!("```{}", tag), format!("```{}s", tag)];
+    for marker in &markers {
+        if let Some(start_pos) = raw_text.find(marker.as_str()) {
+            let after_marker = &raw_text[start_pos + marker.len()..];
+            if let Some(newline_pos) = after_marker.find('\n') {
+                let body_start = &after_marker[newline_pos + 1..];
+                if let Some(end_pos) = body_start.find("```") {
+                    let extracted = body_start[..end_pos].trim();
+                    if !extracted.is_empty() {
+                        return Some(format!("{}\n", extracted));
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+/// @outputs: 1
+pub fn extract_second_rust_block(raw_text: &str) -> Option<String> {
+    let first_marker = "```rust";
+    let p1 = raw_text.find(first_marker)?;
+    let after_p1 = &raw_text[p1 + first_marker.len()..];
+    let end1 = after_p1.find("```")?;
+    let rest = &after_p1[end1 + 3..];
+    let p2 = rest.find(first_marker)?;
+    let after_p2 = &rest[p2 + first_marker.len()..];
+    let nl = after_p2.find('\n')?;
+    let body = &after_p2[nl + 1..];
+    let end2 = body.find("```")?;
+    let extracted = body[..end2].trim();
     if extracted.is_empty() {
         return None;
     }
@@ -407,6 +431,7 @@ fn try_single_farm_attempt(
         .or_else(|| extract_fenced_block(&raw_resp, "rust"))
         .ok_or_else(|| "模型輸出缺少 ```rust:module 標籤".to_string())?;
     let test_code = extract_fenced_block(&raw_resp, "rust:test")
+        .or_else(|| extract_second_rust_block(&raw_resp))
         .ok_or_else(|| "模型輸出缺少 ```rust:test 標籤".to_string())?;
 
     let lib_path = repo_root.join("src").join("lib.rs");
@@ -467,7 +492,8 @@ pub fn farm_brick_from_spec(
         match try_single_farm_attempt(repo_root, module_name, &orig_lib, &spec_text, &feedback, attempt) {
             Ok(provider) => return Ok(provider),
             Err(err_log) => {
-                println!("⚠️ [cloud-farmer] 第 {} 次驗證未過，準備自我修復...", attempt);
+                let first_err = err_log.lines().next().unwrap_or("未知錯誤");
+                println!("⚠️ [cloud-farmer] 第 {} 次驗證未過 ({})，準備自我修復...", attempt, first_err);
                 feedback = err_log;
             }
         }
