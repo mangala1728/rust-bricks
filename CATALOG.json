@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 794,
+  "total_functions": 796,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2251,6 +2251,23 @@
           "name": "black_scholes_european",
           "signature": "pub fn black_scholes_european(",
           "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "fin_calmar_ratio",
+      "file": "src/fin_calmar_ratio.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_max_drawdown",
+          "signature": "pub fn fin_max_drawdown(prices: &[f64]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_calmar_ratio",
+          "signature": "pub fn fin_calmar_ratio(annualized_return: f64, max_drawdown: f64) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 794
+total_functions: 796
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2198,6 +2198,23 @@ modules:
           rate: "[-0.5..1.0]"
           sigma: "[0.001..10.0]"
           t_years: "[0.001..100.0]"
+  - module: "fin_calmar_ratio"
+    file: "src/fin_calmar_ratio.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   Compute financial risk metrics (Maximum Drawdown & Calmar Ratio)"
+      - "Inputs: prices: &[f64] (net‑asset values), annualized_return: f64, max_drawdown: f64"
+      - "Outputs: Option<f64> (metric value)"
+      - "Invariants: prices.len() >= 2, each price > 0.0, max_drawdown ∈ (0.0, 1.0], all f64 values are finite"
+    functions:
+      - name: "fin_max_drawdown"
+        signature: "pub fn fin_max_drawdown(prices: &[f64]) -> Option<f64>"
+        outputs: 1
+      - name: "fin_calmar_ratio"
+        signature: "pub fn fin_calmar_ratio(annualized_return: f64, max_drawdown: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          max_drawdown: "[0.0..=1.0]"
   - module: "fin_ewma_volatility"
     file: "src/fin_ewma_volatility.rs"
     functions_count: 2
