@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 789,
+  "total_functions": 792,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1686,6 +1686,23 @@
       ]
     },
     {
+      "module": "dsp_comb_filter",
+      "file": "src/dsp_comb_filter.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_feedback_comb_step",
+          "signature": "pub fn dsp_feedback_comb_step(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_feedforward_comb_step",
+          "signature": "pub fn dsp_feedforward_comb_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_ema_smoother",
       "file": "src/dsp_ema_smoother.rs",
       "functions_count": 2,
@@ -2365,6 +2382,18 @@
           "name": "geo_geohash_decode_bounds",
           "signature": "pub fn geo_geohash_decode_bounds(",
           "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "geo_haversine_destination",
+      "file": "src/geo_haversine_destination.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "geo_destination_point",
+          "signature": "pub fn geo_destination_point(",
+          "outputs": 2
         }
       ]
     },

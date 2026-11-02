@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 789
+total_functions: 792
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1582,6 +1582,27 @@ modules:
         outputs: 1
         domains:
           input: "[-1.0e9..1.0e9]"
+  - module: "dsp_comb_filter"
+    file: "src/dsp_comb_filter.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   DSP primitive – comb‑filter building block"
+      - "Inputs: input: f64, buffer: &mut [f64], write_pos: &mut usize,"
+      - "feedback_gain / blend: f64"
+      - "Outputs: 1 (filtered sample)"
+      - "Invariants:"
+      - "- buffer.len() >= 1"
+      - "- *write_pos < buffer.len()"
+      - "- |feedback_gain| < 1.0  (feedback case)"
+      - "- blend is finite        (feed‑forward case)"
+      - "- all numeric arguments are finite"
+    functions:
+      - name: "dsp_feedback_comb_step"
+        signature: "pub fn dsp_feedback_comb_step("
+        outputs: 1
+      - name: "dsp_feedforward_comb_step"
+        signature: "pub fn dsp_feedforward_comb_step("
+        outputs: 1
   - module: "dsp_ema_smoother"
     file: "src/dsp_ema_smoother.rs"
     functions_count: 2
@@ -2345,6 +2366,26 @@ modules:
         outputs: 4
         domains:
           precision_bits: "[1..=64]"
+  - module: "geo_haversine_destination"
+    file: "src/geo_haversine_destination.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Compute the destination point on a spherical Earth given start latitude, longitude,"
+      - "bearing and travel distance."
+      - "Inputs: lat_deg (f64) ∈ [-90.0, 90.0], lon_deg (f64) ∈ [-180.0, 180.0],"
+      - "bearing_deg (f64) ∈ [0.0, 360.0], distance_m (f64) ≥ 0.0"
+      - "Outputs: (lat2_deg, lon2_deg) – latitude and longitude of the destination point."
+      - "Invariants: all angles are finite, distance is finite and non‑negative,"
+      - "Earth radius is constant 6 371 000 m."
+    functions:
+      - name: "geo_destination_point"
+        signature: "pub fn geo_destination_point("
+        outputs: 2
+        domains:
+          lat_deg: "[-90.0..=90.0]"
+          lon_deg: "[-180.0..=180.0]"
+          bearing_deg: "[0.0..=360.0]"
+          distance_m: "[0.0..=∞]"
   - module: "geo_point_in_polygon_ray"
     file: "src/geo_point_in_polygon_ray.rs"
     functions_count: 1
