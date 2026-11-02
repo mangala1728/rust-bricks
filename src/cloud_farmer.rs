@@ -204,8 +204,13 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<
         .or_else(|_| env::var("GEMINI_API_KEY"))
         .unwrap_or_default();
     let gemini_pool = parse_api_key_pool(&gemini_raw);
+    let node_offset: usize = env::var("FARMER_NODE_ID")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(0);
+    let sharded_attempt = ((attempt - 1 + node_offset) % 100) + 1;
 
-    if let Some(gkey) = select_rotating_key(&gemini_pool, attempt) {
+    if let Some(gkey) = select_rotating_key(&gemini_pool, sharded_attempt) {
         let model = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
         let url = format!(
             "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
@@ -312,6 +317,24 @@ fn try_single_farm_attempt(
 }
 
 /// @outputs: 2
+pub fn check_module_already_claimed(repo_root: &Path, module_name: &str) -> Result<(), String> {
+    let mod_path = repo_root.join("src").join(format!("{}.rs", module_name));
+    if mod_path.exists() {
+        return Err(format!("【防撞車鎖定】本地已存在 `src/{}.rs`，跳過重複開農！", module_name));
+    }
+    let _ = Command::new("git").args(["fetch", "--all", "--quiet"]).current_dir(repo_root).status();
+    let out = Command::new("git").args(["branch", "-r"]).current_dir(repo_root).output();
+    if let Ok(o) = out {
+        let branches = String::from_utf8_lossy(&o.stdout);
+        let target_branch = format!("contrib/cloud-farm-{}", module_name);
+        if branches.contains(&target_branch) {
+            return Err(format!("【防撞車鎖定】遠端已存在雲端分支 `{}`，其他節點已完成或正在執行！", target_branch));
+        }
+    }
+    Ok(())
+}
+
+/// @outputs: 2
 /// @domain: max_attempts [1..10]
 pub fn farm_brick_from_spec(
     repo_root: &Path,
@@ -322,6 +345,7 @@ pub fn farm_brick_from_spec(
     if max_attempts < 1 || max_attempts > 10 {
         return Err("max_attempts 必須介於 [1..10]".to_string());
     }
+    check_module_already_claimed(repo_root, module_name)?;
     let spec_text = fs::read_to_string(spec_path).map_err(|e| format!("讀取規格書失敗: {}", e))?;
     let lib_path = repo_root.join("src").join("lib.rs");
     let orig_lib = fs::read_to_string(&lib_path).map_err(|e| format!("讀取 lib.rs 失敗: {}", e))?;
@@ -344,4 +368,81 @@ pub fn farm_brick_from_spec(
     let _ = fs::remove_file(&mod_path);
     let _ = fs::remove_file(&test_path);
     Err(format!("超過最大重試次數 ({})，已安全回滾工作區。最後報錯:\n{}", max_attempts, feedback))
+}
+
+/// @outputs: 2
+fn git_show_file(repo_root: &Path, git_ref: &str) -> Option<String> {
+    let out = Command::new("git")
+        .args(["show", git_ref])
+        .current_dir(repo_root)
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    Some(String::from_utf8_lossy(&out.stdout).to_string())
+}
+
+/// @outputs: 2
+fn harvest_single_branch(repo_root: &Path, remote_branch: &str, module_name: &str) -> Result<(), String> {
+    let mod_path = repo_root.join("src").join(format!("{}.rs", module_name));
+    if mod_path.exists() {
+        return Err(format!("本地已存在 src/{}.rs，跳過雲端分支 {}", module_name, remote_branch));
+    }
+    let mod_ref = format!("{}:src/{}.rs", remote_branch, module_name);
+    let test_ref = format!("{}:tests/test_{}.rs", remote_branch, module_name);
+    let mod_src = git_show_file(repo_root, &mod_ref)
+        .ok_or_else(|| format!("無法從 {} 提取 src/{}.rs", remote_branch, module_name))?;
+    let test_src = git_show_file(repo_root, &test_ref)
+        .ok_or_else(|| format!("無法從 {} 提取 tests/test_{}.rs", remote_branch, module_name))?;
+
+    let lib_path = repo_root.join("src").join("lib.rs");
+    let orig_lib = fs::read_to_string(&lib_path).map_err(|e| format!("讀取 lib.rs 失敗: {}", e))?;
+    let test_name = format!("test_{}", module_name);
+    let test_path = repo_root.join("tests").join(format!("{}.rs", test_name));
+
+    let new_lib = insert_mod_alphabetically(&orig_lib, module_name);
+    let _ = fs::write(&lib_path, new_lib);
+    let _ = fs::write(&mod_path, mod_src);
+    let _ = fs::write(&test_path, test_src);
+
+    if let Err(e) = verify_farmed_module(repo_root, &test_name) {
+        let _ = fs::write(&lib_path, orig_lib);
+        let _ = fs::remove_file(&mod_path);
+        let _ = fs::remove_file(&test_path);
+        return Err(format!("收割驗證衝突或失敗 (已自動回滾): {}", e));
+    }
+    Ok(())
+}
+
+/// @outputs: 2
+pub fn harvest_cloud_branches(repo_root: &Path) -> Result<Vec<String>, String> {
+    let _ = Command::new("git").args(["fetch", "--all", "--prune"]).current_dir(repo_root).status();
+    let out = Command::new("git")
+        .args(["branch", "-r"])
+        .current_dir(repo_root)
+        .output()
+        .map_err(|e| format!("git branch -r 失敗: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let prefix = "origin/contrib/cloud-farm-";
+    let mut harvested = Vec::new();
+
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        let mod_name = match trimmed.strip_prefix(prefix) {
+            Some(m) => m,
+            None => continue,
+        };
+        if let Err(e) = harvest_single_branch(repo_root, trimmed, mod_name) {
+            eprintln!("⚠️ [harvest] 跳過 {}: {}", trimmed, e);
+            continue;
+        }
+        harvested.push(mod_name.to_string());
+    }
+    if !harvested.is_empty() {
+        let _ = crate::catalog::generate_catalogs(repo_root);
+        let _ = crate::receipt::create_receipt(repo_root, "cloud-harvester", "PASS");
+    }
+    Ok(harvested)
 }

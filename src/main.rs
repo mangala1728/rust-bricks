@@ -1098,14 +1098,37 @@ fn run_wish_cmd(args: &[String]) {
 
 /// @outputs: 1
 fn auto_commit_and_push_farm(module_name: &str, spec_file: &str) {
+    let branch_name = format!("contrib/cloud-farm-{}", module_name);
     let mod_file = format!("src/{}.rs", module_name);
     let test_file = format!("tests/test_{}.rs", module_name);
+    let _ = Command::new("git").args(["checkout", "-B", &branch_name]).status();
     let _ = Command::new("git")
         .args(["add", &mod_file, &test_file, "src/lib.rs", "CATALOG.yaml", "CATALOG.json", ".ai-memory/receipt.json", spec_file])
         .status();
     let msg = format!("feat(cloud-farm): 自動農出並驗證微積木 `{}`", module_name);
     let _ = Command::new("git").args(["commit", "-m", &msg]).status();
-    let _ = Command::new("git").args(["push"]).status();
+    let _ = Command::new("git")
+        .args(["push", "-u", "origin", &branch_name, "--force-with-lease"])
+        .status();
+}
+
+/// @outputs: 1
+fn run_harvest_cmd() {
+    println!("🚜 [rust-bricks] 啟動零衝突雲端收割機 (Cloud Branch Harvester)...");
+    let repo_root = Path::new(".");
+    match rust_bricks::cloud_farmer::harvest_cloud_branches(repo_root) {
+        Ok(list) => {
+            if list.is_empty() {
+                println!("✨ [harvest] 目前無新完成的雲端農夫分支待收割。");
+            } else {
+                println!("🎉 [harvest] 成功無衝突收割 {} 個雲端積木並重算總索引：{:?}", list.len(), list);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ [harvest] 收割失敗: {}", e);
+            process::exit(1);
+        }
+    }
 }
 
 /// @outputs: 1
@@ -1149,6 +1172,7 @@ fn print_help() {
     println!("  cargo run -- audit                      # Run Zero-Trust Quality Director Chaos Audit");
     println!("  cargo run -- wish [list|new]            # Wishlist board for AI agents & users");
     println!("  cargo run -- farm <spec> <mod> [--push] # Cloud Free-Tier Auto Brick Farmer");
+    println!("  cargo run -- harvest                    # Conflict-free harvest of cloud-farmed branches");
     println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
     println!("  cargo test                              # Run full unit test suite");
@@ -1167,6 +1191,7 @@ fn main() {
         "audit" | "chaos" => run_audit_cmd(),
         "wish" | "wishes" => run_wish_cmd(&args),
         "farm" | "farmer" => run_farm_cmd(&args),
+        "harvest" => run_harvest_cmd(),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

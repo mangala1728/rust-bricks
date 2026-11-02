@@ -116,3 +116,39 @@
    - 參考 [`specs/template.md`](../specs/template.md)，在規格書中明確給出一組標準輸入與精確預期輸出（例如 CRC32 `"123456789"` $\rightarrow$ `0xcbf43926`），防止模型寫出弱斷言。
 3. **分支隔離安全網**：
    - 雲端農夫預設推送至 `contrib/cloud-farm-*` 分支，或是通過全套 `guard.rs`（含零信任黑箱混沌測試 `chaos_audit`）後才入庫，永遠不會把壞代碼推進 `main`！
+
+---
+
+## 五、多模式同時啟動之「四層防撞車與零衝突收割」協議
+
+當 **本地端（Local Mode）** 與 **雲端三模式（GitHub Actions / Codespaces / Firebase Studio）** 同時啟動時，為了徹底杜絕「Git `main` 撞車」、「`CATALOG.yaml` / `receipt.json` 合併衝突」與「免費 API Key 429 搶頻寬」，系統於 [`src/cloud_farmer.rs`](../src/cloud_farmer.rs) 實作了四道硬體級防撞防線：
+
+### 1. 第一層：開農前遠端領地預檢（`check_module_already_claimed`）
+每次執行 `cargo run -- farm <spec> <mod>` 時，在消耗任何免費 API Token 之前，引擎會先自動執行：
+- 檢查本地是否已存在 `src/<mod>.rs`
+- 執行 `git fetch --all --quiet` 並檢查遠端是否已有 `origin/contrib/cloud-farm-<mod>` 分支
+- **一旦發現已被本地或其他雲端節點認領，立即攔截退出**，絕不重複白農同一塊積木。
+
+### 2. 第二層：主幹道與雲端專用車道物理隔離（Branch Isolation）
+- **本地端（Local Mode）**：獨佔 `main` 主幹道話語權。
+- **所有雲端模式（Cloud Modes）**：加上 `--push` 時，[`auto_commit_and_push_farm`](../src/main.rs) **強制切換並推送至獨立車道 `contrib/cloud-farm-<模組名>`**，絕不直接推 `main`，因此本地與多個雲端容器同時 Push 永遠是 $0$ 衝突。
+
+### 3. 第三層：繞過熱點檔的「零衝突收割機」（`cargo run -- harvest`）
+如果直接 `git merge` 雲端分支，`CATALOG.yaml`、`CATALOG.json`、`src/lib.rs` 與 `.ai-memory/receipt.json` 這四個共用熱點檔案 100% 會發生 Merge Conflict。
+因此，本地端只需在空檔執行一鍵收割指令：
+```bash
+cargo run -- harvest
+```
+收割機（[`harvest_cloud_branches`](../src/cloud_farmer.rs)）會自動完成：
+1. 掃描所有 `origin/contrib/cloud-farm-*` 遠端分支。
+2. **只精準摘取純代碼果實**：用 `git show` 抽出該分支的 `src/<mod>.rs` 與 `tests/test_<mod>.rs`（完全跳過雲端分支上的舊版 `CATALOG` 與 `receipt`）。
+3. 自動按字母序將 `pub mod <mod>;` 插入本地最新的 `src/lib.rs`。
+4. 實機執行 `cargo test` 與 `guard.rs`（含**跨模組全域同名函式查重** `check_function_deduplication`，若雲端跟本地剛寫好的函式撞名，當場攔截並自動回滾該分支）。
+5. 全部通過後，在本地**一次性重新生成** `CATALOG.yaml`、`CATALOG.json` 並簽發最新仲裁收據！
+
+### 4. 第四層：免費 API Key 池分片錯開（`FARMER_NODE_ID` Sharding）
+當多個環境共用同一組 `GEMINI_API_KEYS="Key0,Key1,Key2,Key3"` 時，為避免同時打第一把 Key 觸發每分鐘 15 次 (15 RPM) 限流，可在不同環境設定節點編號：
+- 本地端：`FARMER_NODE_ID=0`（從 Key0 開始輪替）
+- GitHub Actions：`FARMER_NODE_ID=1`（從 Key1 開始輪替）
+- GitHub Codespaces：`FARMER_NODE_ID=2`（從 Key2 開始輪替）
+- Firebase Studio：`FARMER_NODE_ID=3`（從 Key3 開始輪替）
