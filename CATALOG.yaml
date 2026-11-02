@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 738
+total_functions: 740
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1489,6 +1489,33 @@ modules:
         outputs: 1
         domains:
           distance_pt: "[0.0, 1000.0], angle_rad [-100.0, 100.0]"
+  - module: "dsp_biquad_bandpass"
+    file: "src/dsp_biquad_bandpass.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DSP Biquad Band‑Pass Filter (pure Rust, no external crates)"
+      - "Inputs: sample_rate_hz [1.0..1_000_000.0], center_freq_hz [0.1..sample_rate_hz/2.0],"
+      - "q_factor [0.01..1000.0], input_signal [-1.0e9..1.0e9]"
+      - "Outputs: coeffs [5] (normalized biquad coefficients), filtered_sample [1]"
+      - "Invariants: all parameters must be finite (no NaN/Inf), centre frequency < Nyquist,"
+      - "Computes the normalized biquad coefficients for a constant‑0 dB peak‑gain band‑pass filter."
+      - "@outputs: 5"
+      - "@domain: sample_rate_hz [1.0..1_000_000.0]"
+      - "@domain: center_freq_hz [0.1..sample_rate_hz/2.0]"
+      - "@domain: q_factor [0.01..1000.0]"
+    functions:
+      - name: "biquad_bandpass_coefficients"
+        signature: "pub fn biquad_bandpass_coefficients("
+        outputs: 5
+        domains:
+          sample_rate_hz: "[1.0..1_000_000.0]"
+          center_freq_hz: "[0.1..sample_rate_hz/2.0]"
+          q_factor: "[0.01..1000.0]"
+      - name: "biquad_bandpass_step"
+        signature: "pub fn biquad_bandpass_step("
+        outputs: 1
+        domains:
+          input: "[-1.0e9..1.0e9]"
   - module: "dsp_biquad_notch"
     file: "src/dsp_biquad_notch.rs"
     functions_count: 2
