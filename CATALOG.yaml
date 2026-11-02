@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 735
+total_functions: 737
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2361,6 +2361,21 @@ modules:
       - name: "xorshift64_step"
         signature: "pub fn xorshift64_step(state: u64) -> u64"
         outputs: 1
+  - module: "modbus_rtu_frame"
+    file: "src/modbus_rtu_frame.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Modbus RTU Frame Validator & CRC-16 Engine"
+      - "Inputs: data: &[u8], frame: &[u8]"
+      - "Outputs: crc: u16, Option<(slave_id: u8, function_code: u8, payload_len: usize)>"
+      - "Invariants: zero external dependencies, no recursion, deterministic CRC-16 (poly 0xA001)"
+    functions:
+      - name: "modbus_crc16"
+        signature: "pub fn modbus_crc16(data: &[u8]) -> u16"
+        outputs: 1
+      - name: "modbus_validate_frame"
+        signature: "pub fn modbus_validate_frame(frame: &[u8]) -> Option<(u8, u8, usize)>"
+        outputs: 3
   - module: "motion_dead_reckon"
     file: "src/motion_dead_reckon.rs"
     functions_count: 3

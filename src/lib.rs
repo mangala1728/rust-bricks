@@ -70,6 +70,7 @@ pub mod iot_wire_protocol;
 pub mod iso7816_smartcard;
 pub mod math_rk4_ode;
 pub mod math_time;
+pub mod modbus_rtu_frame;
 pub mod motion_dead_reckon;
 pub mod motion_render_timeline;
 pub mod motor_stepper;
