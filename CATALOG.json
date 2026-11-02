@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 762,
+  "total_functions": 764,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2912,6 +2912,23 @@
           "name": "nfc_felica_frame_validate",
           "signature": "pub fn nfc_felica_frame_validate(frame: &[u8]) -> bool",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "nmea0183_gprmc",
+      "file": "src/nmea0183_gprmc.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "nmea_validate_checksum",
+          "signature": "pub fn nmea_validate_checksum(sentence: &str) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "nmea_parse_lat_lon",
+          "signature": "pub fn nmea_parse_lat_lon(",
+          "outputs": 2
         }
       ]
     },

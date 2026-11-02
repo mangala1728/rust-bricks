@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 762
+total_functions: 764
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2848,6 +2848,25 @@ modules:
       - name: "nfc_felica_frame_validate"
         signature: "pub fn nfc_felica_frame_validate(frame: &[u8]) -> bool"
         outputs: 1
+  - module: "nmea0183_gprmc"
+    file: "src/nmea0183_gprmc.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: NMEA‑0183 GPRMC parser – checksum validation & latitude/longitude conversion."
+      - "Inputs: &str sentences, raw latitude/longitude strings, direction chars."
+      - "Outputs: bool (checksum ok), Option<(f64,f64)> (decimal degrees)."
+      - "Invariants:"
+      - "- Sentence must start with '$' and contain '*' followed by exactly two hex digits."
+      - "- Latitude raw format: ddmm.mmmm, Longitude raw format: dddmm.mmmm."
+      - "- Direction chars limited to N,S,E,W."
+      - "- Resulting decimal degrees must lie within [-90,90] for latitude and [-180,180] for longitude."
+    functions:
+      - name: "nmea_validate_checksum"
+        signature: "pub fn nmea_validate_checksum(sentence: &str) -> bool"
+        outputs: 1
+      - name: "nmea_parse_lat_lon"
+        signature: "pub fn nmea_parse_lat_lon("
+        outputs: 2
   - module: "numerical_optimization_gradient"
     file: "src/numerical_optimization_gradient.rs"
     functions_count: 10
