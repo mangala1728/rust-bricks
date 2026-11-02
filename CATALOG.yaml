@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 768
+total_functions: 769
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2589,6 +2589,17 @@ modules:
       - name: "golden_section_search_min<F>"
         signature: "pub fn golden_section_search_min<F>("
         outputs: 2
+        domains:
+          tol: "[1.0e-12..1.0]"
+          max_iter: "[1..1000]"
+  - module: "math_newton_raphson_1d"
+    file: "src/math_newton_raphson_1d.rs"
+    functions_count: 1
+    architecture_map:
+    functions:
+      - name: "newton_raphson_1d<F, DF>"
+        signature: "pub fn newton_raphson_1d<F, DF>("
+        outputs: 1
         domains:
           tol: "[1.0e-12..1.0]"
           max_iter: "[1..1000]"

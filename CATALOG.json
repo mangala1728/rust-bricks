@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 768,
+  "total_functions": 769,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2651,6 +2651,18 @@
           "name": "golden_section_search_min<F>",
           "signature": "pub fn golden_section_search_min<F>(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "math_newton_raphson_1d",
+      "file": "src/math_newton_raphson_1d.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "newton_raphson_1d<F, DF>",
+          "signature": "pub fn newton_raphson_1d<F, DF>(",
+          "outputs": 1
         }
       ]
     },
