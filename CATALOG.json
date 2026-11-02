@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 777,
+  "total_functions": 781,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2262,6 +2262,23 @@
       ]
     },
     {
+      "module": "fin_var_historical",
+      "file": "src/fin_var_historical.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_var_historical",
+          "signature": "pub fn fin_var_historical(returns: &[f64], confidence: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_cvar_historical",
+          "signature": "pub fn fin_cvar_historical(returns: &[f64], confidence: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "geo_collision",
       "file": "src/geo_collision.rs",
       "functions_count": 3,
@@ -2297,6 +2314,23 @@
           "name": "convex_hull_2d",
           "signature": "pub fn convex_hull_2d(mut points: Vec<(f64, f64)>) -> Option<Vec<(f64, f64)>>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "geo_geohash",
+      "file": "src/geo_geohash.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "geo_geohash_encode_bits",
+          "signature": "pub fn geo_geohash_encode_bits(lat: f64, lon: f64, precision_bits: u8) -> Option<u64>",
+          "outputs": 1
+        },
+        {
+          "name": "geo_geohash_decode_bounds",
+          "signature": "pub fn geo_geohash_decode_bounds(",
+          "outputs": 4
         }
       ]
     },

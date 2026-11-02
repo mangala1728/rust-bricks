@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 777
+total_functions: 781
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2220,6 +2220,26 @@ modules:
         outputs: 1
         domains:
           risk_free_rate: "[-1.0..10.0]"
+  - module: "fin_var_historical"
+    file: "src/fin_var_historical.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   Financial risk analytics – historical simulation VaR & CVaR."
+      - "Inputs: returns: &[f64] (historical portfolio returns)"
+      - "confidence: f64 (confidence level, 0.0 < confidence < 1.0)"
+      - "Outputs: Option<f64> – Some(value) if inputs are valid, None otherwise."
+      - "Invariants:"
+      - "- returns.len() ≥ 2"
+      - "- all returns are finite numbers"
+      - "- confidence ∈ (0.0, 1.0) and finite"
+      - "- Returned VaR/CVaR are non‑negative loss figures."
+    functions:
+      - name: "fin_var_historical"
+        signature: "pub fn fin_var_historical(returns: &[f64], confidence: f64) -> Option<f64>"
+        outputs: 1
+      - name: "fin_cvar_historical"
+        signature: "pub fn fin_cvar_historical(returns: &[f64], confidence: f64) -> Option<f64>"
+        outputs: 1
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3
@@ -2270,6 +2290,27 @@ modules:
         domains:
           points: "[i].x [MIN..MAX] (checked for every point)"
           points: "[i].y [MIN..MAX] (checked for every point)"
+  - module: "geo_geohash"
+    file: "src/geo_geohash.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Geohash Bit‑Interleaving Codec"
+      - "Inputs: lat f64, lon f64, precision_bits u8, hash u64"
+      - "Outputs: encoded u64, decoded bounds ((f64,f64),(f64,f64))"
+      - "Invariants: 1 ≤ precision_bits ≤ 64, lat ∈ [‑90.0, 90.0], lon ∈ [‑180.0, 180.0]"
+    functions:
+      - name: "geo_geohash_encode_bits"
+        signature: "pub fn geo_geohash_encode_bits(lat: f64, lon: f64, precision_bits: u8) -> Option<u64>"
+        outputs: 1
+        domains:
+          lat: "[-90.0..=90.0]"
+          lon: "[-180.0..=180.0]"
+          precision_bits: "[1..=64]"
+      - name: "geo_geohash_decode_bounds"
+        signature: "pub fn geo_geohash_decode_bounds("
+        outputs: 4
+        domains:
+          precision_bits: "[1..=64]"
   - module: "geo_point_in_polygon_ray"
     file: "src/geo_point_in_polygon_ray.rs"
     functions_count: 1
