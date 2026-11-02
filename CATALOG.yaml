@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 766
+total_functions: 767
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3942,6 +3942,21 @@ modules:
         outputs: 4
         domains:
           rr_intervals_ms: "[200.0..3000.0]"
+  - module: "sensor_kalman_1d"
+    file: "src/sensor_kalman_1d.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: 1D Adaptive Kalman Filter Step"
+      - "Inputs: (state.0 = estimate, state.1 = covariance), measurement, q_noise, r_noise"
+      - "Outputs: updated estimate (Option<f64>)"
+      - "Invariants: state.1 ≥ 0.0, q_noise ≥ 0.0, r_noise > 0.0, measurement is finite"
+    functions:
+      - name: "kalman_1d_step"
+        signature: "pub fn kalman_1d_step("
+        outputs: 1
+        domains:
+          q_noise: "[0.0..1000.0]"
+          r_noise: "[1.0e-9..1000.0]"
   - module: "sensor_mahony_ahrs"
     file: "src/sensor_mahony_ahrs.rs"
     functions_count: 2

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 766,
+  "total_functions": 767,
   "modules": [
     {
       "module": "agent_terminal",
@@ -4068,6 +4068,18 @@
           "name": "hrv_time_domain_metrics",
           "signature": "pub fn hrv_time_domain_metrics(rr_intervals_ms: &[f64]) -> Option<(f64, f64, f64, f64)>",
           "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "sensor_kalman_1d",
+      "file": "src/sensor_kalman_1d.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "kalman_1d_step",
+          "signature": "pub fn kalman_1d_step(",
+          "outputs": 1
         }
       ]
     },

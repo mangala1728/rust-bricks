@@ -117,6 +117,7 @@ pub mod rpa_screen_control;
 pub mod sensor_baro_als;
 pub mod sensor_hardware;
 pub mod sensor_hrv_time_domain;
+pub mod sensor_kalman_1d;
 pub mod sensor_mahony_ahrs;
 pub mod sensor_motion;
 pub mod sensor_pan_tompkins;
