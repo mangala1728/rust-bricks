@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 729,
+  "total_functions": 731,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2030,6 +2030,23 @@
           "name": "lrc_checksum",
           "signature": "pub fn lrc_checksum(data: &[u8]) -> u8",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_black_scholes",
+      "file": "src/fin_black_scholes.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "standard_normal_cdf",
+          "signature": "pub fn standard_normal_cdf(x: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "black_scholes_european",
+          "signature": "pub fn black_scholes_european(",
+          "outputs": 4
         }
       ]
     },

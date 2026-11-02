@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 729
+total_functions: 731
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1901,6 +1901,29 @@ modules:
         outputs: 1
         domains:
           data_len: "[0..1024]"
+  - module: "fin_black_scholes"
+    file: "src/fin_black_scholes.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:  Black‑Scholes analytical pricing & Greeks (pure std)"
+      - "Inputs:  s0, strike, rate, sigma, t_years, x"
+      - "Outputs:  (call_price, put_price, call_delta, put_delta) or CDF value"
+      - "Invariants: all numeric inputs must lie inside the documented domains"
+    functions:
+      - name: "standard_normal_cdf"
+        signature: "pub fn standard_normal_cdf(x: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x: "[-10.0..10.0]"
+      - name: "black_scholes_european"
+        signature: "pub fn black_scholes_european("
+        outputs: 4
+        domains:
+          s0: "[0.001..1.0e9]"
+          strike: "[0.001..1.0e9]"
+          rate: "[-0.5..1.0]"
+          sigma: "[0.001..10.0]"
+          t_years: "[0.001..100.0]"
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3
