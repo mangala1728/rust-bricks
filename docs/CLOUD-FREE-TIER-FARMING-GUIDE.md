@@ -40,8 +40,8 @@
 
 | 免費來源 | 環境變數名稱 | 免費額度與優勢 | 如何蹭到極致？ |
 | :--- | :--- | :--- | :--- |
-| **Google AI Studio (首選)** | `GEMINI_API_KEYS` | 單一免費 Google 帳號每日 **1,500 次請求 (RPD)**、每分鐘 15 次 (`gemini-2.5-flash`) | 準備 2~3 個免費 Google 帳號申請 API Key，以逗號串接：`GEMINI_API_KEYS="AIzaSyA...,AIzaSyB...,AIzaSyC..."`。引擎每次重試會自動輪替 (`attempt % N`)，徹底避開 429 限流！ |
-| **Groq Cloud (備援快刀)** | `GROQ_API_KEY` | 免費層提供極速 `llama-3.3-70b-versatile`（每日數十萬免費 Token） | 若未設 Gemini Key，引擎自動切換至 Groq OpenAI 相容端點。 |
+| **Google AI Studio (首選雙階)** | `GEMINI_API_KEYS` | 免費層支援 `gemini-3.8-flash`（旗艦推理）與 `gemini-3.5-flash`（極速快刀），單帳號每日 **1,500 次請求 (RPD)**、每分鐘 15 次 | 引擎預設依序瀑布降級：**`gemini-3.8-flash` $\rightarrow$ `gemini-3.5-flash`**。準備 2~3 個免費 Google 帳號申請 API Key，以逗號串接：`GEMINI_API_KEYS="AIzaSyA...,AIzaSyB..."`，自動輪替避開 429！ |
+| **Groq Cloud (三階快刀)** | `GROQ_API_KEYS` / `GROQ_API_KEY` | 免費層提供極速 `openai/gpt-oss-120b`（每日數十萬免費 Token） | 若 Gemini 兩階皆限流或連線受阻，引擎自動切換至 Groq 接手。 |
 | **GitHub Models (零配置保底)** | `GITHUB_TOKEN` | GitHub Actions 內建免費權限，直接呼叫 `gpt-4o-mini` | 在 GitHub Actions 中無須額外申請，開箱即用。 |
 
 ### 2. 三大免費雲端主機底座對比

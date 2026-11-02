@@ -48,6 +48,7 @@ pub mod dsp_ema_smoother;
 pub mod dsp_fft_multirate_2d;
 pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;
+pub mod dsp_window_hann;
 pub mod env_sensor;
 pub mod fast_math;
 pub mod fieldbus_building_automation;

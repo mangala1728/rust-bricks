@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 722
+total_functions: 723
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1616,6 +1616,21 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "dsp_window_hann"
+    file: "src/dsp_window_hann.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: DSP Hann window coefficient generator"
+      - "Inputs: n [0..65535], total_len [1..65536]"
+      - "Outputs: Option<f64> (Some coefficient or None on guard failure)"
+      - "Invariants: total_len > 0, n < total_len, total_len ≤ 65536, n ≤ 65535"
+    functions:
+      - name: "hann_window_coeff"
+        signature: "pub fn hann_window_coeff(n: usize, total_len: usize) -> Option<f64>"
+        outputs: 1
+        domains:
+          n: "[0..65535]"
+          total_len: "[1..65536]"
   - module: "env_sensor"
     file: "src/env_sensor.rs"
     functions_count: 3

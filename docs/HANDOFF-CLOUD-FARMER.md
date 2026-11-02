@@ -5,7 +5,7 @@
 1. **4 Gemini + 4 Groq 雙引擎自動輪替池 (`src/cloud_farmer.rs`)**：
    - **本地免設定自動載入**：[`resolve_key_pool_strings`](../src/cloud_farmer.rs) 會自動讀取 `./keys.local.json` 或 `../工作流/keys.local.json` 中的 `gemini`~`gemini4` 與 `groq`~`groq4`（共 8 把免費金鑰），且 `keys.local.json` 已列入 `.gitignore` 嚴禁入庫。
    - **雲端 GitHub Secrets 已自動同步**：已透過 `gh secret set` 將 4 把 Gemini 金鑰寫入 `GEMINI_API_KEYS`、4 把 Groq 金鑰寫入 `GROQ_API_KEYS`（目標倉庫：`mangala1728/rust-bricks`）。
-   - **雙引擎無縫降級（Seamless Fallback）**：單次請求若 Gemini 金鑰池遇到限流或格式不符，同回合**自動秒切至 Groq (`llama-3.3-70b-versatile`) 4 把金鑰池**接手，絕不浪費重試次數。
+   - **雙引擎無縫降級（Seamless Fallback）**：單次請求若 Gemini 金鑰池遇到限流或格式不符，同回合依序瀑布降級：**`gemini-3.8-flash` $\rightarrow$ `gemini-3.5-flash` $\rightarrow$ Groq (`openai/gpt-oss-120b`)**，絕不浪費重試次數。
 
 2. **多模式同時啟動之四層防撞車機制**：
    - **開農前預檢**：[`check_module_already_claimed`](../src/cloud_farmer.rs) 自動檢查本地 `src/<mod>.rs` 與遠端 `origin/contrib/cloud-farm-<mod>`。
