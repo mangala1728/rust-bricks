@@ -66,8 +66,9 @@ pub fn build_farmer_prompt(module_name: &str, spec_text: &str, error_feedback: &
         "2. 零外部依賴（僅使用 Rust `std` 標準庫），禁止 `static mut`、禁止遞迴、控制流巢狀深度 <= 2。\n",
         "3. 每個具名函式上方必備 `/// @outputs: N`（1 <= N <= 32），且單一函式長度嚴格 <= 60 行（NASA JPL 微積木原則）。\n",
         "4. 所有數值參數必備 `/// @domain: param [min..max]`，且函式第一行必須實作 `if param < min || param > max` 執行期守衛。\n",
-        "5. 嚴禁未附帶 `// @safety-proof:` 的 `.unwrap()`、`.expect()`、`panic!` 或 `unsafe`。\n",
-        "6. 測試必須使用確定性黃金值（Golden Values），禁止弱斷言。\n"
+        "5. 優先使用 match 或 if let 進行安全解構，嚴禁未附帶 `// @safety-proof` 的 `.unwrap()`、`.expect()`、`panic!` 或 `unsafe`。\n",
+        "6. 測試必須使用確定性黃金值（Golden Values），禁止弱斷言。\n",
+        "7. 整合測試檔案位於 tests/ 目錄下，必須使用 `use rust_bricks::<模組名>::*;` 匯入，嚴禁使用 `use super::*;`！\n"
     );
 
     format!(
@@ -442,7 +443,9 @@ fn try_single_farm_attempt(
     let new_lib = insert_mod_alphabetically(orig_lib, module_name);
     let _ = fs::write(&lib_path, new_lib);
     let _ = fs::write(&mod_path, mod_code);
-    let _ = fs::write(&test_path, test_code);
+    let target_use = format!("use rust_bricks::{}::*;", module_name);
+    let sanitized_test = test_code.replace("use super::*;", &target_use);
+    let _ = fs::write(&test_path, sanitized_test);
 
     verify_farmed_module(repo_root, &test_name)?;
     let _ = crate::catalog::generate_catalogs(repo_root);

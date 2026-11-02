@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 727
+total_functions: 729
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3585,6 +3585,34 @@ modules:
           lon1: "[-180.0..180.0]"
           lat2: "[-90.0..90.0]"
           lon2: "[-180.0..180.0]"
+  - module: "sensor_pan_tompkins"
+    file: "src/sensor_pan_tompkins.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 5‑point derivative filter & moving‑window integration for Pan‑Tompkins QRS detection"
+      - "Inputs:  x_n (f64) – current sample, history[4] (f64) – previous 4 samples"
+      - "derivative (f64) – output of derivative filter"
+      - "ring_buf (slice of f64) – circular buffer for squared values"
+      - "head_idx (usize) – write index into ring_buf"
+      - "running_sum (f64) – sum of values currently stored in ring_buf"
+      - "Outputs: y (f64) – derivative output, mwi (f64) – moving‑window integrated value"
+      - "Invariants:"
+      - "- All numeric arguments stay inside the declared domain."
+      - "- `history` always holds the four most recent raw samples in order"
+      - "[x[n‑1], x[n‑2], x[n‑3], x[n‑4]]."
+      - "- `ring_buf.len() > 0` and `head_idx < ring_buf.len()`."
+      - "- `running_sum` equals the sum of all elements currently stored in `ring_buf`."
+    functions:
+      - name: "pan_tompkins_derivative_step"
+        signature: "pub fn pan_tompkins_derivative_step("
+        outputs: 1
+        domains:
+          x_n: "[-1.0e6..1.0e6]"
+      - name: "pan_tompkins_integrate_step"
+        signature: "pub fn pan_tompkins_integrate_step("
+        outputs: 1
+        domains:
+          derivative: "[-1.0e6..1.0e6]"
   - module: "sensor_power_meter"
     file: "src/sensor_power_meter.rs"
     functions_count: 3

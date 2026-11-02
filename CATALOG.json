@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 727,
+  "total_functions": 729,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3797,6 +3797,23 @@
           "name": "haversine_bearing_deg",
           "signature": "pub fn haversine_bearing_deg(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> Option<f64>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "sensor_pan_tompkins",
+      "file": "src/sensor_pan_tompkins.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "pan_tompkins_derivative_step",
+          "signature": "pub fn pan_tompkins_derivative_step(",
+          "outputs": 1
+        },
+        {
+          "name": "pan_tompkins_integrate_step",
+          "signature": "pub fn pan_tompkins_integrate_step(",
+          "outputs": 1
         }
       ]
     },

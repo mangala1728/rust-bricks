@@ -99,6 +99,7 @@ pub mod rpa_screen_control;
 pub mod sensor_baro_als;
 pub mod sensor_hardware;
 pub mod sensor_motion;
+pub mod sensor_pan_tompkins;
 pub mod sensor_power_meter;
 pub mod spatial_physics;
 pub mod spc_msa_advanced;
