@@ -4713,6 +4713,28 @@ fn test_robotics_ukf_attitude_estimator_bricks() {
     assert_eq!(motor_thrust_ratio_to_pwm_us(1.0), 2000);
 }
 
+#[test]
+fn test_cloud_farmer_key_pool_and_extraction() {
+    use rust_bricks::cloud_farmer::*;
+    let pool = parse_api_key_pool(" key_a , key_b , key_c ");
+    assert_eq!(pool.len(), 3);
+    assert_eq!(select_rotating_key(&pool, 1).as_deref(), Some("key_a"));
+    assert_eq!(select_rotating_key(&pool, 2).as_deref(), Some("key_b"));
+    assert_eq!(select_rotating_key(&pool, 4).as_deref(), Some("key_a"));
+    assert_eq!(select_rotating_key(&pool, 0), None);
+
+    let lib_src = "pub mod alpha;\npub mod gamma;\n";
+    let updated_lib = insert_mod_alphabetically(lib_src, "beta");
+    assert_eq!(updated_lib, "pub mod alpha;\npub mod beta;\npub mod gamma;\n");
+
+    let raw_md = "Hello\n```rust:module\npub fn add(a: i32, b: i32) -> i32 { a + b }\n```\n```rust:test\n#[test] fn t() {}\n```\n";
+    assert_eq!(
+        extract_fenced_block(raw_md, "rust:module").as_deref(),
+        Some("pub fn add(a: i32, b: i32) -> i32 { a + b }\n")
+    );
+}
+
+
 
 
 

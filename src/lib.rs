@@ -27,6 +27,7 @@ pub mod can_lin_bus;
 pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;
+pub mod cloud_farmer;
 pub mod cnc_gcode_toolpath;
 pub mod codec_binary_wire_schema;
 pub mod codec_container_multimedia;

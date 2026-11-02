@@ -1,0 +1,24 @@
+{
+  "name": "rust-bricks Cloud Farmer (Codespaces)",
+  "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": false
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tmux curl && cargo test --no-run",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "GEMINI_API_KEYS": "${localEnv:GEMINI_API_KEYS}",
+    "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",
+    "GROQ_API_KEY": "${localEnv:GROQ_API_KEY}"
+  }
+}

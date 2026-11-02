@@ -699,8 +699,6 @@ modules:
       - name: "remotion_spring_damping_ratio"
         signature: "pub fn remotion_spring_damping_ratio(mass: f64, stiffness: f64, damping: f64) -> Option<f64>"
         outputs: 1
-        domains:
-          scale: "[0.001..1000.0]"
   - module: "can_bus_frame"
     file: "src/can_bus_frame.rs"
     functions_count: 6

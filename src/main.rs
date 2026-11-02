@@ -1097,18 +1097,61 @@ fn run_wish_cmd(args: &[String]) {
 }
 
 /// @outputs: 1
+fn auto_commit_and_push_farm(module_name: &str, spec_file: &str) {
+    let mod_file = format!("src/{}.rs", module_name);
+    let test_file = format!("tests/test_{}.rs", module_name);
+    let _ = Command::new("git")
+        .args(["add", &mod_file, &test_file, "src/lib.rs", "CATALOG.yaml", "CATALOG.json", ".ai-memory/receipt.json", spec_file])
+        .status();
+    let msg = format!("feat(cloud-farm): 自動農出並驗證微積木 `{}`", module_name);
+    let _ = Command::new("git").args(["commit", "-m", &msg]).status();
+    let _ = Command::new("git").args(["push"]).status();
+}
+
+/// @outputs: 1
+fn run_farm_cmd(args: &[String]) {
+    let spec_str = args.get(2).map(|s| s.as_str()).unwrap_or("specs/template.md");
+    let mod_name = args.get(3).map(|s| s.as_str()).unwrap_or("");
+    let do_push = args.iter().any(|a| a == "--push");
+
+    if mod_name.is_empty() {
+        println!("🌾 [rust-bricks] 雲端自動農積木引擎 (Pure Rust Cloud Farmer)");
+        println!("用法: cargo run -- farm <規格書路徑> <目標模組名> [--push]");
+        println!("範例: cargo run -- farm specs/ema_filter.md dsp_ema_filter --push");
+        return;
+    }
+
+    let repo_root = Path::new(".");
+    let spec_path = Path::new(spec_str);
+    match rust_bricks::cloud_farmer::farm_brick_from_spec(repo_root, spec_path, mod_name, 4) {
+        Ok(provider) => {
+            println!("🎉 [cloud-farmer] 微積木 `{}` 已由 [{}] 產出並 100% 通過 Guard 與單元測試！", mod_name, provider);
+            if do_push {
+                println!("🚀 [cloud-farmer] 偵測到 --push，正在自動 Commit 並推送至 GitHub...");
+                auto_commit_and_push_farm(mod_name, spec_str);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ [cloud-farmer] 自動農積木失敗:\n{}", e);
+            process::exit(1);
+        }
+    }
+}
+
+/// @outputs: 1
 fn print_help() {
     println!("rust-bricks v0.1.0 — Pure Zero-Dependency Function Blocks (09 Contract)");
     println!("Usage:");
-    println!("  cargo run -- selftest          # Run internal contract self-test");
-    println!("  cargo run -- catalog           # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
-    println!("  cargo run -- guard             # Run capacity & contract guard hook (Pure Rust)");
-    println!("  cargo run -- patrol            # Patrol external contrib branches & collisions");
-    println!("  cargo run -- audit             # Run Zero-Trust Quality Director Chaos Audit");
-    println!("  cargo run -- wish [list|new]   # Wishlist board for AI agents & users");
-    println!("  cargo run -- receipt <model>   # Sign Diff-bound Arbitration Receipt");
-    println!("  cargo run -- verify-receipt    # Verify Receipt against current Git Diff");
-    println!("  cargo test                     # Run full unit test suite");
+    println!("  cargo run -- selftest                   # Run internal contract self-test");
+    println!("  cargo run -- catalog                    # Generate CATALOG.yaml & CATALOG.json (Pure Rust)");
+    println!("  cargo run -- guard                      # Run capacity & contract guard hook (Pure Rust)");
+    println!("  cargo run -- patrol                     # Patrol external contrib branches & collisions");
+    println!("  cargo run -- audit                      # Run Zero-Trust Quality Director Chaos Audit");
+    println!("  cargo run -- wish [list|new]            # Wishlist board for AI agents & users");
+    println!("  cargo run -- farm <spec> <mod> [--push] # Cloud Free-Tier Auto Brick Farmer");
+    println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
+    println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
+    println!("  cargo test                              # Run full unit test suite");
 }
 
 /// @outputs: 1
@@ -1123,6 +1166,7 @@ fn main() {
         "patrol" => run_patrol_cmd(),
         "audit" | "chaos" => run_audit_cmd(),
         "wish" | "wishes" => run_wish_cmd(&args),
+        "farm" | "farmer" => run_farm_cmd(&args),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

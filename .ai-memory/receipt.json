@@ -1,6 +1,6 @@
 {
   "schema": "agy-arbitration-receipt-v1",
-  "model": "ironclad-rules-v2",
+  "model": "kev-4b",
   "verdict": "PASS",
-  "diff_sha256": "0a474b23597a1fa03b7c600bc9956a05dccc0d48c544d9ca64591b17af36d36c"
+  "diff_sha256": "8663f3f2137dc57122ac6261b4e730b261bc83cfd1bc91cfe027ee19140fefb0"
 }

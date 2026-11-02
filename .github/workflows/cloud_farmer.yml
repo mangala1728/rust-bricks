@@ -1,0 +1,67 @@
+name: Cloud Free-Tier Auto Brick Farmer
+
+on:
+  workflow_dispatch:
+    inputs:
+      spec_path:
+        description: "規格書或許願單路徑 (例如 specs/template.md 或 wishes/WISH-20261102-001.md)"
+        required: true
+        default: "specs/template.md"
+      module_name:
+        description: "產出之 Rust 模組名稱 (例如 dsp_ema_filter)"
+        required: true
+        default: "dsp_ema_filter"
+      push_to_branch:
+        description: "驗證通過後是否自動推送至遠端分支"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+  models: read
+
+jobs:
+  cloud_farm_brick:
+    name: Farm & Guard Pure Rust Brick
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo Build Artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Configure Git Identity for Cloud Farmer
+        run: |
+          git config user.name "rust-bricks-cloud-farmer[bot]"
+          git config user.email "cloud-farmer@users.noreply.github.com"
+
+      - name: Run Pure Rust Cloud Farmer (Multi-Key Pool + Real Guard Closed-Loop)
+        env:
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ inputs.push_to_branch }}" = "true" ]; then
+            git checkout -B "contrib/cloud-farm-${{ inputs.module_name }}"
+            cargo run -- farm "${{ inputs.spec_path }}" "${{ inputs.module_name }}"
+            git add "src/${{ inputs.module_name }}.rs" "tests/test_${{ inputs.module_name }}.rs" src/lib.rs CATALOG.yaml CATALOG.json .ai-memory/receipt.json
+            git commit -m "feat(cloud-farm): 自動農出並驗證微積木 ${{ inputs.module_name }}"
+            git push -u origin "contrib/cloud-farm-${{ inputs.module_name }}" --force-with-lease
+          else
+            cargo run -- farm "${{ inputs.spec_path }}" "${{ inputs.module_name }}"
+          fi
