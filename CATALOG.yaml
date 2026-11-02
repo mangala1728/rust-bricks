@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 752
+total_functions: 754
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1690,6 +1690,30 @@ modules:
         outputs: 1
         domains:
           buffer_len: "[2..2048]"
+  - module: "dsp_spectral_features"
+    file: "src/dsp_spectral_features.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Spectral feature extraction (centroid & rolloff)"
+      - "Inputs: magnitudes &[f64], sample_rate_hz f64, rolloff_ratio f64 (optional)"
+      - "Outputs: Option<f64> (spectral centroid or rolloff frequency)"
+      - "Invariants:"
+      - "- sample_rate_hz ∈ [1.0 .. 1_000_000.0]"
+      - "- rolloff_ratio ∈ [0.5 .. 0.99] (when used)"
+      - "- magnitudes length N ≥ 2 for meaningful result"
+      - "- total magnitude > 1.0e-12 for centroid calculation"
+    functions:
+      - name: "spectral_centroid"
+        signature: "pub fn spectral_centroid(magnitudes: &[f64], sample_rate_hz: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          sample_rate_hz: "[1.0..1000000.0]"
+      - name: "spectral_rolloff"
+        signature: "pub fn spectral_rolloff("
+        outputs: 1
+        domains:
+          rolloff_ratio: "[0.5..0.99]"
+          sample_rate_hz: "[1.0..1000000.0]"
   - module: "dsp_window_blackman"
     file: "src/dsp_window_blackman.rs"
     functions_count: 2

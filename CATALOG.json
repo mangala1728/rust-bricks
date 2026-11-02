@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 752,
+  "total_functions": 754,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1787,6 +1787,23 @@
         {
           "name": "q15_apply_gain",
           "signature": "pub fn q15_apply_gain(buffer: &mut [i16], gain_q15: i16)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_spectral_features",
+      "file": "src/dsp_spectral_features.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "spectral_centroid",
+          "signature": "pub fn spectral_centroid(magnitudes: &[f64], sample_rate_hz: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "spectral_rolloff",
+          "signature": "pub fn spectral_rolloff(",
           "outputs": 1
         }
       ]
