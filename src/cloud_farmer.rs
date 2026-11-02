@@ -203,7 +203,7 @@ fn call_curl_json(url: &str, headers: &[String], body_json: &str, repo_root: &Pa
     fs::write(&payload_path, body_json).map_err(|e| format!("寫入請求暫存檔失敗: {}", e))?;
 
     let mut cmd = Command::new("curl");
-    cmd.args(["-s", "-S", "-X", "POST", url, "-H", "User-Agent: rust-bricks/1.0"]);
+    cmd.args(["-s", "-S", "-X", "POST", url, "-H", "User-Agent: rust-bricks/1.0", "--max-time", "60"]);
     for h in headers {
         cmd.args(["-H", h]);
     }
