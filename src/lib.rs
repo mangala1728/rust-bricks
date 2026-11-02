@@ -24,6 +24,7 @@ pub mod ble_adv_parser;
 pub mod cad_geom_model;
 pub mod can_bus_frame;
 pub mod can_lin_bus;
+pub mod canopen_sdo_handler;
 pub mod catalog;
 pub mod chaos_audit;
 pub mod clock_pll_rtc;

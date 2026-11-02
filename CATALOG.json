@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 746,
+  "total_functions": 748,
   "modules": [
     {
       "module": "agent_terminal",
@@ -797,6 +797,23 @@
         {
           "name": "i2s_unpack_stereo_16bit",
           "signature": "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "canopen_sdo_handler",
+      "file": "src/canopen_sdo_handler.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "parse_sdo_download_request",
+          "signature": "pub fn parse_sdo_download_request(payload: &[u8; 8]) -> Option<(u8, u16, u8, usize)>",
+          "outputs": 4
+        },
+        {
+          "name": "encode_sdo_abort",
+          "signature": "pub fn encode_sdo_abort(",
           "outputs": 1
         }
       ]

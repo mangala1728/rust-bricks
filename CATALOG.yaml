@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 746
+total_functions: 748
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -762,6 +762,27 @@ modules:
       - name: "i2s_unpack_stereo_16bit"
         signature: "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)"
         outputs: 1
+  - module: "canopen_sdo_handler"
+    file: "src/canopen_sdo_handler.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: SDO Handler – parses CANopen SDO download requests and builds abort responses."
+      - "Inputs: payload (&[u8;8]), index (u16), sub_index (u8), abort_code (u32), out_frame (&mut [u8;8])."
+      - "Outputs: Option<(u8, u16, u8, usize)>, bool."
+      - "Invariants:"
+      - "- For a download request the Command Specifier (CCS) must be 1."
+      - "- Abort frames always start with 0x80 (CCS = 4)."
+    functions:
+      - name: "parse_sdo_download_request"
+        signature: "pub fn parse_sdo_download_request(payload: &[u8; 8]) -> Option<(u8, u16, u8, usize)>"
+        outputs: 4
+      - name: "encode_sdo_abort"
+        signature: "pub fn encode_sdo_abort("
+        outputs: 1
+        domains:
+          index: "[0..65535]"
+          sub_index: "[0..255]"
+          abort_code: "[0..4294967295]"
   - module: "chaos_audit"
     file: "src/chaos_audit.rs"
     functions_count: 1
