@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 731,
+  "total_functions": 733,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2432,6 +2432,23 @@
         {
           "name": "iso8583_bitmap_is_present",
           "signature": "pub fn iso8583_bitmap_is_present(bitmap: &[u8; 8], field_num: u8) -> bool",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "math_rk4_ode",
+      "file": "src/math_rk4_ode.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "rk4_step_1d<F>",
+          "signature": "pub fn rk4_step_1d<F>(t: f64, y: f64, dt: f64, derivative_fn: F) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "rk4_step_2d<F>",
+          "signature": "pub fn rk4_step_2d<F>(t: f64, y: (f64, f64), dt: f64, derivative_fn: F) -> Option<(f64, f64)>",
           "outputs": 2
         }
       ]

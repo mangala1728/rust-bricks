@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 731
+total_functions: 733
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2284,6 +2284,21 @@ modules:
         outputs: 2
         domains:
           field_num: "[1..64]"
+  - module: "math_rk4_ode"
+    file: "src/math_rk4_ode.rs"
+    functions_count: 2
+    architecture_map:
+    functions:
+      - name: "rk4_step_1d<F>"
+        signature: "pub fn rk4_step_1d<F>(t: f64, y: f64, dt: f64, derivative_fn: F) -> Option<f64>"
+        outputs: 1
+        domains:
+          dt: "[1.0e-9..1000.0]"
+      - name: "rk4_step_2d<F>"
+        signature: "pub fn rk4_step_2d<F>(t: f64, y: (f64, f64), dt: f64, derivative_fn: F) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          dt: "[1.0e-9..1000.0]"
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5
