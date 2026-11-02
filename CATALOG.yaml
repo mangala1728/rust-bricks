@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 781
+total_functions: 789
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1792,6 +1792,25 @@ modules:
           num_filters: "[2..128]"
           min_hz: "[0.0..10000.0]"
           max_hz: "[100.0..100000.0]"
+  - module: "dsp_moving_rms"
+    file: "src/dsp_moving_rms.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Moving RMS detector (pure‑std, O(1) sliding‑window update)"
+      - "Inputs: x_new: f64, x_old: f64, sum_sq: f64, window_len: usize, signal: &[f64]"
+      - "Outputs: (new_sum_sq, rms) for step, rms for slice"
+      - "Invariants: sum_sq ≥ 0.0, window_len ≥ 1, rms ≥ 0.0, all samples are finite"
+    functions:
+      - name: "dsp_moving_rms_step"
+        signature: "pub fn dsp_moving_rms_step("
+        outputs: 2
+        domains:
+          x_new any finite, x_old any finite, sum_sq: "[0.0..∞], window_len [1..usize::MAX]"
+      - name: "dsp_rms_slice"
+        signature: "pub fn dsp_rms_slice(signal: &[f64]) -> Option<f64>"
+        outputs: 1
+        domains:
+          signal.len(): "[1..∞]"
   - module: "dsp_resample_linear"
     file: "src/dsp_resample_linear.rs"
     functions_count: 1
@@ -2191,6 +2210,21 @@ modules:
         outputs: 2
         domains:
           ytm: "[0.0..1.0]"
+  - module: "fin_sharpe_ratio"
+    file: "src/fin_sharpe_ratio.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Compute annualized Sharpe and Information ratios."
+      - "Inputs: returns slice, annual risk‑free rate, periods per year; portfolio slice, benchmark slice."
+      - "Outputs: Option<f64> containing the requested ratio."
+      - "Invariants: slices have length ≥ 2, periods_per_year > 0, all numbers are finite, denominator > 1e‑12."
+    functions:
+      - name: "fin_sharpe_ratio"
+        signature: "pub fn fin_sharpe_ratio("
+        outputs: 1
+      - name: "fin_information_ratio"
+        signature: "pub fn fin_information_ratio("
+        outputs: 1
   - module: "fin_sortino_ratio"
     file: "src/fin_sortino_ratio.rs"
     functions_count: 2
@@ -2686,6 +2720,25 @@ modules:
         outputs: 1
         domains:
           pf: "[0..0xFF]"
+  - module: "math_chebyshev_poly"
+    file: "src/math_chebyshev_poly.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   Compute first‑kind Chebyshev polynomials and evaluate Chebyshev series."
+      - "Inputs: n: u32, x: f64, coeffs: &[f64]"
+      - "Outputs: Option<f64>"
+      - "Invariants: x ∈ [-1.0, 1.0], coeffs non‑empty, all coefficients finite."
+    functions:
+      - name: "math_chebyshev_t"
+        signature: "pub fn math_chebyshev_t(n: u32, x: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          n: "[0..=u32::MAX], x [-1.0..=1.0]"
+      - name: "math_chebyshev_clenshaw"
+        signature: "pub fn math_chebyshev_clenshaw(coeffs: &[f64], x: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          coeffs.len(): "[1..=usize::MAX], x [-1.0..=1.0]"
   - module: "math_golden_section"
     file: "src/math_golden_section.rs"
     functions_count: 1
@@ -4006,6 +4059,26 @@ modules:
         domains:
           baud_rate: "[300..10000000]"
           data_bits: "[5..9]"
+  - module: "sensor_activity_intensity"
+    file: "src/sensor_activity_intensity.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Compute Signal Magnitude Area (SMA) and classify activity intensity."
+      - "Inputs: ax, ay, az slices of f64; sma f64, sedentary_threshold f64, active_threshold f64."
+      - "Outputs: SMA value (Option<f64>); activity class (Option<u8>)."
+      - "Invariants:"
+      - "- ax.len() == ay.len() == az.len() >= 1"
+      - "- every element of ax, ay, az is finite"
+      - "- sma >= 0.0, thresholds are finite, 0.0 <= sedentary_threshold <= active_threshold"
+    functions:
+      - name: "sensor_sma"
+        signature: "pub fn sensor_sma(ax: &[f64], ay: &[f64], az: &[f64]) -> Option<f64>"
+        outputs: 1
+      - name: "sensor_classify_activity"
+        signature: "pub fn sensor_classify_activity("
+        outputs: 1
+        domains:
+          sma: "[0.0..], sedentary_threshold [0.0..], active_threshold [sedentary_threshold..]"
   - module: "sensor_baro_als"
     file: "src/sensor_baro_als.rs"
     functions_count: 3

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 781,
+  "total_functions": 789,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1865,6 +1865,23 @@
       ]
     },
     {
+      "module": "dsp_moving_rms",
+      "file": "src/dsp_moving_rms.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_moving_rms_step",
+          "signature": "pub fn dsp_moving_rms_step(",
+          "outputs": 2
+        },
+        {
+          "name": "dsp_rms_slice",
+          "signature": "pub fn dsp_rms_slice(signal: &[f64]) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_resample_linear",
       "file": "src/dsp_resample_linear.rs",
       "functions_count": 1,
@@ -2241,6 +2258,23 @@
           "name": "bond_duration",
           "signature": "pub fn bond_duration(cash_flows: &[f64], ytm: f64) -> Option<(f64, f64)>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "fin_sharpe_ratio",
+      "file": "src/fin_sharpe_ratio.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_sharpe_ratio",
+          "signature": "pub fn fin_sharpe_ratio(",
+          "outputs": 1
+        },
+        {
+          "name": "fin_information_ratio",
+          "signature": "pub fn fin_information_ratio(",
+          "outputs": 1
         }
       ]
     },
@@ -2723,6 +2757,23 @@
         {
           "name": "j1939_is_pdu1",
           "signature": "pub fn j1939_is_pdu1(pf: u8) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "math_chebyshev_poly",
+      "file": "src/math_chebyshev_poly.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "math_chebyshev_t",
+          "signature": "pub fn math_chebyshev_t(n: u32, x: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "math_chebyshev_clenshaw",
+          "signature": "pub fn math_chebyshev_clenshaw(coeffs: &[f64], x: f64) -> Option<f64>",
           "outputs": 1
         }
       ]
@@ -4115,6 +4166,23 @@
         {
           "name": "rs485_calc_char_tx_time_us",
           "signature": "pub fn rs485_calc_char_tx_time_us(baud_rate: u32, data_bits: u8, stop_bits: u8, has_parity: bool) -> u32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "sensor_activity_intensity",
+      "file": "src/sensor_activity_intensity.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "sensor_sma",
+          "signature": "pub fn sensor_sma(ax: &[f64], ay: &[f64], az: &[f64]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "sensor_classify_activity",
+          "signature": "pub fn sensor_classify_activity(",
           "outputs": 1
         }
       ]
