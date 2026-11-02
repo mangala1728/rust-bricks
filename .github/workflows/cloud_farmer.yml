@@ -1,16 +1,19 @@
 name: Cloud Free-Tier Auto Brick Farmer
 
 on:
+  schedule:
+    # 模式 A：每 3 小時自動喚醒巡航 (UTC 0, 3, 6, 9, 12, 15, 18, 21)，筆電關機也能自跑
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
       spec_path:
-        description: "規格書或許願單路徑 (例如 specs/template.md 或 wishes/WISH-20261102-001.md)"
-        required: true
-        default: "specs/template.md"
+        description: "規格書路徑 (留空則自動掃描 specs/ 佇列取下一塊未實作規格)"
+        required: false
+        default: ""
       module_name:
-        description: "產出之 Rust 模組名稱 (例如 dsp_ema_filter)"
-        required: true
-        default: "dsp_ema_filter"
+        description: "產出模組名稱 (留空則依規格書檔名自動判定)"
+        required: false
+        default: ""
       push_to_branch:
         description: "驗證通過後是否自動推送至遠端分支"
         required: false
@@ -49,7 +52,7 @@ jobs:
           git config user.name "rust-bricks-cloud-farmer[bot]"
           git config user.email "cloud-farmer@users.noreply.github.com"
 
-      - name: Run Pure Rust Cloud Farmer (Multi-Key Pool + Real Guard Closed-Loop)
+      - name: Run Pure Rust Cloud Farmer (Auto-Queue & Multi-Key Pool)
         env:
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -57,8 +60,37 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ inputs.push_to_branch }}" = "true" ]; then
-            cargo run -- farm "${{ inputs.spec_path }}" "${{ inputs.module_name }}" --push
+          SPEC="${{ inputs.spec_path }}"
+          MOD="${{ inputs.module_name }}"
+
+          if [ -z "$SPEC" ] || [ -z "$MOD" ]; then
+            echo "🔍 [cloud-farmer] 未指定規格書，正在自動搜尋 specs/ 佇列中尚未實作之規格..."
+            SPEC=""
+            MOD=""
+            for s in specs/*.md; do
+              [ -e "$s" ] || continue
+              m=$(basename "$s" .md)
+              if [ "$m" = "template" ]; then continue; fi
+              # 檢查是否已存在主幹 src/<mod>.rs
+              if [ ! -f "src/$m.rs" ]; then
+                # 檢查遠端是否已有對應分支正在進行
+                if ! git ls-remote --heads origin "contrib/cloud-farm-$m" | grep -q "$m"; then
+                  SPEC="$s"
+                  MOD="$m"
+                  break
+                fi
+              fi
+            done
+          fi
+
+          if [ -z "$SPEC" ]; then
+            echo "✨ [cloud-farmer] 巡檢完畢：目前所有規格書皆已入庫或已有雲端分支處理中，佇列無待處理任務。"
+            exit 0
+          fi
+
+          echo "🌾 [cloud-farmer] 選定目標規格: $SPEC -> 模組: $MOD"
+          if [ "${{ inputs.push_to_branch }}" = "false" ]; then
+            cargo run -- farm "$SPEC" "$MOD"
           else
-            cargo run -- farm "${{ inputs.spec_path }}" "${{ inputs.module_name }}"
+            cargo run -- farm "$SPEC" "$MOD" --push
           fi

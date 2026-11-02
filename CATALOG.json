@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 792,
+  "total_functions": 794,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1698,6 +1698,23 @@
         {
           "name": "dsp_feedforward_comb_step",
           "signature": "pub fn dsp_feedforward_comb_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_dc_blocker",
+      "file": "src/dsp_dc_blocker.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_dc_blocker_step",
+          "signature": "pub fn dsp_dc_blocker_step(",
+          "outputs": 3
+        },
+        {
+          "name": "dsp_dc_blocker_slice",
+          "signature": "pub fn dsp_dc_blocker_slice(samples: &mut [f64], r_coeff: f64) -> bool",
           "outputs": 1
         }
       ]

@@ -49,6 +49,7 @@ pub mod doc_office_drawing_shape;
 pub mod dsp_biquad_bandpass;
 pub mod dsp_biquad_notch;
 pub mod dsp_comb_filter;
+pub mod dsp_dc_blocker;
 pub mod dsp_ema_smoother;
 pub mod dsp_envelope_peak_hold;
 pub mod dsp_fft_multirate_2d;

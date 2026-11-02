@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 792
+total_functions: 794
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1603,6 +1603,25 @@ modules:
       - name: "dsp_feedforward_comb_step"
         signature: "pub fn dsp_feedforward_comb_step("
         outputs: 1
+  - module: "dsp_dc_blocker"
+    file: "src/dsp_dc_blocker.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: First‑order IIR DC blocker (DSP brick)"
+      - "Inputs: x, x_prev, y_prev, r_coeff  (step) | samples slice, r_coeff (slice)"
+      - "Outputs: y, updated states (step) | filtered slice (slice)"
+      - "Invariants: r_coeff ∈ [0.0, 1.0) , all numeric arguments are finite, output is finite"
+    functions:
+      - name: "dsp_dc_blocker_step"
+        signature: "pub fn dsp_dc_blocker_step("
+        outputs: 3
+        domains:
+          r_coeff: "[0.0..1.0)"
+      - name: "dsp_dc_blocker_slice"
+        signature: "pub fn dsp_dc_blocker_slice(samples: &mut [f64], r_coeff: f64) -> bool"
+        outputs: 1
+        domains:
+          r_coeff: "[0.0..1.0)"
   - module: "dsp_ema_smoother"
     file: "src/dsp_ema_smoother.rs"
     functions_count: 2
