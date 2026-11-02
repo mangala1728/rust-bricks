@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 761
+total_functions: 762
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2100,6 +2100,22 @@ modules:
         domains:
           daily_variance: "[0.0..1.0e12]"
           trading_days_per_year: "[200.0..365.0]"
+  - module: "fin_kelly_criterion"
+    file: "src/fin_kelly_criterion.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Compute Kelly optimal fraction (full and fractional)"
+      - "Inputs: win_prob (f64) in [0.01..0.99], odds_b (f64) in [0.01..1000.0], fraction (f64) in [0.01..1.0]"
+      - "Outputs: Option<f64> where Some(value) is the position size in [0.0..1.0]"
+      - "Invariants: result ∈ [0.0, 1.0]; None is returned for any out‑of‑domain argument"
+    functions:
+      - name: "kelly_optimal_fraction"
+        signature: "pub fn kelly_optimal_fraction("
+        outputs: 1
+        domains:
+          win_prob: "[0.01..0.99]"
+          odds_b: "[0.01..1000.0]"
+          fraction: "[0.01..1.0]"
   - module: "fin_sortino_ratio"
     file: "src/fin_sortino_ratio.rs"
     functions_count: 2

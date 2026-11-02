@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 761,
+  "total_functions": 762,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2170,6 +2170,18 @@
         {
           "name": "ewma_annualized_volatility",
           "signature": "pub fn ewma_annualized_volatility(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_kelly_criterion",
+      "file": "src/fin_kelly_criterion.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "kelly_optimal_fraction",
+          "signature": "pub fn kelly_optimal_fraction(",
           "outputs": 1
         }
       ]
