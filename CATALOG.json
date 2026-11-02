@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 771,
+  "total_functions": 777,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1521,6 +1521,23 @@
       ]
     },
     {
+      "module": "dlt_protocol_header",
+      "file": "src/dlt_protocol_header.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dlt_parse_standard_header",
+          "signature": "pub fn dlt_parse_standard_header(buf: &[u8]) -> Option<(u8, bool, u16, usize)>",
+          "outputs": 4
+        },
+        {
+          "name": "dlt_extract_ecu_id",
+          "signature": "pub fn dlt_extract_ecu_id(buf: &[u8]) -> Option<[u8; 4]>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "doc_layout_typography",
       "file": "src/doc_layout_typography.rs",
       "functions_count": 10,
@@ -1682,6 +1699,23 @@
           "name": "dema_step_f64",
           "signature": "pub fn dema_step_f64(",
           "outputs": 3
+        }
+      ]
+    },
+    {
+      "module": "dsp_envelope_peak_hold",
+      "file": "src/dsp_envelope_peak_hold.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_envelope_follower",
+          "signature": "pub fn dsp_envelope_follower(",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_peak_hold_step",
+          "signature": "pub fn dsp_peak_hold_step(",
+          "outputs": 2
         }
       ]
     },
@@ -4221,6 +4255,23 @@
           "name": "ppg_estimate_spo2",
           "signature": "pub fn ppg_estimate_spo2(r: f64) -> Option<f64>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "sensor_step_counter",
+      "file": "src/sensor_step_counter.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "sensor_accel_magnitude",
+          "signature": "pub fn sensor_accel_magnitude(ax: f64, ay: f64, az: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "sensor_step_detect_step",
+          "signature": "pub fn sensor_step_detect_step(",
+          "outputs": 3
         }
       ]
     },

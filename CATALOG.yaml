@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 771
+total_functions: 777
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1394,6 +1394,25 @@ modules:
         domains:
           alpha: "[0.0, 1.0]"
           gamma: "[0.0, 1.0]"
+  - module: "dlt_protocol_header"
+    file: "src/dlt_protocol_header.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DLT Standard Header Parser"
+      - "Inputs: buf: &[u8] (binary DLT message)"
+      - "Outputs: (vers: u8, ueh: bool, len: u16, header_len: usize)"
+      - "Invariants: buf.len() >= 4, version == 1, length field >= header_len"
+    functions:
+      - name: "dlt_parse_standard_header"
+        signature: "pub fn dlt_parse_standard_header(buf: &[u8]) -> Option<(u8, bool, u16, usize)>"
+        outputs: 4
+        domains:
+          buf.len(): "[4..usize::MAX]"
+      - name: "dlt_extract_ecu_id"
+        signature: "pub fn dlt_extract_ecu_id(buf: &[u8]) -> Option<[u8; 4]>"
+        outputs: 1
+        domains:
+          buf.len(): "[8..usize::MAX]"
   - module: "doc_layout_typography"
     file: "src/doc_layout_typography.rs"
     functions_count: 10
@@ -1587,6 +1606,33 @@ modules:
           ema1_prev: "[-1000000.0..1000000.0]"
           ema2_prev: "[-1000000.0..1000000.0]"
           alpha: "[0.0001..1.0]"
+  - module: "dsp_envelope_peak_hold"
+    file: "src/dsp_envelope_peak_hold.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DSP envelope follower & peak‑hold processor"
+      - "Inputs:"
+      - "- dsp_envelope_follower: input (f64), prev_env (f64), attack_coeff (0.0..=1.0), release_coeff (0.0..=1.0)"
+      - "- dsp_peak_hold_step: current_val (f64), peak (f64), hold_timer (u32), hold_duration (u32), decay_rate (0.0..=1.0)"
+      - "Outputs:"
+      - "- dsp_envelope_follower → env (f64)"
+      - "- dsp_peak_hold_step → (new_peak (f64), new_timer (u32))"
+      - "Invariants:"
+      - "- All envelope / peak values are non‑negative and finite."
+      - "- Coefficients stay inside the closed interval [0.0, 1.0]."
+      - "- hold_timer never exceeds hold_duration."
+    functions:
+      - name: "dsp_envelope_follower"
+        signature: "pub fn dsp_envelope_follower("
+        outputs: 1
+        domains:
+          attack_coeff: "[0.0..=1.0]"
+          release_coeff: "[0.0..=1.0]"
+      - name: "dsp_peak_hold_step"
+        signature: "pub fn dsp_peak_hold_step("
+        outputs: 2
+        domains:
+          decay_rate: "[0.0..=1.0]"
   - module: "dsp_fft_multirate_2d"
     file: "src/dsp_fft_multirate_2d.rs"
     functions_count: 8
@@ -4140,6 +4186,27 @@ modules:
         outputs: 1
         domains:
           r: "[0.1..3.0]"
+  - module: "sensor_step_counter"
+    file: "src/sensor_step_counter.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 3‑Axis Accelerometer Step Counter core logic"
+      - "Inputs: ax, ay, az (f64) | mag, ema_mean, alpha, threshold_delta (f64) | state (u8)"
+      - "Outputs: magnitude (Option<f64>) | (state, new_ema, step_flag) (Option<(u8,f64,bool)>)"
+      - "Invariants:"
+      - "- All floating‑point inputs must be finite."
+      - "- 0.0 ≤ alpha ≤ 1.0, threshold_delta ≥ 0.0, state ∈ {0,1}."
+    functions:
+      - name: "sensor_accel_magnitude"
+        signature: "pub fn sensor_accel_magnitude(ax: f64, ay: f64, az: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          ax: "[−∞..∞], ay [−∞..∞], az [−∞..∞]"
+      - name: "sensor_step_detect_step"
+        signature: "pub fn sensor_step_detect_step("
+        outputs: 3
+        domains:
+          alpha: "[0.0..=1.0], threshold_delta [0.0..=∞], state [0..=1]"
   - module: "spatial_physics"
     file: "src/spatial_physics.rs"
     functions_count: 4
