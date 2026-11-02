@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 750,
+  "total_functions": 752,
   "modules": [
     {
       "module": "agent_terminal",
@@ -4017,6 +4017,23 @@
         {
           "name": "lipo_voltage_to_soc_percent",
           "signature": "pub fn lipo_voltage_to_soc_percent(cell_voltage: f32) -> f32",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "sensor_ppg_spo2",
+      "file": "src/sensor_ppg_spo2.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "ppg_ratio_of_ratios",
+          "signature": "pub fn ppg_ratio_of_ratios(",
+          "outputs": 1
+        },
+        {
+          "name": "ppg_estimate_spo2",
+          "signature": "pub fn ppg_estimate_spo2(r: f64) -> Option<f64>",
           "outputs": 1
         }
       ]

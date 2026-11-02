@@ -112,6 +112,7 @@ pub mod sensor_mahony_ahrs;
 pub mod sensor_motion;
 pub mod sensor_pan_tompkins;
 pub mod sensor_power_meter;
+pub mod sensor_ppg_spo2;
 pub mod spatial_physics;
 pub mod spc_msa_advanced;
 pub mod spc_six_sigma_msa;

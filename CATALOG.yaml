@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 750
+total_functions: 752
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3876,6 +3876,32 @@ modules:
         outputs: 1
         domains:
           cell_voltage: "[2.5..4.5]"
+  - module: "sensor_ppg_spo2"
+    file: "src/sensor_ppg_spo2.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: PPG雙波長血氧飽和度估算器"
+      - "Inputs: ac_red, dc_red, ac_ir, dc_ir, r"
+      - "Outputs: R (Ratio of Ratios), SpO2 (%)"
+      - "Invariants:"
+      - "- dc_red > 0, dc_ir > 0"
+      - "- ac_ir > 1e-12 for a valid ratio"
+      - "- R ∈ [0.1, 3.0] for the calibration polynomial"
+      - "- SpO2 is clamped to [0.0, 100.0]"
+    functions:
+      - name: "ppg_ratio_of_ratios"
+        signature: "pub fn ppg_ratio_of_ratios("
+        outputs: 1
+        domains:
+          ac_red: "[0.0..1.0e6]"
+          dc_red: "[1.0..1.0e8]"
+          ac_ir: "[0.0..1.0e6]"
+          dc_ir: "[1.0..1.0e8]"
+      - name: "ppg_estimate_spo2"
+        signature: "pub fn ppg_estimate_spo2(r: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          r: "[0.1..3.0]"
   - module: "spatial_physics"
     file: "src/spatial_physics.rs"
     functions_count: 4
