@@ -49,6 +49,7 @@ pub mod dsp_fft_multirate_2d;
 pub mod dsp_fft_radix2;
 pub mod dsp_fixed_point;
 pub mod dsp_window_blackman;
+pub mod dsp_window_hamming;
 pub mod dsp_window_hann;
 pub mod env_sensor;
 pub mod fast_math;

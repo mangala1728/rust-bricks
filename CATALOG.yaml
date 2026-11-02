@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 725
+total_functions: 727
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1633,6 +1633,24 @@ modules:
           window_len: "[2..1048576]"
       - name: "apply_blackman_window"
         signature: "pub fn apply_blackman_window(buffer: &mut [f64]) -> bool"
+        outputs: 1
+  - module: "dsp_window_hamming"
+    file: "src/dsp_window_hamming.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DSP windowing primitive – Hamming window"
+      - "Inputs: index: usize, window_len: usize, buffer: &mut [f64]"
+      - "Outputs: Option<f64> (coeff), bool (apply result)"
+      - "Invariants: 2 ≤ window_len ≤ 1_048_576, 0 ≤ index < window_len, buffer.len() ≥ 2"
+    functions:
+      - name: "hamming_window_coeff"
+        signature: "pub fn hamming_window_coeff(index: usize, window_len: usize) -> Option<f64>"
+        outputs: 1
+        domains:
+          index: "[0..1_048_575]"
+          window_len: "[2..1_048_576]"
+      - name: "apply_hamming_window"
+        signature: "pub fn apply_hamming_window(buffer: &mut [f64]) -> bool"
         outputs: 1
   - module: "dsp_window_hann"
     file: "src/dsp_window_hann.rs"

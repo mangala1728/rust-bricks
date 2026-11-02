@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 725,
+  "total_functions": 727,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1753,6 +1753,23 @@
         {
           "name": "apply_blackman_window",
           "signature": "pub fn apply_blackman_window(buffer: &mut [f64]) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_window_hamming",
+      "file": "src/dsp_window_hamming.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "hamming_window_coeff",
+          "signature": "pub fn hamming_window_coeff(index: usize, window_len: usize) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "apply_hamming_window",
+          "signature": "pub fn apply_hamming_window(buffer: &mut [f64]) -> bool",
           "outputs": 1
         }
       ]
