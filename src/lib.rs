@@ -80,6 +80,7 @@ pub mod instrument_lxi_hislip;
 pub mod instrument_scpi_vna;
 pub mod iot_wire_protocol;
 pub mod iso7816_smartcard;
+pub mod j1939_pgn_parser;
 pub mod math_golden_section;
 pub mod math_newton_raphson_1d;
 pub mod math_rk4_ode;

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 769,
+  "total_functions": 771,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2639,6 +2639,23 @@
           "name": "iso8583_bitmap_is_present",
           "signature": "pub fn iso8583_bitmap_is_present(bitmap: &[u8; 8], field_num: u8) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "j1939_pgn_parser",
+      "file": "src/j1939_pgn_parser.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "j1939_parse_can_id",
+          "signature": "pub fn j1939_parse_can_id(can_id_29bit: u32) -> Option<(u8, u32, u8, u8)>",
+          "outputs": 4
+        },
+        {
+          "name": "j1939_is_pdu1",
+          "signature": "pub fn j1939_is_pdu1(pf: u8) -> bool",
+          "outputs": 1
         }
       ]
     },
