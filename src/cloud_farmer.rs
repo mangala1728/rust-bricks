@@ -430,6 +430,12 @@ pub fn provider_order(shift: usize) -> [usize; 3] {
     [s, (s + 1) % 3, (s + 2) % 3]
 }
 
+/// 模擬回應只准在本機使用：GitHub Actions（GITHUB_ACTIONS=true）中一律停用，免得被環境變數繞過真正的模型與黃金向量
+/// @outputs: 2
+pub fn mock_allowed(github_actions: Option<&str>) -> bool {
+    github_actions != Some("true")
+}
+
 /// 測試專用：設定 FARMER_MOCK_DIR 時改讀 `<dir>/<attempt>.txt` 當模型回應，供應商名稱帶 shift 以觀察二振換供應商
 /// @outputs: 2
 /// @domain: attempt [1..20]
@@ -452,6 +458,9 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path, shift: usi
         return Err(format!("{} 嘗試次數或供應商偏移超出定義域", INFRA_TAG));
     }
     if let Ok(dir) = env::var("FARMER_MOCK_DIR") {
+        if !mock_allowed(env::var("GITHUB_ACTIONS").ok().as_deref()) {
+            return Err(format!("{} FARMER_MOCK_DIR 只供本機測試，在 GitHub Actions 中一律停用", INFRA_TAG));
+        }
         return mock_llm_response(&dir, attempt, shift);
     }
     let escaped = escape_json_string(prompt);

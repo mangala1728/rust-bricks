@@ -1,4 +1,4 @@
-use rust_bricks::cloud_farmer::{failure_outcome, provider_order};
+use rust_bricks::cloud_farmer::{failure_outcome, mock_allowed, provider_order};
 use rust_bricks::farm_tree::*;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -290,4 +290,11 @@ fn farmer_prompt_carries_dead_ends_before_error_feedback() {
     assert!(prompt.contains("attempt/20261104-farm-m（golden:#1，模型 m1）：教訓"));
     assert!(prompt.contains("```golden"));
     assert!(dead_end_prompt(&[]).is_empty());
+}
+
+#[test]
+fn mock_responses_are_refused_inside_github_actions() {
+    assert!(!mock_allowed(Some("true")));
+    assert!(mock_allowed(None));
+    assert!(mock_allowed(Some("false")));
 }
