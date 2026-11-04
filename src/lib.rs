@@ -64,6 +64,7 @@ pub mod dsp_window_blackman;
 pub mod dsp_window_hamming;
 pub mod dsp_window_hann;
 pub mod env_sensor;
+pub mod farm_tree;
 pub mod fast_math;
 pub mod fieldbus_building_automation;
 pub mod fieldbus_industrial_eth;

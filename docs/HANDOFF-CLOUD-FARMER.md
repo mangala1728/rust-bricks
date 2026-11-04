@@ -1,5 +1,7 @@
 # 🤝 跨視窗與雲端自動農夫交接檔 (Handoff — 4+4 雙引擎金鑰池版)
 
+> **2026-11-04 更新**：雲端農夫已加入失敗嘗試樹（`attempt/*-farm-*` 分支）、二振出局、壓力紅燈、日誌保鮮與規格 ```golden 黃金向量；本檔以下內容若與 [`docs/CLOUD-FARMER-ATTEMPT-TREE.md`](CLOUD-FARMER-ATTEMPT-TREE.md) 衝突，以該檔為準。
+
 ## 1. 目前已完成之硬體級基建（100% 就緒）
 
 1. **4 Gemini + 4 Groq 雙引擎自動輪替池 (`src/cloud_farmer.rs`)**：

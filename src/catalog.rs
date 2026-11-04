@@ -283,7 +283,7 @@ pub fn generate_catalogs(repo_root: &Path) -> Result<usize, String> {
             continue;
         }
         let fname = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-        if fname == "lib.rs" || fname == "main.rs" || fname == "catalog.rs" || fname == "guard.rs" || fname == "cloud_farmer.rs" {
+        if fname == "lib.rs" || fname == "main.rs" || fname == "catalog.rs" || fname == "guard.rs" || fname == "cloud_farmer.rs" || fname == "farm_tree.rs" {
             continue;
         }
 

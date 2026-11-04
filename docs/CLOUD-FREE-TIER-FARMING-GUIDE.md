@@ -26,11 +26,13 @@
 │  2. 自動注入 09 合約 + NASA JPL 60 行 + GEMINI.md 14 條鐵律 Prompt           │
 │  3. 自動按字母序插入 `src/lib.rs`，寫入 `src/<mod>.rs` 與 `tests/test_<mod>.rs`│
 │  4. 實機執行 `cargo test` + `cargo run -- guard`                             │
-│     ├─ [失敗] 擷取編譯器/守衛報錯 → 換下一把免費 Key 自動自我修復 (最多 4 輪) │
-│     ├─ [耗盡] 自動乾淨回滾 (Rollback)，絕不污染倉庫                          │
+│     ├─ [失敗] 分類報錯 → 自我修復 (最多 4 次)；同類連 2 次二振出局換供應商   │
+│     ├─ [耗盡] 失敗碼記入 attempt/ 分支（Dead-End）後回滾，下一輪帶入死路     │
 │     └─ [通過] 自動更新 CATALOG.yaml + 簽發 SHA-256 收據 + 自動 Push 分支！   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+> 失敗嘗試樹、二振出局、壓力紅燈、日誌保鮮與 ```golden 黃金向量的完整說明：[`docs/CLOUD-FARMER-ATTEMPT-TREE.md`](CLOUD-FARMER-ATTEMPT-TREE.md)。
 
 ---
 

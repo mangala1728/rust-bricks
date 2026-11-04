@@ -1096,21 +1096,40 @@ fn run_wish_cmd(args: &[String]) {
     }
 }
 
+/// 把農出的積木 commit 到 contrib/cloud-farm-<mod>（git-handoff 混合格式訊息）並推送
 /// @outputs: 1
-fn auto_commit_and_push_farm(module_name: &str, spec_file: &str) {
+fn auto_commit_and_push_farm(module_name: &str, spec_file: &str, message: &str) {
     let branch_name = format!("contrib/cloud-farm-{}", module_name);
     let mod_file = format!("src/{}.rs", module_name);
     let test_file = format!("tests/test_{}.rs", module_name);
+    let golden_file = format!("tests/golden_{}.rs", module_name);
+    let msg_path = Path::new("target").join("farm_done_msg.txt");
+    let _ = std::fs::create_dir_all("target");
+    let _ = std::fs::write(&msg_path, message);
     let _ = Command::new("git").args(["checkout", "-B", &branch_name]).status();
     let _ = Command::new("git")
         .args(["add", &mod_file, &test_file, "src/lib.rs", "CATALOG.yaml", "CATALOG.json", ".ai-memory/receipt.json", spec_file])
         .status();
-    let msg = format!("feat(cloud-farm): 自動農出並驗證微積木 `{}`", module_name);
-    let _ = Command::new("git").args(["commit", "-m", &msg, "--no-verify"]).status();
+    if Path::new(&golden_file).exists() {
+        let _ = Command::new("git").args(["add", &golden_file]).status();
+    }
+    let msg_arg = msg_path.to_string_lossy().to_string();
+    let _ = Command::new("git").args(["commit", "-F", &msg_arg, "--no-verify"]).status();
     let _ = Command::new("git")
         .args(["push", "-u", "origin", &branch_name, "--force-with-lease", "--no-verify"])
         .status();
     let _ = Command::new("git").args(["checkout", "main"]).status();
+}
+
+/// 在 GitHub Actions 中把 key=value 附加到 $GITHUB_OUTPUT（本機執行時略過）
+/// @outputs: 1
+fn append_github_output(lines: &str) {
+    let path = match env::var("GITHUB_OUTPUT") {
+        Ok(p) if !p.is_empty() => p,
+        _ => return,
+    };
+    let existing = std::fs::read_to_string(&path).unwrap_or_default();
+    let _ = std::fs::write(&path, format!("{}{}", existing, lines));
 }
 
 /// @outputs: 1
@@ -1146,20 +1165,85 @@ fn run_farm_cmd(args: &[String]) {
     }
 
     let repo_root = Path::new(".");
-    let spec_path = Path::new(spec_str);
-    match rust_bricks::cloud_farmer::farm_brick_from_spec(repo_root, spec_path, mod_name, 4) {
-        Ok(provider) => {
-            println!("🎉 [cloud-farmer] 微積木 `{}` 已由 [{}] 產出並 100% 通過 Guard 與單元測試！", mod_name, provider);
+    match rust_bricks::cloud_farmer::farm_brick_from_spec(repo_root, Path::new(spec_str), mod_name, 4, do_push) {
+        Ok(done) => {
+            println!("🎉 [cloud-farmer] 微積木 `{}` 已由 [{}] 產出並通過黃金向量、Guard 與單元測試（{}）！", mod_name, done.provider, done.test_summary);
+            append_github_output(&format!("outcome=done\nprovider={}\n", done.provider));
             if do_push {
+                let message = rust_bricks::farm_tree::done_message(&rust_bricks::farm_tree::DoneInput {
+                    module: mod_name.to_string(),
+                    spec_path: spec_str.to_string(),
+                    spec_hash: done.spec_hash.clone(),
+                    provider: done.provider.clone(),
+                    test_summary: done.test_summary.clone(),
+                    golden_count: done.golden_count,
+                    attempts_used: done.attempts_used,
+                    resolves: done.resolves.clone(),
+                });
                 println!("🚀 [cloud-farmer] 偵測到 --push，正在自動 Commit 並推送至 GitHub...");
-                auto_commit_and_push_farm(mod_name, spec_str);
+                auto_commit_and_push_farm(mod_name, spec_str, &message);
             }
         }
-        Err(e) => {
-            eprintln!("❌ [cloud-farmer] 自動農積木失敗:\n{}", e);
+        Err(fail) => {
+            let branch = fail.attempt_branch.clone().unwrap_or_default();
+            append_github_output(&format!("outcome={}\nattempt_branch={}\n", fail.outcome, branch));
+            if fail.outcome.starts_with("skip-") {
+                println!("⏭️ [cloud-farmer] 跳過 `{}`（{}）：{}", mod_name, fail.outcome, fail.detail);
+                return;
+            }
+            eprintln!("❌ [cloud-farmer] `{}` 本輪放棄（{}）：{}", mod_name, fail.outcome, fail.detail);
+            if !branch.is_empty() {
+                eprintln!("🌳 [cloud-farmer] 失敗嘗試已記錄於 {}（git-handoff 的 ATTEMPTS.md 可讀取）", branch);
+            }
             process::exit(1);
         }
     }
+}
+
+/// farm-queue：輸出下一份待做規格與卡關清單（key=value，給 Actions 用）
+/// @outputs: 1
+fn run_farm_queue_cmd() {
+    let entries = rust_bricks::farm_tree::scan_queue(Path::new("."));
+    let kv = rust_bricks::farm_tree::queue_kv_lines(&entries);
+    print!("{}", kv);
+    append_github_output(&kv);
+}
+
+/// farm-status：佇列狀態表（markdown，從 git 即時推導）
+/// @outputs: 1
+fn run_farm_status_cmd() {
+    let entries = rust_bricks::farm_tree::scan_queue(Path::new("."));
+    print!("{}", rust_bricks::farm_tree::status_markdown(&entries));
+}
+
+/// farm-report <mod>：某模組本版規格的死路報告（markdown，給 issue 用）
+/// @outputs: 1
+fn run_farm_report_cmd(args: &[String]) {
+    let module = args.get(2).map(|s| s.as_str()).unwrap_or("");
+    let entries = rust_bricks::farm_tree::scan_queue(Path::new("."));
+    let entry = match entries.iter().find(|e| e.module == module) {
+        Some(e) => e,
+        None => {
+            eprintln!("❌ [farm-report] 佇列中沒有 `{}`", module);
+            process::exit(1);
+        }
+    };
+    let root = Path::new(".");
+    let hash = rust_bricks::farm_tree::spec_blob_hash(root, &entry.spec);
+    let fresh = rust_bricks::farm_tree::fresh_dead_ends(&rust_bricks::farm_tree::load_dead_ends(root, module), &hash);
+    print!("{}", rust_bricks::farm_tree::dead_end_report(module, &entry.spec, &entry.state, &fresh));
+}
+
+/// farm-prune [--push]：刪除已入庫模組的過期死路分支（日誌保鮮）
+/// @outputs: 1
+fn run_farm_prune_cmd(args: &[String]) {
+    let push = args.iter().any(|a| a == "--push");
+    let pruned = rust_bricks::farm_tree::prune_resolved_attempts(Path::new("."), push);
+    if pruned.is_empty() {
+        println!("✨ [farm-prune] 沒有過期的死路分支。");
+        return;
+    }
+    println!("🧹 [farm-prune] 已入庫模組的死路分支已過期並清除：{:?}", pruned);
 }
 
 /// @outputs: 1
@@ -1174,6 +1258,10 @@ fn print_help() {
     println!("  cargo run -- wish [list|new]            # Wishlist board for AI agents & users");
     println!("  cargo run -- farm <spec> <mod> [--push] # Cloud Free-Tier Auto Brick Farmer");
     println!("  cargo run -- harvest                    # Conflict-free harvest of cloud-farmed branches");
+    println!("  cargo run -- farm-queue                 # Next pending spec & blocked list (key=value)");
+    println!("  cargo run -- farm-status                # Farm queue status table (markdown, from git)");
+    println!("  cargo run -- farm-report <mod>          # Dead-end report of a module (markdown)");
+    println!("  cargo run -- farm-prune [--push]        # Delete attempt/ branches of harvested modules");
     println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
     println!("  cargo test                              # Run full unit test suite");
@@ -1193,6 +1281,10 @@ fn main() {
         "wish" | "wishes" => run_wish_cmd(&args),
         "farm" | "farmer" => run_farm_cmd(&args),
         "harvest" => run_harvest_cmd(),
+        "farm-queue" => run_farm_queue_cmd(),
+        "farm-status" => run_farm_status_cmd(),
+        "farm-report" => run_farm_report_cmd(&args),
+        "farm-prune" => run_farm_prune_cmd(&args),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

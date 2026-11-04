@@ -4,10 +4,52 @@
 // Outputs: 驗證通過並入庫之純 Rust 模組與單元測試，或詳細排障錯誤報告。
 // Invariants: 零外部依賴、無遞迴、零全域可變狀態、控制流巢狀深度 <= 2、單一函式 <= 60 行、失敗自動回滾。
 
+use crate::farm_tree::{
+    classify_failure, dead_end_prompt, dead_end_samples, extract_golden_lines, first_error_line, fresh_dead_ends,
+    golden_assert_count, load_dead_ends, module_state, next_strike, record_abandoned_round, render_golden_test,
+    spec_blob_hash, spec_suspect, strike_action, strike_note, AbandonInput, DeadEnd, ModuleState, RoundRecord,
+    StrikeAction, StrikeState, BLOCK_ROUNDS, INFRA_TAG,
+};
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+/// 一次農作的固定資料（規格、原始 lib.rs、已知死路、規格黃金向量測試）
+pub struct FarmContext {
+    pub repo_root: PathBuf,
+    pub module: String,
+    pub orig_lib: String,
+    pub spec_text: String,
+    pub memory: String,
+    pub golden_test: Option<String>,
+}
+
+/// 農作成功的結果
+#[derive(Clone, Debug, PartialEq)]
+pub struct FarmSuccess {
+    pub provider: String,
+    pub test_summary: String,
+    pub golden_count: usize,
+    pub attempts_used: usize,
+    pub spec_hash: String,
+    pub resolves: Vec<String>,
+}
+
+/// 農作失敗的結果：outcome 為 abandoned／blocked／suspect／escalated／infra／skip-claimed／skip-blocked／skip-suspect
+#[derive(Clone, Debug, PartialEq)]
+pub struct FarmFailure {
+    pub outcome: String,
+    pub detail: String,
+    pub attempt_branch: Option<String>,
+}
+
+/// 一輪重試迴圈的結果
+enum LoopResult {
+    Success(String, String, usize),
+    Failed(Vec<RoundRecord>, String, bool),
+    Infra(String),
+}
 
 /// @outputs: 1
 pub fn parse_api_key_pool(raw_keys: &str) -> Vec<String> {
@@ -53,7 +95,7 @@ pub fn escape_json_string(input: &str) -> String {
 }
 
 /// @outputs: 1
-pub fn build_farmer_prompt(module_name: &str, spec_text: &str, error_feedback: &str) -> String {
+pub fn build_farmer_prompt(module_name: &str, spec_text: &str, memory: &str, error_feedback: &str) -> String {
     let feedback_section = if error_feedback.is_empty() {
         String::new()
     } else {
@@ -68,12 +110,13 @@ pub fn build_farmer_prompt(module_name: &str, spec_text: &str, error_feedback: &
         "4. 所有數值參數必備 `/// @domain: param [min..max]`，且函式第一行必須實作 `if param < min || param > max` 執行期守衛。\n",
         "5. 優先使用 match 或 if let 進行安全解構，嚴禁未附帶 `// @safety-proof` 的 `.unwrap()`、`.expect()`、`panic!` 或 `unsafe`。\n",
         "6. 測試必須使用確定性黃金值（Golden Values），禁止弱斷言。\n",
-        "7. 整合測試檔案位於 tests/ 目錄下，必須使用 `use rust_bricks::<模組名>::*;` 匯入，嚴禁使用 `use super::*;`！\n"
+        "7. 整合測試檔案位於 tests/ 目錄下，必須使用 `use rust_bricks::<模組名>::*;` 匯入，嚴禁使用 `use super::*;`！\n",
+        "8. 規格書 ```golden 區塊會由系統自動產生 tests/golden_<模組名>.rs 驗證，函式名稱與簽章必須與規格完全一致；不得在測試中放寬或改寫黃金向量的預期值。\n"
     );
 
     format!(
-        "你是專精零外部依賴純 Rust 演算法與 09 號合約邊界規範的硬體級工程師。\n請根據以下規格書，為 `rust-bricks` 編寫純 Rust 模組 `{0}` 與獨立整合測試：\n\n{1}\n\n{2}\n{3}\n【輸出規範】：請嚴格使用 ```rust:module 與 ```rust:test 兩個標籤輸出完整代碼。\n",
-        module_name, spec_text, feedback_section, rules
+        "你是專精零外部依賴純 Rust 演算法與 09 號合約邊界規範的硬體級工程師。\n請根據以下規格書，為 `rust-bricks` 編寫純 Rust 模組 `{0}` 與獨立整合測試：\n\n{1}\n\n{4}{2}\n{3}\n【輸出規範】：請嚴格使用 ```rust:module 與 ```rust:test 兩個標籤輸出完整代碼。\n",
+        module_name, spec_text, feedback_section, rules, memory
     )
 }
 
@@ -332,125 +375,160 @@ fn call_openai_compatible_endpoint(
     Ok((format!("cloud:{}", model), text))
 }
 
+/// Gemini 金鑰池：首選模型失敗時降級到 gemini-3.5-flash
+/// @outputs: 2
+/// @domain: idx [0..1000]
+fn try_gemini_pool(idx: usize, escaped: &str, repo_root: &Path) -> Option<(String, String)> {
+    if idx > 1000 {
+        return None;
+    }
+    let pool = resolve_key_pool_strings(repo_root, "GEMINI_API_KEYS", "GEMINI_API_KEY", &["gemini", "gemini2", "gemini3", "gemini4"]);
+    if pool.is_empty() {
+        return None;
+    }
+    let gkey = &pool[idx % pool.len()];
+    let primary = env::var("FARMER_GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.8-flash".to_string());
+    if let Ok(res) = call_gemini_endpoint(gkey, &primary, escaped, repo_root, 25) {
+        return Some(res);
+    }
+    if primary == "gemini-3.5-flash" {
+        return None;
+    }
+    call_gemini_endpoint(gkey, "gemini-3.5-flash", escaped, repo_root, 20).ok()
+}
+
+/// Groq 金鑰池（OpenAI 相容端點）
+/// @outputs: 2
+/// @domain: idx [0..1000]
+fn try_groq_pool(idx: usize, escaped: &str, repo_root: &Path) -> Option<(String, String)> {
+    if idx > 1000 {
+        return None;
+    }
+    let pool = resolve_key_pool_strings(repo_root, "GROQ_API_KEYS", "GROQ_API_KEY", &["groq", "groq2", "groq3", "groq4"]);
+    if pool.is_empty() {
+        return None;
+    }
+    let qkey = &pool[idx % pool.len()];
+    let url = "https://api.groq.com/openai/v1/chat/completions";
+    let model = env::var("FARMER_GROQ_MODEL").unwrap_or_else(|_| "openai/gpt-oss-120b".to_string());
+    call_openai_compatible_endpoint(url, qkey, &model, escaped, repo_root, 25).ok()
+}
+
+/// GitHub Models（以 GITHUB_TOKEN 呼叫）
+/// @outputs: 2
+fn try_github_models(escaped: &str, repo_root: &Path) -> Option<(String, String)> {
+    let token = env::var("GITHUB_TOKEN").ok()?;
+    let url = "https://models.inference.ai.azure.com/chat/completions";
+    call_openai_compatible_endpoint(url, &token, "gpt-4o-mini", escaped, repo_root, 30).ok()
+}
+
+/// 供應商嘗試順序：0=Gemini、1=Groq、2=GitHub Models；二振出局時 shift 加一，強制換供應商
+/// @outputs: 1
+/// @domain: shift [0..1000]
+pub fn provider_order(shift: usize) -> [usize; 3] {
+    let s = shift.min(1000) % 3;
+    [s, (s + 1) % 3, (s + 2) % 3]
+}
+
+/// 測試專用：設定 FARMER_MOCK_DIR 時改讀 `<dir>/<attempt>.txt` 當模型回應，供應商名稱帶 shift 以觀察二振換供應商
 /// @outputs: 2
 /// @domain: attempt [1..20]
-fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path) -> Result<(String, String), String> {
-    if attempt < 1 || attempt > 20 {
-        return Err("嘗試次數超出定義域 [1..20]".to_string());
+/// @domain: shift [0..1000]
+fn mock_llm_response(dir: &str, attempt: usize, shift: usize) -> Result<(String, String), String> {
+    if attempt < 1 || attempt > 20 || shift > 1000 {
+        return Err(format!("{} mock 參數超出定義域", INFRA_TAG));
+    }
+    let path = Path::new(dir).join(format!("{}.txt", attempt));
+    fs::read_to_string(&path)
+        .map(|text| (format!("mock:provider{}", provider_order(shift)[0]), text))
+        .map_err(|e| format!("{} mock 回應讀取失敗 {}: {}", INFRA_TAG, path.display(), e))
+}
+
+/// @outputs: 2
+/// @domain: attempt [1..20]
+/// @domain: shift [0..1000]
+fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path, shift: usize) -> Result<(String, String), String> {
+    if attempt < 1 || attempt > 20 || shift > 1000 {
+        return Err(format!("{} 嘗試次數或供應商偏移超出定義域", INFRA_TAG));
+    }
+    if let Ok(dir) = env::var("FARMER_MOCK_DIR") {
+        return mock_llm_response(&dir, attempt, shift);
     }
     let escaped = escape_json_string(prompt);
     let node_offset: usize = env::var("FARMER_NODE_ID").ok().and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
-    let idx = (attempt - 1) + node_offset;
-
-    let gemini_pool = resolve_key_pool_strings(
-        repo_root,
-        "GEMINI_API_KEYS",
-        "GEMINI_API_KEY",
-        &["gemini", "gemini2", "gemini3", "gemini4"],
-    );
-    if !gemini_pool.is_empty() {
-        let gkey = &gemini_pool[idx % gemini_pool.len()];
-
-        // 順序 1: gemini-3.8-flash (旗艦推理快刀，限時 25s)
-        let primary_model = env::var("FARMER_GEMINI_MODEL")
-            .unwrap_or_else(|_| "gemini-3.8-flash".to_string());
-        if let Ok(res) = call_gemini_endpoint(gkey, &primary_model, &escaped, repo_root, 25) {
-            return Ok(res);
-        }
-
-        // 順序 2: gemini-3.5-flash (若首選失敗，無縫降級至極速穩定快刀)
-        if primary_model != "gemini-3.5-flash" {
-            if let Ok(res) = call_gemini_endpoint(gkey, "gemini-3.5-flash", &escaped, repo_root, 20) {
-                return Ok(res);
-            }
+    let idx = ((attempt - 1) + node_offset) % 1000;
+    for provider in provider_order(shift) {
+        let res = match provider {
+            0 => try_gemini_pool(idx, &escaped, repo_root),
+            1 => try_groq_pool(idx, &escaped, repo_root),
+            _ => try_github_models(&escaped, repo_root),
+        };
+        if let Some(ok) = res {
+            return Ok(ok);
         }
     }
-
-    // 順序 3: Groq openai/gpt-oss-120b
-    let groq_pool = resolve_key_pool_strings(
-        repo_root,
-        "GROQ_API_KEYS",
-        "GROQ_API_KEY",
-        &["groq", "groq2", "groq3", "groq4"],
-    );
-    if !groq_pool.is_empty() {
-        let qkey = &groq_pool[idx % groq_pool.len()];
-        let url = "https://api.groq.com/openai/v1/chat/completions";
-        let groq_model = env::var("FARMER_GROQ_MODEL").unwrap_or_else(|_| "openai/gpt-oss-120b".to_string());
-        if let Ok(res) = call_openai_compatible_endpoint(url, qkey, &groq_model, &escaped, repo_root, 25) {
-            return Ok(res);
-        }
-    }
-
-    if let Ok(gh_token) = env::var("GITHUB_TOKEN") {
-        let url = "https://models.inference.ai.azure.com/chat/completions";
-        return call_openai_compatible_endpoint(url, &gh_token, "gpt-4o-mini", &escaped, repo_root, 30);
-    }
-
-    Err("所有免費 API 金鑰池 (Gemini 4x / Groq 4x / GitHub Models) 皆無法連線或未設定！".to_string())
+    Err(format!("{} 所有免費 API 金鑰池 (Gemini 4x / Groq 4x / GitHub Models) 皆無法連線或未設定！", INFRA_TAG))
 }
 
+/// 依序跑指定的整合測試，再跑 guard；回傳各測試的通過摘要
 /// @outputs: 2
-fn verify_farmed_module(repo_root: &Path, test_target: &str) -> Result<(), String> {
-    let test_out = Command::new("cargo")
-        .args(["test", "--target-dir", "target/farmer_check", "--test", test_target])
-        .current_dir(repo_root)
-        .output()
-        .map_err(|e| format!("執行 cargo test 失敗: {}", e))?;
-
-    if !test_out.status.success() {
-        return Err(format!(
-            "單元測試未通過:\n{}\n{}",
-            String::from_utf8_lossy(&test_out.stdout),
-            String::from_utf8_lossy(&test_out.stderr)
-        ));
+fn verify_farmed_module(repo_root: &Path, test_targets: &[String]) -> Result<String, String> {
+    let mut summary = Vec::new();
+    for target in test_targets {
+        let out = Command::new("cargo")
+            .args(["test", "--target-dir", "target/farmer_check", "--test", target.as_str()])
+            .current_dir(repo_root)
+            .output()
+            .map_err(|e| format!("執行 cargo test 失敗: {}", e))?;
+        let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+        if !out.status.success() {
+            return Err(format!("單元測試未通過（{}）:\n{}\n{}", target, stdout, String::from_utf8_lossy(&out.stderr)));
+        }
+        summary.push(format!("{} {}", target, crate::farm_tree::test_pass_summary(&stdout)));
     }
-
     if let Err(issues) = crate::guard::run_guard_checks(repo_root) {
         return Err(format!("硬體級守衛 (guard.rs) 攔截:\n{}", issues.join("\n")));
     }
-    Ok(())
+    Ok(summary.join("；"))
 }
 
+/// 一次嘗試：呼叫模型、寫入模組與測試（含規格黃金向量測試）、驗證
+/// 回傳 Ok((供應商, 測試摘要)) 或 Err((供應商, 錯誤輸出))
 /// @outputs: 2
 /// @domain: attempt [1..20]
-fn try_single_farm_attempt(
-    repo_root: &Path,
-    module_name: &str,
-    orig_lib: &str,
-    spec_text: &str,
-    feedback: &str,
-    attempt: usize,
-) -> Result<String, String> {
-    if attempt < 1 || attempt > 20 {
-        return Err("attempt 超出範圍".to_string());
+/// @domain: shift [0..1000]
+fn try_single_farm_attempt(ctx: &FarmContext, feedback: &str, attempt: usize, shift: usize) -> Result<(String, String), (String, String)> {
+    if attempt < 1 || attempt > 20 || shift > 1000 {
+        return Err(("none".to_string(), "attempt 超出範圍".to_string()));
     }
-    let prompt = build_farmer_prompt(module_name, spec_text, feedback);
-    let (provider, raw_resp) = dispatch_cloud_llm(attempt, &prompt, repo_root)?;
-
+    let prompt = build_farmer_prompt(&ctx.module, &ctx.spec_text, &ctx.memory, feedback);
+    let (provider, raw_resp) = dispatch_cloud_llm(attempt, &prompt, &ctx.repo_root, shift).map_err(|e| ("none".to_string(), e))?;
+    let fail = |msg: &str| (provider.clone(), msg.to_string());
     let mod_code = extract_fenced_block(&raw_resp, "rust:module")
         .or_else(|| extract_fenced_block(&raw_resp, "rust"))
-        .ok_or_else(|| "模型輸出缺少 ```rust:module 標籤".to_string())?;
+        .ok_or_else(|| fail("模型輸出缺少 ```rust:module 標籤"))?;
     let test_code = extract_fenced_block(&raw_resp, "rust:test")
         .or_else(|| extract_second_rust_block(&raw_resp))
-        .ok_or_else(|| "模型輸出缺少 ```rust:test 標籤".to_string())?;
+        .ok_or_else(|| fail("模型輸出缺少 ```rust:test 標籤"))?;
 
-    let lib_path = repo_root.join("src").join("lib.rs");
-    let mod_path = repo_root.join("src").join(format!("{}.rs", module_name));
-    let test_name = format!("test_{}", module_name);
-    let test_path = repo_root.join("tests").join(format!("{}.rs", test_name));
+    let root = &ctx.repo_root;
+    let test_name = format!("test_{}", ctx.module);
+    let _ = fs::write(root.join("src").join("lib.rs"), insert_mod_alphabetically(&ctx.orig_lib, &ctx.module));
+    let _ = fs::write(root.join("src").join(format!("{}.rs", ctx.module)), mod_code);
+    let target_use = format!("use rust_bricks::{}::*;", ctx.module);
+    let _ = fs::write(root.join("tests").join(format!("{}.rs", test_name)), test_code.replace("use super::*;", &target_use));
+    let mut targets = Vec::new();
+    if let Some(golden) = &ctx.golden_test {
+        let golden_name = format!("golden_{}", ctx.module);
+        let _ = fs::write(root.join("tests").join(format!("{}.rs", golden_name)), golden);
+        targets.push(golden_name);
+    }
+    targets.push(test_name);
 
-    let new_lib = insert_mod_alphabetically(orig_lib, module_name);
-    let _ = fs::write(&lib_path, new_lib);
-    let _ = fs::write(&mod_path, mod_code);
-    let target_use = format!("use rust_bricks::{}::*;", module_name);
-    let sanitized_test = test_code.replace("use super::*;", &target_use);
-    let _ = fs::write(&test_path, sanitized_test);
-
-    verify_farmed_module(repo_root, &test_name)?;
-    let _ = crate::catalog::generate_catalogs(repo_root);
-    let _ = crate::receipt::create_receipt(repo_root, &provider, "PASS");
-    Ok(provider)
+    let summary = verify_farmed_module(root, &targets).map_err(|e| (provider.clone(), e))?;
+    let _ = crate::catalog::generate_catalogs(root);
+    let _ = crate::receipt::create_receipt(root, &provider, "PASS");
+    Ok((provider, summary))
 }
 
 /// @outputs: 2
@@ -471,41 +549,135 @@ pub fn check_module_already_claimed(repo_root: &Path, module_name: &str) -> Resu
     Ok(())
 }
 
+/// 重試迴圈：二振出局換方向與供應商、第四振升級裁判、API 全斷視為基礎設施問題
+/// @outputs: 3
+/// @domain: max_attempts [1..10]
+fn run_attempt_loop(ctx: &FarmContext, max_attempts: usize) -> LoopResult {
+    let mut feedback = String::new();
+    let mut strikes = StrikeState::default();
+    let mut shift = 0usize;
+    let mut rounds: Vec<RoundRecord> = Vec::new();
+    let mut last_log = String::new();
+    for attempt in 1..=max_attempts.clamp(1, 10) {
+        println!("🌾 [cloud-farmer] 第 {}/{} 次嘗試生成微積木 `{}`...", attempt, max_attempts, ctx.module);
+        let (provider, log) = match try_single_farm_attempt(ctx, &feedback, attempt, shift) {
+            Ok((provider, summary)) => return LoopResult::Success(provider, summary, attempt),
+            Err(pair) => pair,
+        };
+        let class = classify_failure(&log);
+        if class == "infra" {
+            return LoopResult::Infra(log);
+        }
+        println!("⚠️ [cloud-farmer] 第 {} 次未過：{}（{}）", attempt, class, provider);
+        rounds.push(RoundRecord { model: provider, class: class.clone(), first_line: first_error_line(&log) });
+        strikes = next_strike(&strikes, &class);
+        match strike_action(&strikes) {
+            StrikeAction::Escalate => return LoopResult::Failed(rounds, log, true),
+            StrikeAction::SwitchDirection => {
+                println!("🧢 [cloud-farmer] 二振出局：{} 連續 {} 次，換方向並換供應商", class, strikes.count);
+                shift += 1;
+                feedback = format!("{}{}", strike_note(&strikes), log);
+            }
+            StrikeAction::Continue => feedback = log.clone(),
+        }
+        last_log = log;
+    }
+    LoopResult::Failed(rounds, last_log, false)
+}
+
+/// 清回農作前的工作區
+/// @outputs: 1
+fn rollback_workspace(ctx: &FarmContext) {
+    let root = &ctx.repo_root;
+    let _ = fs::write(root.join("src").join("lib.rs"), &ctx.orig_lib);
+    let _ = fs::remove_file(root.join("src").join(format!("{}.rs", ctx.module)));
+    let _ = fs::remove_file(root.join("tests").join(format!("test_{}.rs", ctx.module)));
+    let _ = fs::remove_file(root.join("tests").join(format!("golden_{}.rs", ctx.module)));
+}
+
+/// 這一輪失敗的結論：規格可疑 → 升級裁判 → 卡關 → 一般放棄
+/// @outputs: 4
+pub fn failure_outcome(fresh: &[DeadEnd], rounds: &[RoundRecord], escalated: bool) -> String {
+    let mut samples = dead_end_samples(fresh);
+    samples.extend(rounds.iter().map(|r| (r.model.clone(), r.class.clone())));
+    if spec_suspect(&samples).is_some() {
+        return "suspect".to_string();
+    }
+    if escalated {
+        return "escalated".to_string();
+    }
+    if fresh.len() + 1 >= BLOCK_ROUNDS {
+        return "blocked".to_string();
+    }
+    "abandoned".to_string()
+}
+
+/// 開工前檢查：已入庫／已被領取／本版規格卡關或可疑就不呼叫模型
+/// @outputs: 2
+fn precheck_farm(repo_root: &Path, module: &str, fresh: &[DeadEnd]) -> Result<(), FarmFailure> {
+    let skip = |outcome: &str, detail: String| FarmFailure { outcome: outcome.to_string(), detail, attempt_branch: None };
+    check_module_already_claimed(repo_root, module).map_err(|e| skip("skip-claimed", e))?;
+    match module_state(false, false, fresh) {
+        ModuleState::Blocked(n) => Err(skip("skip-blocked", format!("本版規格已放棄 {} 輪，等待人類裁判", n))),
+        ModuleState::Suspect(class) => Err(skip("skip-suspect", format!("不同模型卡在同一個黃金向量（{}），請先複核規格", class))),
+        _ => Ok(()),
+    }
+}
+
+/// 依規格農一塊積木；失敗時把這一輪記成 attempt/ 分支（push 時推上遠端）
 /// @outputs: 2
 /// @domain: max_attempts [1..10]
-pub fn farm_brick_from_spec(
-    repo_root: &Path,
-    spec_path: &Path,
-    module_name: &str,
-    max_attempts: usize,
-) -> Result<String, String> {
+pub fn farm_brick_from_spec(repo_root: &Path, spec_path: &Path, module_name: &str, max_attempts: usize, push: bool) -> Result<FarmSuccess, FarmFailure> {
+    let fail = |outcome: &str, detail: String| FarmFailure { outcome: outcome.to_string(), detail, attempt_branch: None };
     if max_attempts < 1 || max_attempts > 10 {
-        return Err("max_attempts 必須介於 [1..10]".to_string());
+        return Err(fail("error", "max_attempts 必須介於 [1..10]".to_string()));
     }
-    check_module_already_claimed(repo_root, module_name)?;
-    let spec_text = fs::read_to_string(spec_path).map_err(|e| format!("讀取規格書失敗: {}", e))?;
-    let lib_path = repo_root.join("src").join("lib.rs");
-    let orig_lib = fs::read_to_string(&lib_path).map_err(|e| format!("讀取 lib.rs 失敗: {}", e))?;
-    let mod_path = repo_root.join("src").join(format!("{}.rs", module_name));
-    let test_path = repo_root.join("tests").join(format!("test_{}.rs", module_name));
-    let mut feedback = String::new();
-
-    for attempt in 1..=max_attempts {
-        println!("🌾 [cloud-farmer] 第 {}/{} 次嘗試生成微積木 `{}`...", attempt, max_attempts, module_name);
-        match try_single_farm_attempt(repo_root, module_name, &orig_lib, &spec_text, &feedback, attempt) {
-            Ok(provider) => return Ok(provider),
-            Err(err_log) => {
-                let first_err = err_log.lines().next().unwrap_or("未知錯誤");
-                println!("⚠️ [cloud-farmer] 第 {} 次驗證未過 ({})，準備自我修復...", attempt, first_err);
-                feedback = err_log;
-            }
+    let spec_str = spec_path.to_string_lossy().replace('\\', "/");
+    let spec_hash = spec_blob_hash(repo_root, &spec_str);
+    let all_dead_ends = load_dead_ends(repo_root, module_name);
+    let fresh = fresh_dead_ends(&all_dead_ends, &spec_hash);
+    precheck_farm(repo_root, module_name, &fresh)?;
+    let spec_text = fs::read_to_string(spec_path).map_err(|e| fail("error", format!("讀取規格書失敗: {}", e)))?;
+    let orig_lib = fs::read_to_string(repo_root.join("src").join("lib.rs")).map_err(|e| fail("error", format!("讀取 lib.rs 失敗: {}", e)))?;
+    let golden_lines = extract_golden_lines(&spec_text);
+    let ctx = FarmContext {
+        repo_root: repo_root.to_path_buf(),
+        module: module_name.to_string(),
+        orig_lib,
+        spec_text,
+        memory: dead_end_prompt(&fresh),
+        golden_test: render_golden_test(module_name, &golden_lines),
+    };
+    let resolves: Vec<String> = all_dead_ends.iter().map(|d| d.branch.clone()).collect();
+    match run_attempt_loop(&ctx, max_attempts) {
+        LoopResult::Success(provider, test_summary, attempts_used) => Ok(FarmSuccess {
+            provider,
+            test_summary,
+            golden_count: golden_assert_count(&golden_lines),
+            attempts_used,
+            spec_hash,
+            resolves,
+        }),
+        LoopResult::Infra(log) => {
+            rollback_workspace(&ctx);
+            Err(fail("infra", log))
+        }
+        LoopResult::Failed(rounds, last_log, escalated) => {
+            let outcome = failure_outcome(&fresh, &rounds, escalated);
+            let input = AbandonInput {
+                module: module_name.to_string(),
+                spec_path: spec_str,
+                spec_hash,
+                round: fresh.len() + 1,
+                outcome: outcome.clone(),
+                rounds,
+                evidence: crate::farm_tree::evidence_lines(&last_log),
+            };
+            let branch = record_abandoned_round(repo_root, module_name, &crate::farm_tree::abandon_message(&input), push).ok();
+            rollback_workspace(&ctx);
+            Err(FarmFailure { outcome, detail: first_error_line(&last_log), attempt_branch: branch })
         }
     }
-
-    let _ = fs::write(&lib_path, orig_lib);
-    let _ = fs::remove_file(&mod_path);
-    let _ = fs::remove_file(&test_path);
-    Err(format!("超過最大重試次數 ({})，已安全回滾工作區。最後報錯:\n{}", max_attempts, feedback))
 }
 
 /// @outputs: 2
@@ -533,21 +705,29 @@ fn harvest_single_branch(repo_root: &Path, remote_branch: &str, module_name: &st
         .ok_or_else(|| format!("無法從 {} 提取 src/{}.rs", remote_branch, module_name))?;
     let test_src = git_show_file(repo_root, &test_ref)
         .ok_or_else(|| format!("無法從 {} 提取 tests/test_{}.rs", remote_branch, module_name))?;
+    let golden_src = git_show_file(repo_root, &format!("{}:tests/golden_{}.rs", remote_branch, module_name));
 
     let lib_path = repo_root.join("src").join("lib.rs");
     let orig_lib = fs::read_to_string(&lib_path).map_err(|e| format!("讀取 lib.rs 失敗: {}", e))?;
     let test_name = format!("test_{}", module_name);
     let test_path = repo_root.join("tests").join(format!("{}.rs", test_name));
+    let golden_path = repo_root.join("tests").join(format!("golden_{}.rs", module_name));
 
-    let new_lib = insert_mod_alphabetically(&orig_lib, module_name);
-    let _ = fs::write(&lib_path, new_lib);
+    let _ = fs::write(&lib_path, insert_mod_alphabetically(&orig_lib, module_name));
     let _ = fs::write(&mod_path, mod_src);
     let _ = fs::write(&test_path, test_src);
+    let mut targets = Vec::new();
+    if let Some(golden) = golden_src {
+        let _ = fs::write(&golden_path, golden);
+        targets.push(format!("golden_{}", module_name));
+    }
+    targets.push(test_name);
 
-    if let Err(e) = verify_farmed_module(repo_root, &test_name) {
+    if let Err(e) = verify_farmed_module(repo_root, &targets) {
         let _ = fs::write(&lib_path, orig_lib);
         let _ = fs::remove_file(&mod_path);
         let _ = fs::remove_file(&test_path);
+        let _ = fs::remove_file(&golden_path);
         return Err(format!("收割驗證衝突或失敗 (已自動回滾): {}", e));
     }
     Ok(())
@@ -579,6 +759,10 @@ pub fn harvest_cloud_branches(repo_root: &Path) -> Result<Vec<String>, String> {
         harvested.push(mod_name.to_string());
     }
     if !harvested.is_empty() {
+        let pruned = crate::farm_tree::prune_resolved_attempts(repo_root, false);
+        if !pruned.is_empty() {
+            println!("🧹 [harvest] 已入庫模組的本機死路分支已過期並清除：{:?}", pruned);
+        }
         let _ = crate::catalog::generate_catalogs(repo_root);
         let _ = crate::receipt::create_receipt(repo_root, "cloud-harvester", "PASS");
     }

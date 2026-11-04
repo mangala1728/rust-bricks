@@ -1,17 +1,22 @@
 name: Cloud Free-Tier Auto Brick Farmer
 
+# 失敗嘗試樹（git-handoff 相容的 attempt/ 分支）、二振出局、壓力紅燈、日誌保鮮：
+# 機制說明見 docs/CLOUD-FARMER-ATTEMPT-TREE.md
 on:
   schedule:
-    # 模式 A：每 3 小時自動喚醒巡航 (UTC 0, 3, 6, 9, 12, 15, 18, 21)，筆電關機也能自跑
+    # 每 3 小時巡航一次（UTC 0, 3, 6, …）；GitHub 排程可能延遲或略過，推新規格會立即觸發
     - cron: '0 */3 * * *'
+  push:
+    branches: [ main ]
+    paths: [ 'specs/**' ]
   workflow_dispatch:
     inputs:
       spec_path:
-        description: "規格書路徑 (留空則自動掃描 specs/ 佇列取下一塊未實作規格)"
+        description: "規格書路徑 (留空則自動從 specs/ 佇列取下一塊待做規格)"
         required: false
         default: ""
       module_name:
-        description: "產出模組名稱 (留空則依規格書檔名自動判定)"
+        description: "產出模組名稱 (與 spec_path 一起指定)"
         required: false
         default: ""
       push_to_branch:
@@ -19,8 +24,15 @@ on:
         required: false
         default: "true"
 
+# 同一時間只跑一輪，避免兩輪搶同一份規格
+concurrency:
+  group: cloud-farmer
+  cancel-in-progress: false
+
 permissions:
   contents: write
+  issues: write
+  actions: read
   models: read
 
 jobs:
@@ -52,45 +64,71 @@ jobs:
           git config user.name "rust-bricks-cloud-farmer[bot]"
           git config user.email "cloud-farmer@users.noreply.github.com"
 
-      - name: Run Pure Rust Cloud Farmer (Auto-Queue & Multi-Key Pool)
+      - name: Build Farmer
+        run: cargo build -q
+
+      - name: 日誌保鮮：清除已入庫模組的過期死路分支
+        run: cargo run -q -- farm-prune --push
+
+      - name: 壓力紅燈檢查
+        id: pressure
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/farmer_pressure.sh
+
+      - name: 選定規格（佇列狀態由失敗嘗試樹推導）
+        id: queue
+        if: steps.pressure.outputs.frozen != 'true'
+        env:
+          INPUT_SPEC: ${{ inputs.spec_path }}
+          INPUT_MOD: ${{ inputs.module_name }}
+        run: |
+          cargo run -q -- farm-status >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$INPUT_SPEC" ] && [ -n "$INPUT_MOD" ]; then
+            echo "🎯 [cloud-farmer] 手動指定：$INPUT_SPEC -> $INPUT_MOD"
+            { echo "next_spec=$INPUT_SPEC"; echo "next_module=$INPUT_MOD"; } >> "$GITHUB_OUTPUT"
+          else
+            cargo run -q -- farm-queue
+          fi
+
+      - name: 農作（二振出局、死路帶入提示、失敗記入 attempt/ 分支）
+        id: farm
+        if: steps.pressure.outputs.frozen != 'true' && steps.queue.outputs.next_module != ''
         env:
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SPEC: ${{ steps.queue.outputs.next_spec }}
+          MOD: ${{ steps.queue.outputs.next_module }}
+          PUSH_TO_BRANCH: ${{ inputs.push_to_branch }}
         run: |
-          SPEC="${{ inputs.spec_path }}"
-          MOD="${{ inputs.module_name }}"
-
-          if [ -z "$SPEC" ] || [ -z "$MOD" ]; then
-            echo "🔍 [cloud-farmer] 未指定規格書，正在自動搜尋 specs/ 佇列中尚未實作之規格..."
-            SPEC=""
-            MOD=""
-            for s in specs/*.md; do
-              [ -e "$s" ] || continue
-              m=$(basename "$s" .md)
-              if [ "$m" = "template" ]; then continue; fi
-              # 檢查是否已存在主幹 src/<mod>.rs
-              if [ ! -f "src/$m.rs" ]; then
-                # 檢查遠端是否已有對應分支正在進行
-                if ! git ls-remote --heads origin "contrib/cloud-farm-$m" | grep -q "$m"; then
-                  SPEC="$s"
-                  MOD="$m"
-                  break
-                fi
-              fi
-            done
-          fi
-
-          if [ -z "$SPEC" ]; then
-            echo "✨ [cloud-farmer] 巡檢完畢：目前所有規格書皆已入庫或已有雲端分支處理中，佇列無待處理任務。"
-            exit 0
-          fi
-
           echo "🌾 [cloud-farmer] 選定目標規格: $SPEC -> 模組: $MOD"
-          if [ "${{ inputs.push_to_branch }}" = "false" ]; then
-            cargo run -- farm "$SPEC" "$MOD"
+          if [ "$PUSH_TO_BRANCH" = "false" ]; then
+            cargo run -q -- farm "$SPEC" "$MOD"
           else
-            cargo run -- farm "$SPEC" "$MOD" --push
+            cargo run -q -- farm "$SPEC" "$MOD" --push
           fi
+
+      - name: 依 git 狀態同步 issue（卡關／規格可疑／佇列空）
+        if: always() && steps.pressure.outputs.frozen != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/farmer_issues.sh
+
+      - name: 本輪摘要
+        if: always()
+        env:
+          FROZEN: ${{ steps.pressure.outputs.frozen }}
+          MOD: ${{ steps.queue.outputs.next_module }}
+          OUTCOME: ${{ steps.farm.outputs.outcome }}
+          BRANCH: ${{ steps.farm.outputs.attempt_branch }}
+        run: |
+          {
+            echo "## 本輪結果"
+            echo "- 壓力紅燈凍結：${FROZEN:-false}"
+            echo "- 模組：${MOD:-（佇列無可做規格）}"
+            echo "- 結果：${OUTCOME:-（未執行）}"
+            if [ -n "$BRANCH" ]; then echo "- 失敗嘗試分支：\`$BRANCH\`"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
