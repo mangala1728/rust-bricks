@@ -43,3 +43,16 @@
 - 初始區間 $[0.0, 5.0]$，$tol = 1.0e-5$，$max\_iter = 100$：
   - 搜尋結果 $x^* \approx 2.0$，$f(x^*) \approx 3.0$。
 - 容差使用 `(x_opt - 2.0).abs() < 1e-4` 與 `(y_opt - 3.0).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_math_golden_section.rs）
+```golden
+// 出處：規格向量 f(x) = (x-2)^2 + 3 於 [0, 5]，tol 1e-5，max_iter 100；Python 依規格迭代獨立驗算 x* = 2.0000019, f = 3.0
+let (x_opt, y_opt) = golden_section_search_min(0.0, 5.0, 1.0e-5, 100, |x: f64| (x - 2.0).powi(2) + 3.0).unwrap();
+(x_opt - 2.0).abs() < 1e-4
+(y_opt - 3.0).abs() < 1e-4
+// 出處：規格邊界（a >= b、tol <= 0、max_iter == 0 回傳 None）
+golden_section_search_min(5.0, 0.0, 1.0e-5, 100, |x: f64| x * x).is_none()
+golden_section_search_min(1.0, 1.0, 1.0e-5, 100, |x: f64| x * x).is_none()
+golden_section_search_min(0.0, 5.0, 0.0, 100, |x: f64| x * x).is_none()
+golden_section_search_min(0.0, 5.0, 1.0e-5, 0, |x: f64| x * x).is_none()
+```

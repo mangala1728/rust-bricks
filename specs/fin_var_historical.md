@@ -58,3 +58,21 @@
     - `count = (0.10 * 10).ceil() = 1` -> 最差 1 個損失為 `0.05` -> CVaR = `0.05`
   - `confidence = 0.80` (alpha = 0.20)
     - `count = (0.20 * 10).ceil() = 2` -> 最差 2 個損失平均 `(0.05 + 0.04) / 2 = 0.045` -> CVaR = `0.045`
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_var_historical.rs）
+```golden
+// 出處：規格樣本 10 筆報酬，VaR(90%) idx = floor(0.10*10) = 1 -> -sorted[1] = 0.04（Python 獨立驗算）
+let r = [-0.05, -0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05];
+(fin_var_historical(&r, 0.90).unwrap() - 0.04).abs() < 1e-4
+// 出處：規格邊界檢查（len < 2、confidence 不在 (0,1)、非有限值一律 None）
+fin_var_historical(&[-0.01], 0.90).is_none()
+fin_var_historical(&r, 0.0).is_none()
+fin_var_historical(&r, 1.0).is_none()
+fin_var_historical(&r, f64::NAN).is_none()
+fin_var_historical(&[-0.01, f64::NAN], 0.90).is_none()
+fin_cvar_historical(&[-0.01], 0.90).is_none()
+fin_cvar_historical(&r, 0.0).is_none()
+fin_cvar_historical(&r, 1.0).is_none()
+fin_cvar_historical(&[-0.01, f64::INFINITY], 0.90).is_none()
+// 註：規格的 CVaR 向量（0.90 -> 0.05、0.80 -> 0.045）與規格自身的 count 公式（ceil(alpha*n + 1e-9)）互相矛盾，暫不轉寫，待人類複核
+```

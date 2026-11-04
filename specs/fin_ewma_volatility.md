@@ -47,3 +47,10 @@
   - 年化波動率 (以 252 交易日計)：
     $\sigma_{\text{ann}} = \sqrt{0.000430 \times 252} = \sqrt{0.10836} \approx 0.3291808$ (約 32.92%)
 - 容差使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_ewma_volatility.rs）
+```golden
+// 出處：規格向量 σ²=0.0004, r=0.03, λ=0.94；Python 獨立驗算
+(ewma_variance_step(0.0004, 0.03, 0.94).unwrap() - 0.000430).abs() < 1e-4
+(ewma_annualized_volatility(0.000430, 252.0).unwrap() - 0.3291808).abs() < 1e-4
+```

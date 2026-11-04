@@ -50,3 +50,25 @@
   - 經度：`01131.000`, `'E'` $\implies 11 + 31.000 / 60 \approx 11.516667^\circ$。
 - 測試容差使用 `(val - golden).abs() < 1e-4`。
 - 錯誤語句：校驗和錯誤或方向非 N/S/E/W 應安全返回 `false` 或 `None`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_nmea0183_gprmc.rs）
+```golden
+// 出處：規格向量（NMEA 標準範例語句，Python 獨立 XOR 驗算 0x6A）
+nmea_validate_checksum("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A")
+// 出處：規格錯誤語句：校驗和錯誤應回傳 false
+!nmea_validate_checksum("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6B")
+// 出處：函式 1 運算過程：開頭非 '$'、或無 '*' 時回傳 false
+!nmea_validate_checksum("GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A")
+!nmea_validate_checksum("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W")
+// 出處：規格向量：48 + 7.038/60 = 48.1173、11 + 31/60 ≈ 11.516667，容差 1e-4
+let (lat_ne, lon_ne) = nmea_parse_lat_lon("4807.038", 'N', "01131.000", 'E').unwrap();
+(lat_ne - 48.1173).abs() < 1e-4
+(lon_ne - 11.516667).abs() < 1e-4
+// 出處：函式 2 運算過程：S / W 取負號
+let (lat_sw, lon_sw) = nmea_parse_lat_lon("4807.038", 'S', "01131.000", 'W').unwrap();
+(lat_sw + 48.1173).abs() < 1e-4
+(lon_sw + 11.516667).abs() < 1e-4
+// 出處：規格錯誤語句：方向非 N/S/E/W 應回傳 None
+nmea_parse_lat_lon("4807.038", 'X', "01131.000", 'E').is_none()
+nmea_parse_lat_lon("4807.038", 'N', "01131.000", 'X').is_none()
+```

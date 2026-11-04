@@ -25,3 +25,17 @@
 - 基準恆等測試：`alpha = 1.0` 時輸出必須精確等於 `current`；`current == prev` 時輸出保持不變。
 - 確定性黃金值驗證：`current = 100.0, prev = 0.0, alpha = 0.25` $\rightarrow$ 斷言 `(res - 25.0).abs() < 1e-6`。
 - 非法邊界拒絕測試：`alpha = 0.0`、`alpha = 1.5`、`f64::NAN` 均必須斷言為 `None`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_ema_smoother.rs）
+```golden
+// 出處：確定性黃金值 100 × 0.25 + 0 × 0.75 = 25（手算）
+(ema_step_f64(100.0, 0.0, 0.25).unwrap() - 25.0).abs() < 1e-6
+// 出處：基準恆等 alpha = 1 時輸出等於 current
+(ema_step_f64(42.0, 7.0, 1.0).unwrap() - 42.0).abs() < 1e-12
+// 出處：基準恆等 current == prev 時輸出不變
+(ema_step_f64(5.0, 5.0, 0.3).unwrap() - 5.0).abs() < 1e-12
+// 出處：非法邊界拒絕 alpha = 0.0、alpha = 1.5、NaN
+ema_step_f64(1.0, 0.0, 0.0).is_none()
+ema_step_f64(1.0, 0.0, 1.5).is_none()
+ema_step_f64(f64::NAN, 0.0, 0.5).is_none()
+```

@@ -53,3 +53,19 @@
   - 窗口大小 $4$，初始全 0。輸入導數分別為 $2.0$ (平方 $4.0$)：
     窗口總和 $= 4.0$，輸出 $= 1.0$。
 - 容差使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_sensor_pan_tompkins.rs）
+```golden
+// 出處：規格向量：歷史全 0、x[n] = 8 → y = (2×8)/8 = 2.0（手算）
+let mut pt_hist = [0.0_f64; 4];
+(pan_tompkins_derivative_step(8.0, &mut pt_hist).unwrap() - 2.0).abs() < 1e-4
+// 出處：函式 1：history = [x[n-1], x[n-2], x[n-3], x[n-4]]，右移並壓入 x[n] → [8, 0, 0, 0]
+pt_hist == [8.0, 0.0, 0.0, 0.0]
+// 出處：規格向量：窗口 4、初始全 0，導數 2.0 → 平方 4，總和 4，輸出 1.0（手算）
+let mut pt_ring = [0.0_f64; 4];
+let mut pt_head = 0_usize;
+let mut pt_sum = 0.0_f64;
+(pan_tompkins_integrate_step(2.0, &mut pt_ring, &mut pt_head, &mut pt_sum).unwrap() - 1.0).abs() < 1e-4
+// 出處：函式 2 運算過程：running_sum = 4、ring_buf[0] = 4、head_idx = 1
+(pt_sum - 4.0).abs() < 1e-12 && (pt_ring[0] - 4.0).abs() < 1e-12 && pt_head == 1
+```

@@ -14,7 +14,7 @@
   ```rust
   /// @outputs: 5
   /// @domain: sample_rate_hz [1.0..1000000.0]
-  /// @domain: center_freq_hz [0.1..sample_rate_hz / 2.0]
+  /// @domain: center_freq_hz [0.1..sample_rate_hz / 2.0)（不含 fs/2，與下方邊界防禦一致）
   /// @domain: q_factor [0.01..1000.0]
   pub fn biquad_bandpass_coefficients(
       sample_rate_hz: f64,
@@ -56,3 +56,18 @@
   - $a_0 = 1.5, a_1 = 0.0, a_2 = 0.5$
   - 歸一化：$b_0/a_0 = 0.333333, b_1/a_0 = 0.0, b_2/a_0 = -0.333333, a_1/a_0 = 0.0, a_2/a_0 = 0.333333$
 - 容差使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_biquad_bandpass.rs）
+```golden
+// 出處：規格黃金向量 fs=1000, f0=250, Q=1 → [1/3, 0, -1/3, 0, 1/3]（手算，容差照規格 1e-4）
+let c = biquad_bandpass_coefficients(1000.0, 250.0, 1.0).unwrap();
+(c[0] - 0.333333).abs() < 1e-4
+(c[1] - 0.0).abs() < 1e-4
+(c[2] - (-0.333333)).abs() < 1e-4
+(c[3] - 0.0).abs() < 1e-4
+(c[4] - 0.333333).abs() < 1e-4
+// 出處：邊界防禦 f0 >= fs/2、參數非正、NaN → None
+biquad_bandpass_coefficients(1000.0, 500.0, 1.0).is_none()
+biquad_bandpass_coefficients(1000.0, 250.0, 0.0).is_none()
+biquad_bandpass_coefficients(f64::NAN, 250.0, 1.0).is_none()
+```

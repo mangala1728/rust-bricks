@@ -41,3 +41,20 @@
 - 斷言 `(integral - 2.0).abs() < 1e-4`。
 - 多項式積分：$\int_0^3 x^2 dx = [x^3 / 3]_0^3 = 9.0$。
   - 辛普森法對二次多項式為代數精確值：斷言 `(integral - 9.0).abs() < 1e-6`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_math_simpson_integral.rs）
+```golden
+// 出處：規格向量 ∫_0^π sin(x)dx = 2，intervals = 100，容差 1e-4（Python 獨立複合 Simpson 驗算 2.0000000108）
+(simpson_integral_1d(0.0, std::f64::consts::PI, 100, |x: f64| x.sin()).unwrap() - 2.0).abs() < 1e-4
+// 出處：規格向量 ∫_0^3 x^2 dx = 9，Simpson 對二次式代數精確，容差 1e-6（規格未指定 intervals，取 100）
+(simpson_integral_1d(0.0, 3.0, 100, |x: f64| x * x).unwrap() - 9.0).abs() < 1e-6
+// 出處：運算過程「奇數 intervals 向上補齊為偶數」：intervals = 3 → n = 4，對二次式仍精確為 9（手算）
+(simpson_integral_1d(0.0, 3.0, 3, |x: f64| x * x).unwrap() - 9.0).abs() < 1e-6
+// 出處：運算過程的非法輸入拒絕（a >= b、intervals < 2 或 > 100000、端點非有限）
+simpson_integral_1d(1.0, 1.0, 10, |x: f64| x).is_none()
+simpson_integral_1d(2.0, 1.0, 10, |x: f64| x).is_none()
+simpson_integral_1d(0.0, 1.0, 1, |x: f64| x).is_none()
+simpson_integral_1d(0.0, 1.0, 100001, |x: f64| x).is_none()
+simpson_integral_1d(f64::NAN, 1.0, 10, |x: f64| x).is_none()
+simpson_integral_1d(0.0, f64::INFINITY, 10, |x: f64| x).is_none()
+```

@@ -56,3 +56,18 @@
   - $a_0 = 1.0 + \alpha \approx 1.707113562, a_1 = 0.0, a_2 = 1.0 - \alpha \approx 0.292886438$
   - 歸一化：$b_0/a_0 \approx 0.585786, b_1/a_0 = 0.0, b_2/a_0 \approx 0.585786, a_1/a_0 = 0.0, a_2/a_0 \approx 0.171573$
 - 測試斷言使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_biquad_notch.rs）
+```golden
+// 出處：規格黃金向量 fs=1000, f0=250, Q=0.7071 → [0.585786, 0, 0.585786, 0, 0.171573]（Python 驗算 0.5857841 / 0.1715682，差 < 1e-5，容差照規格 1e-4）
+let c = biquad_notch_coefficients(1000.0, 250.0, 0.7071).unwrap();
+(c[0] - 0.585786).abs() < 1e-4
+(c[1] - 0.0).abs() < 1e-4
+(c[2] - 0.585786).abs() < 1e-4
+(c[3] - 0.0).abs() < 1e-4
+(c[4] - 0.171573).abs() < 1e-4
+// 出處：邊界防禦 f0 >= fs/2、參數 <= 0、NaN/Inf → None
+biquad_notch_coefficients(1000.0, 500.0, 0.7071).is_none()
+biquad_notch_coefficients(1000.0, 250.0, -1.0).is_none()
+biquad_notch_coefficients(f64::INFINITY, 250.0, 0.7071).is_none()
+```

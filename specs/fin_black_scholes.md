@@ -60,3 +60,15 @@
   - $\text{Call Delta} \approx 0.6368$
   - $\text{Put Delta} \approx -0.3632$
 - 容差使用 `(val - golden).abs() < 1e-3`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_black_scholes.rs）
+```golden
+// 出處：Hull 經典例 S0=K=100, r=0.05, σ=0.2, T=1；Python statistics.NormalDist 獨立驗算
+// 回傳順序 (call_price, put_price, call_delta, put_delta)
+(standard_normal_cdf(0.35).unwrap() - 0.63683).abs() < 1e-3
+(standard_normal_cdf(0.15).unwrap() - 0.55962).abs() < 1e-3
+(black_scholes_european(100.0, 100.0, 0.05, 0.20, 1.0).unwrap().0 - 10.4506).abs() < 1e-3
+(black_scholes_european(100.0, 100.0, 0.05, 0.20, 1.0).unwrap().1 - 5.5735).abs() < 1e-3
+(black_scholes_european(100.0, 100.0, 0.05, 0.20, 1.0).unwrap().2 - 0.6368).abs() < 1e-3
+(black_scholes_european(100.0, 100.0, 0.05, 0.20, 1.0).unwrap().3 - (-0.3632)).abs() < 1e-3
+```

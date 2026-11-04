@@ -42,3 +42,12 @@
 - 向量 3：負期望值情境：勝率 40% ($win\_prob = 0.40$)，賠率 1:1 ($odds\_b = 1.0$):
   - $f^* = 0.40 - 0.60 = -0.20 \le 0$。
   - 回傳 `Some(0.0)`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_kelly_criterion.rs）
+```golden
+// 出處：規格向量 1–3；Python 依 f = fraction·(p - q/b)，f* <= 0 時回傳 0 獨立驗算
+(kelly_optimal_fraction(0.60, 1.0, 1.0).unwrap() - 0.20).abs() < 1e-4
+(kelly_optimal_fraction(0.60, 1.0, 0.5).unwrap() - 0.10).abs() < 1e-4
+// 向量 3 規格未指定 fraction；f* < 0 時任何合法 fraction 皆回傳 Some(0.0)，此處用全凱利 1.0
+kelly_optimal_fraction(0.40, 1.0, 1.0) == Some(0.0)
+```

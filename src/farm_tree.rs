@@ -814,3 +814,25 @@ pub fn test_pass_summary(stdout: &str) -> String {
         .map(|part| part.trim_start_matches("test result: ok.").trim().to_string())
         .unwrap_or_else(|| line.trim().to_string())
 }
+
+/// 依規格書 ```golden 區塊，為已入庫的模組重新產生 tests/golden_<mod>.rs；回傳 (模組, 斷言數) 清單
+/// 規格與測試不同步時，CI 的 clean-tree 檢查會攔下來
+/// @outputs: 1
+pub fn sync_golden_tests(repo_root: &Path) -> Vec<(String, usize)> {
+    let mut synced = Vec::new();
+    for entry in scan_queue(repo_root).iter().filter(|e| e.state == ModuleState::Done) {
+        let spec = fs::read_to_string(repo_root.join(&entry.spec)).unwrap_or_default();
+        let lines = extract_golden_lines(&spec);
+        let path = repo_root.join("tests").join(format!("golden_{}.rs", entry.module));
+        match render_golden_test(&entry.module, &lines) {
+            Some(test) => {
+                let _ = fs::write(&path, test);
+                synced.push((entry.module.clone(), golden_assert_count(&lines)));
+            }
+            None => {
+                let _ = fs::remove_file(&path);
+            }
+        }
+    }
+    synced
+}

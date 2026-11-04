@@ -58,3 +58,24 @@
   - `geo_geohash_encode_bits(0.0, 0.0, 4)` 應回傳 `Some(12)`
 - 向量 2 (台北座標 25.0330, 121.5654):
   - 10 bits 編碼應精確收斂且 `decode_bounds` 必須包含原始座標。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_geo_geohash.rs）
+```golden
+// 出處：規格向量 1，原點 4 bits -> 0b1100 = 12（手算與 Python 獨立驗算）
+geo_geohash_encode_bits(0.0, 0.0, 4) == Some(12)
+// 出處：規格向量 1 逐步區間：lat [0, 45]、lon [0, 90]（二進位精確值）
+geo_geohash_decode_bounds(12, 4) == Some(((0.0, 45.0), (0.0, 90.0)))
+// 出處：規格向量 2，台北 10 bits 編碼後解碼包圍盒必須包含原始座標
+let h = geo_geohash_encode_bits(25.0330, 121.5654, 10).unwrap();
+let ((lat_min, lat_max), (lon_min, lon_max)) = geo_geohash_decode_bounds(h, 10).unwrap();
+lat_min <= 25.0330 && 25.0330 <= lat_max
+lon_min <= 121.5654 && 121.5654 <= lon_max
+// 出處：規格邊界檢查
+geo_geohash_encode_bits(0.0, 0.0, 0).is_none()
+geo_geohash_encode_bits(0.0, 0.0, 65).is_none()
+geo_geohash_encode_bits(90.5, 0.0, 10).is_none()
+geo_geohash_encode_bits(0.0, -180.5, 10).is_none()
+geo_geohash_encode_bits(f64::NAN, 0.0, 10).is_none()
+geo_geohash_decode_bounds(12, 0).is_none()
+geo_geohash_decode_bounds(12, 65).is_none()
+```

@@ -53,3 +53,19 @@
   - SA = `0x01`
   - PGN = `0xEA00` (59904)
   - 解析應回傳 `Some((6, 59904, 0x00, 0x01))`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_j1939_pgn_parser.rs）
+```golden
+// 出處：規格向量 1（SAE J1939 Time/Date PGN 65254，PDU2）；Python 位元運算獨立驗算
+j1939_parse_can_id(0x18FEE600) == Some((6, 65254, 0xE6, 0x00))
+// 出處：規格向量 2（Request PGN 59904，PDU1，PS 不併入 PGN）
+j1939_parse_can_id(0x18EA0001) == Some((6, 59904, 0x00, 0x01))
+// 出處：規格邊界檢查（> 0x1FFFFFFF 回傳 None）
+j1939_parse_can_id(0x2000_0000).is_none()
+j1939_parse_can_id(0xFFFF_FFFF).is_none()
+// 出處：規格函式 2 定義 pf < 240
+j1939_is_pdu1(0xEA)
+!j1939_is_pdu1(0xFE)
+j1939_is_pdu1(239)
+!j1939_is_pdu1(240)
+```

@@ -8,7 +8,7 @@
 ///
 /// @outputs: 5
 /// @domain: sample_rate_hz [1.0..1_000_000.0]
-/// @domain: center_freq_hz [0.1..sample_rate_hz/2.0]
+/// @domain: center_freq_hz [0.1..sample_rate_hz/2.0)（不含 fs/2：ω₀=π 時 α≈0，濾波器退化）
 /// @domain: q_factor [0.01..1000.0]
 pub fn biquad_bandpass_coefficients(
     sample_rate_hz: f64,
@@ -25,7 +25,7 @@ pub fn biquad_bandpass_coefficients(
     if sample_rate_hz < 1.0 || sample_rate_hz > 1_000_000.0 {
         return None;
     }
-    if center_freq_hz < 0.1 || center_freq_hz > sample_rate_hz / 2.0 {
+    if center_freq_hz < 0.1 || center_freq_hz >= sample_rate_hz / 2.0 {
         return None;
     }
     if q_factor < 0.01 || q_factor > 1000.0 {

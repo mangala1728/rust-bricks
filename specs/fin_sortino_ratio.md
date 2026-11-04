@@ -45,3 +45,11 @@
   - 下行偏差 $D = \sqrt{0.003125} \approx 0.055901699$
   - 索提諾比率 $= 0.025 / 0.055901699 \approx 0.4472136$
 - 容差使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_sortino_ratio.rs）
+```golden
+// 出處：規格序列 [0.10, -0.05, 0.15, -0.10], r_f = 0；Python 獨立驗算
+let returns = [0.10, -0.05, 0.15, -0.10];
+(downside_deviation(&returns, 0.0).unwrap() - 0.055901699).abs() < 1e-4
+(sortino_ratio(&returns, 0.0).unwrap() - 0.4472136).abs() < 1e-4
+```

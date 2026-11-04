@@ -50,3 +50,22 @@
   - $P^- = 0.393333$，$K \approx 0.495798$。
   - 更新後 $\hat{x}_2 \approx 0.865546$，$P_2 \approx 0.198319$。
   - 斷言 `(state.0 - 0.865546).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_sensor_kalman_1d.rs）
+```golden
+// 出處：規格向量 x0 = 0、P0 = 1、Q = 0.1、R = 0.4（Python 獨立驗算）
+let mut kf = (0.0_f64, 1.0_f64);
+// 第 1 步 z = 1.0：x1 ≈ 0.733333、P1 ≈ 0.293333
+(kalman_1d_step(&mut kf, 1.0, 0.1, 0.4).unwrap() - 0.733333).abs() < 1e-4
+(kf.0 - 0.733333).abs() < 1e-4
+(kf.1 - 0.293333).abs() < 1e-4
+// 第 2 步 z = 1.0：x2 ≈ 0.865546、P2 ≈ 0.198319
+(kalman_1d_step(&mut kf, 1.0, 0.1, 0.4).unwrap() - 0.865546).abs() < 1e-4
+(kf.0 - 0.865546).abs() < 1e-4
+(kf.1 - 0.198319).abs() < 1e-4
+// 出處：運算過程邊界檢查：q < 0、r < 1e-9、P < 0、量測非有限 回傳 None
+kalman_1d_step(&mut (0.0, 1.0), 1.0, -0.1, 0.4).is_none()
+kalman_1d_step(&mut (0.0, 1.0), 1.0, 0.1, 1.0e-10).is_none()
+kalman_1d_step(&mut (0.0, -1.0), 1.0, 0.1, 0.4).is_none()
+kalman_1d_step(&mut (0.0, 1.0), f64::NAN, 0.1, 0.4).is_none()
+```

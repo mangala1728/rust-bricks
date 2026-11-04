@@ -1234,6 +1234,14 @@ fn run_farm_report_cmd(args: &[String]) {
     print!("{}", rust_bricks::farm_tree::dead_end_report(module, &entry.spec, &entry.state, &fresh));
 }
 
+/// farm-golden：依規格 ```golden 區塊重新產生已入庫模組的黃金向量測試
+/// @outputs: 1
+fn run_farm_golden_cmd() {
+    let synced = rust_bricks::farm_tree::sync_golden_tests(Path::new("."));
+    let total: usize = synced.iter().map(|(_, n)| n).sum();
+    println!("🥇 [farm-golden] {} 個模組、共 {} 個黃金向量斷言已與規格同步", synced.len(), total);
+}
+
 /// farm-prune [--push]：刪除已入庫模組的過期死路分支（日誌保鮮）
 /// @outputs: 1
 fn run_farm_prune_cmd(args: &[String]) {
@@ -1262,6 +1270,7 @@ fn print_help() {
     println!("  cargo run -- farm-status                # Farm queue status table (markdown, from git)");
     println!("  cargo run -- farm-report <mod>          # Dead-end report of a module (markdown)");
     println!("  cargo run -- farm-prune [--push]        # Delete attempt/ branches of harvested modules");
+    println!("  cargo run -- farm-golden                # Regenerate tests/golden_<mod>.rs from spec golden blocks");
     println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
     println!("  cargo test                              # Run full unit test suite");
@@ -1285,6 +1294,7 @@ fn main() {
         "farm-status" => run_farm_status_cmd(),
         "farm-report" => run_farm_report_cmd(&args),
         "farm-prune" => run_farm_prune_cmd(&args),
+        "farm-golden" => run_farm_golden_cmd(),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");

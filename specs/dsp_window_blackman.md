@@ -38,3 +38,11 @@
   - $n = 2$: $w(2) = 0.42 - 0.5\cos(\pi) + 0.08\cos(2\pi) = 0.42 + 0.5 + 0.08 = 1.0$
   - $n = 4$: $w(4) = 0.42 - 0.5\cos(2\pi) + 0.08\cos(4\pi) = 0.42 - 0.5 + 0.08 = 0.0$
 - 測試斷言嚴禁使用弱斷言，一律使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_window_blackman.rs）
+```golden
+// 出處：規格 N = 5 點向量；Python 依 w(n)=0.42-0.5cos(2πn/(N-1))+0.08cos(4πn/(N-1)) 獨立驗算
+(blackman_window_coeff(0, 5).unwrap() - 0.0).abs() < 1e-4
+(blackman_window_coeff(2, 5).unwrap() - 1.0).abs() < 1e-4
+(blackman_window_coeff(4, 5).unwrap() - 0.0).abs() < 1e-4
+```

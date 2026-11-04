@@ -48,3 +48,19 @@ Goertzel 演算法為二階 IIR 濾波器結構，以 $O(N)$ 複雜度、僅需�
 - 斷言 `(coeff - 1.41421356).abs() < 1e-4`。
 - 斷言 `(p - 16.0).abs() < 1e-4`。
 - 斷言 `(mag - 4.0).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_goertzel.rs）
+```golden
+// 出處：規格黃金向量 fs=8000, f0=1000 → coeff = 2cos(pi/4) = sqrt(2)（手算）
+let coeff = goertzel_coeff(1000.0, 8000.0).unwrap();
+(coeff - 1.41421356).abs() < 1e-4
+// 出處：規格黃金向量 N=8 純正弦 → P=16, M=4（Python 獨立 DFT 驗算 |X[1]|^2 = 16）
+let x: Vec<f64> = (0..8).map(|n| (2.0 * std::f64::consts::PI * 1000.0 * n as f64 / 8000.0).sin()).collect();
+let (p, mag) = goertzel_detect(&x, coeff).unwrap();
+(p - 16.0).abs() < 1e-4
+(mag - 4.0).abs() < 1e-4
+// 出處：邊界規則 target >= fs/2、空樣本、|coeff| > 2 → None
+goertzel_coeff(4000.0, 8000.0).is_none()
+goertzel_detect(&[], 1.0).is_none()
+goertzel_detect(&[1.0, 2.0], 2.5).is_none()
+```

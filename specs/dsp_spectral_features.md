@@ -54,3 +54,14 @@
     $k=2: 7.0$
     $k=3: 9.0 \ge 8.5 \implies$ 滾降頻率為 $f_3 = 375.0\text{ Hz}$。
 - 測試容差 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_spectral_features.rs）
+```golden
+// 出處：規格黃金向量 fs=1000, M=[1,2,4,2,1] → 質心 250 Hz（手算 2500/10）
+(spectral_centroid(&[1.0, 2.0, 4.0, 2.0, 1.0], 1000.0).unwrap() - 250.0).abs() < 1e-4
+// 出處：規格黃金向量 ratio=0.85, T=8.5 → 累積 9 ≥ 8.5 於 k=3 → 375 Hz（手算）
+(spectral_rolloff(&[1.0, 2.0, 4.0, 2.0, 1.0], 1000.0, 0.85).unwrap() - 375.0).abs() < 1e-4
+// 出處：數學公式 N < 2 或振幅總和 <= 1e-12 → None
+spectral_centroid(&[1.0], 1000.0).is_none()
+spectral_centroid(&[0.0, 0.0, 0.0], 1000.0).is_none()
+```

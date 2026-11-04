@@ -50,3 +50,19 @@
   - 導數 $f'(x) = -\sin(x) - 1.0$。
   - 初值 $x_0 = 0.5$，$tol = 1.0e-6$，$max\_iter = 20$。
   - 斷言 `(root - 0.739085).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_math_newton_raphson_1d.rs）
+```golden
+// 出處：規格向量 1，x^2 - 2 = 0，x0 = 1，tol 1e-6，max_iter 20 -> sqrt(2)（Python 獨立驗算 1.41421356237）
+(newton_raphson_1d(1.0, 1.0e-6, 20, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).unwrap() - 1.41421356).abs() < 1e-4
+// 出處：規格向量 2，cos(x) - x = 0，x0 = 0.5 -> Dottie 數 0.7390851（Python 獨立驗算）
+(newton_raphson_1d(0.5, 1.0e-6, 20, |x: f64| x.cos() - x, |x: f64| -x.sin() - 1.0).unwrap() - 0.739085).abs() < 1e-4
+// 出處：規格邊界檢查（initial_x 非有限、tol 不在 [1e-12, 1]、max_iter 不在 [1, 1000]）
+newton_raphson_1d(f64::NAN, 1.0e-6, 20, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).is_none()
+newton_raphson_1d(1.0, 1.0e-13, 20, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).is_none()
+newton_raphson_1d(1.0, 2.0, 20, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).is_none()
+newton_raphson_1d(1.0, 1.0e-6, 0, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).is_none()
+newton_raphson_1d(1.0, 1.0e-6, 1001, |x: f64| x * x - 2.0, |x: f64| 2.0 * x).is_none()
+// 出處：規格「|dy| < 1e-12 回傳 None」：x^2 + 1 於 x0 = 0，f = 1 未收斂且導數為 0（手算）
+newton_raphson_1d(0.0, 1.0e-6, 20, |x: f64| x * x + 1.0, |x: f64| 2.0 * x).is_none()
+```

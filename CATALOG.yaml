@@ -1541,7 +1541,7 @@ modules:
       - "Computes the normalized biquad coefficients for a constant‑0 dB peak‑gain band‑pass filter."
       - "@outputs: 5"
       - "@domain: sample_rate_hz [1.0..1_000_000.0]"
-      - "@domain: center_freq_hz [0.1..sample_rate_hz/2.0]"
+      - "@domain: center_freq_hz [0.1..sample_rate_hz/2.0)（不含 fs/2：ω₀=π 時 α≈0，濾波器退化）"
       - "@domain: q_factor [0.01..1000.0]"
     functions:
       - name: "biquad_bandpass_coefficients"
@@ -1549,7 +1549,7 @@ modules:
         outputs: 5
         domains:
           sample_rate_hz: "[1.0..1_000_000.0]"
-          center_freq_hz: "[0.1..sample_rate_hz/2.0]"
+          center_freq_hz: "[0.1..sample_rate_hz/2.0)（不含 fs/2：ω₀=π 時 α≈0，濾波器退化）"
           q_factor: "[0.01..1000.0]"
       - name: "biquad_bandpass_step"
         signature: "pub fn biquad_bandpass_step("

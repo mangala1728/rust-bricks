@@ -45,3 +45,16 @@
 - $R = 1.0$:
   - $SpO_2 = -45.060 \times 1.0 + 30.354 \times 1.0 + 94.845 = 80.139$。
 - 容差使用 `(val - golden).abs() < 1e-3`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_sensor_ppg_spo2.rs）
+```golden
+// 出處：規格向量 R = 0.5 → 98.757、R = 1.0 → 80.139，容差 1e-3（Python 獨立驗算）
+(ppg_estimate_spo2(0.5).unwrap() - 98.757).abs() < 1e-3
+(ppg_estimate_spo2(1.0).unwrap() - 80.139).abs() < 1e-3
+// 出處：經驗曲線＋夾止規則手算：R = 3.0 → -45.060×9 + 30.354×3 + 94.845 = -219.633，夾止為 0.0
+(ppg_estimate_spo2(3.0).unwrap() - 0.0).abs() < 1e-3
+// 出處：函式 1 拒絕條件：dc_red <= 0、dc_ir <= 0、ac_ir <= 1e-12 回傳 None
+ppg_ratio_of_ratios(0.02, 0.0, 0.04, 1.0).is_none()
+ppg_ratio_of_ratios(0.02, 1.0, 0.04, 0.0).is_none()
+ppg_ratio_of_ratios(0.02, 1.0, 0.0, 1.0).is_none()
+```

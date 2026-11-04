@@ -38,3 +38,11 @@
   - $n = 2$: $w(2) = 0.54 - 0.46\cos(\pi) = 0.54 + 0.46 = 1.00$
   - $n = 4$: $w(4) = 0.54 - 0.46\cos(2\pi) = 0.54 - 0.46 = 0.08$
 - 測試斷言使用 `(val - golden).abs() < 1e-4`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_window_hamming.rs）
+```golden
+// 出處：規格 N = 5 點向量；Python 依 w(n)=0.54-0.46cos(2πn/(N-1)) 獨立驗算
+(hamming_window_coeff(0, 5).unwrap() - 0.08).abs() < 1e-4
+(hamming_window_coeff(2, 5).unwrap() - 1.0).abs() < 1e-4
+(hamming_window_coeff(4, 5).unwrap() - 0.08).abs() < 1e-4
+```

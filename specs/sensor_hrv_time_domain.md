@@ -41,3 +41,17 @@
   - `(sdnn - 42.2374).abs() < 1e-4`
   - `(rmssd - 66.7083).abs() < 1e-4`
   - `(pnn50 - 75.0).abs() < 1e-4`
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_sensor_hrv_time_domain.rs）
+```golden
+// 出處：規格向量 [800, 810, 890, 820, 900]（Python 獨立驗算：mean 844、母體標準差 42.237424、RMSSD 66.708320、pNN50 75）
+let hrv = hrv_time_domain_metrics(&[800.0, 810.0, 890.0, 820.0, 900.0]).unwrap();
+(hrv.0 - 844.0).abs() < 1e-4
+(hrv.1 - 42.2374).abs() < 1e-4
+(hrv.2 - 66.7083).abs() < 1e-4
+(hrv.3 - 75.0).abs() < 1e-4
+// 出處：運算過程：長度 < 2 或任一間期超出 [200, 3000] 回傳 None
+hrv_time_domain_metrics(&[800.0]).is_none()
+hrv_time_domain_metrics(&[800.0, 199.0, 820.0]).is_none()
+hrv_time_domain_metrics(&[800.0, 3001.0, 820.0]).is_none()
+```

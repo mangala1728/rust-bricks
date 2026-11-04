@@ -51,3 +51,22 @@
   - `new_sum_sq = 9.0 + 16.0 - 9.0 = 16.0`
   - `rms = sqrt(16.0 / 4) = 2.0`
   - 回傳 `Some((16.0, 2.0))`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_moving_rms.rs）
+```golden
+// 出處：向量 1 直流常數 [3,3,3,3] → RMS = 3（手算）
+(dsp_rms_slice(&[3.0, 3.0, 3.0, 3.0]).unwrap() - 3.0).abs() < 1e-6
+// 出處：向量 1 峰值 1.0 正弦 RMS = 1/sqrt(2)；取整週期 8 點取樣（離散整週期取樣時恆等式精確成立，Python 驗算 0.70710678）
+let sine: Vec<f64> = (0..8).map(|n| (2.0 * std::f64::consts::PI * n as f64 / 8.0).sin()).collect();
+(dsp_rms_slice(&sine).unwrap() - 0.70710678).abs() < 1e-6
+// 出處：向量 2 遞推 sum_sq=9, x_new=4, x_old=3, window_len=4 → (16, 2)（手算）
+let (s, r) = dsp_moving_rms_step(4.0, 3.0, 9.0, 4).unwrap();
+(s - 16.0).abs() < 1e-6
+(r - 2.0).abs() < 1e-6
+// 出處：邊界檢查 window_len == 0、sum_sq < 0、非有限值、空切片 → None
+dsp_moving_rms_step(4.0, 3.0, 9.0, 0).is_none()
+dsp_moving_rms_step(4.0, 3.0, -1.0, 4).is_none()
+dsp_moving_rms_step(f64::NAN, 3.0, 9.0, 4).is_none()
+dsp_rms_slice(&[]).is_none()
+dsp_rms_slice(&[1.0, f64::INFINITY]).is_none()
+```

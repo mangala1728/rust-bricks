@@ -25,3 +25,15 @@
 - 對稱中心測試: `n = 2, total_len = 5` 時輸出必須為 `1.0` (`(val - 1.0).abs() < 1e-6`)。
 - 單點窗測試: `n = 0, total_len = 1` 時輸出為 `1.0`。
 - 越界測試: `n = 5, total_len = 5` 必須返回 `None`；`total_len = 0` 返回 `None`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_window_hann.rs）
+```golden
+// 出處：規格第 4 節；Python 依 w(n)=0.5(1-cos(2πn/(N-1))) 獨立驗算
+(hann_window_coeff(0, 5).unwrap() - 0.0).abs() < 1e-6
+(hann_window_coeff(2, 5).unwrap() - 1.0).abs() < 1e-6
+// 單點窗依規格定義為 1.0
+(hann_window_coeff(0, 1).unwrap() - 1.0).abs() < 1e-6
+// 越界拒絕
+hann_window_coeff(5, 5).is_none()
+hann_window_coeff(0, 0).is_none()
+```

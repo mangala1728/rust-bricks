@@ -54,3 +54,23 @@
   - $M = 2595.0 \times 0.385350 \approx 999.985$ (約 1000 Mel)。
   - 雙向還原：`mel_to_hz(999.985) = 1000.0 Hz`。
 - 容差使用 `(val - golden).abs() < 1e-2`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_dsp_mel_filterbank.rs）
+```golden
+// 出處：規格黃金向量 hz_to_mel(1000) ≈ 999.985（Python 驗算 999.98554，容差照規格 1e-2）
+(hz_to_mel(1000.0).unwrap() - 999.985).abs() < 1e-2
+// 出處：規格雙向還原 mel_to_hz(999.985) ≈ 1000（Python 驗算 999.99919）
+(mel_to_hz(999.985).unwrap() - 1000.0).abs() < 1e-2
+// 出處：邊界防禦 負值、NaN → None
+hz_to_mel(-1.0).is_none()
+mel_to_hz(-1.0).is_none()
+hz_to_mel(f64::NAN).is_none()
+// 出處：運算過程 num_filters < 2 或 min_hz >= max_hz → None
+mel_filterbank_centers_hz(1, 0.0, 8000.0).is_none()
+mel_filterbank_centers_hz(10, 8000.0, 8000.0).is_none()
+// 出處：運算過程 等間距 num_filters + 2 個點（含左右邊界）→ 長度 12，首尾等於 min_hz / max_hz
+let centers = mel_filterbank_centers_hz(10, 0.0, 8000.0).unwrap();
+centers.len() == 12
+(centers[0] - 0.0).abs() < 1e-2
+(centers[11] - 8000.0).abs() < 1e-2
+```

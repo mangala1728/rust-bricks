@@ -58,3 +58,11 @@
 - 向量 2 (卡瑪比率):
   - `annualized_return = 0.20` (20%), `max_drawdown = 0.10` (10%) -> `Calmar = 2.0`
   - 斷言驗證：`(fin_calmar_ratio(0.20, 0.10).unwrap() - 2.0).abs() < 1e-4`
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_calmar_ratio.rs）
+```golden
+// 出處：規格向量 1（最大回撤 1/3）與向量 2（Calmar = 2.0）；Python 獨立驗算
+let prices = [100.0, 120.0, 90.0, 110.0, 80.0, 130.0];
+(fin_max_drawdown(&prices).unwrap() - 1.0 / 3.0).abs() < 1e-4
+(fin_calmar_ratio(0.20, 0.10).unwrap() - 2.0).abs() < 1e-4
+```

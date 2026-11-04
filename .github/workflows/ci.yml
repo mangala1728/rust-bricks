@@ -25,6 +25,9 @@ jobs:
       - name: Hardware-Grade Brick Guard (Capacity, JPL 60-Line, Safety Proof, Incidents)
         run: cargo run -- guard
 
+      - name: Spec Golden Vectors in Sync (specs/*.md ```golden -> tests/golden_*.rs)
+        run: cargo run -- farm-golden
+
       - name: Machine Catalog Generator (YAML & JSON)
         run: cargo run -- catalog
 

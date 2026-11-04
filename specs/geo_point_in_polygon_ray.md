@@ -37,3 +37,16 @@
   - 點 $(10.0, 10.0)$：遠離多邊形，應回傳 `Some(false)`。
 - 邊界防禦：
   - 點數小於 3（退化線段）：回傳 `None`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_geo_point_in_polygon_ray.rs）
+```golden
+// 出處：規格向量，L 型凹多邊形；射線法 Python 獨立驗算
+let l = [(0.0, 0.0), (6.0, 0.0), (6.0, 3.0), (3.0, 3.0), (3.0, 6.0), (0.0, 6.0)];
+point_in_polygon_ray((1.0, 1.0), &l) == Some(true)
+point_in_polygon_ray((4.0, 4.0), &l) == Some(false)
+point_in_polygon_ray((10.0, 10.0), &l) == Some(false)
+// 出處：規格邊界防禦（點數 < 3、NaN／非有限座標回傳 None）
+point_in_polygon_ray((1.0, 1.0), &[(0.0, 0.0), (6.0, 0.0)]).is_none()
+point_in_polygon_ray((f64::NAN, 1.0), &l).is_none()
+point_in_polygon_ray((1.0, 1.0), &[(0.0, 0.0), (6.0, f64::INFINITY), (0.0, 6.0)]).is_none()
+```

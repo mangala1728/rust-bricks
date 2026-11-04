@@ -37,3 +37,15 @@
   - 計算出的 CRC-16 暫存器值為 `0x0A84` (低位組 `0x84`，高位組 `0x0A`)。
   - Modbus 序列傳輸低位在前，完整合規訊框為 `[0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A]`。
   - 通過驗證，回傳 `Some((1, 3, 4))`。
+
+### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_modbus_rtu_frame.rs）
+```golden
+// 出處：規格向量（Modbus 標準 CRC-16/MODBUS，Python 獨立驗算 0x0A84）
+modbus_crc16(&[0x01, 0x03, 0x00, 0x00, 0x00, 0x01]) == 0x0A84
+// 出處：規格向量，完整訊框低位在前 → Some((1, 3, 4))
+modbus_validate_frame(&[0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A]) == Some((1, 3, 4))
+// 出處：函式 2 運算過程：CRC 比對失敗回傳 None（CRC 高低位對調）
+modbus_validate_frame(&[0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x0A, 0x84]).is_none()
+// 出處：函式 2 運算過程：frame.len() < 4 回傳 None
+modbus_validate_frame(&[0x01, 0x03, 0x84]).is_none()
+```
