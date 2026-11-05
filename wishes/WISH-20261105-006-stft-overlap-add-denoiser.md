@@ -2,7 +2,8 @@
 
 wish_id: WISH-20261105-006
 requester: ai-interpreter-core-squad
-status: PENDING
+status: FULFILLED
+fulfilled_by: dsp_stft_ola_denoiser (stft_spectral_denoise_frame, spectral_subtraction_gain_single, estimate_noise_power_profile)
 priority: HIGH
 created_at: 2026-11-05
 

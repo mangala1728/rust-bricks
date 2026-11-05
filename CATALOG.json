@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 814,
+  "total_functions": 817,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1998,6 +1998,28 @@
         {
           "name": "spectral_rolloff",
           "signature": "pub fn spectral_rolloff(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_stft_ola_denoiser",
+      "file": "src/dsp_stft_ola_denoiser.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "spectral_subtraction_gain_single",
+          "signature": "pub fn spectral_subtraction_gain_single(",
+          "outputs": 1
+        },
+        {
+          "name": "estimate_noise_power_profile",
+          "signature": "pub fn estimate_noise_power_profile(",
+          "outputs": 1
+        },
+        {
+          "name": "stft_spectral_denoise_frame",
+          "signature": "pub fn stft_spectral_denoise_frame(",
           "outputs": 1
         }
       ]

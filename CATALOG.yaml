@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 814
+total_functions: 817
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1954,6 +1954,32 @@ modules:
         domains:
           rolloff_ratio: "[0.5..0.99]"
           sample_rate_hz: "[1.0..1000000.0]"
+  - module: "dsp_stft_ola_denoiser"
+    file: "src/dsp_stft_ola_denoiser.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: dsp/dsp_stft_ola_denoiser — 零依賴 STFT 重疊相加 (OLA) 即時頻譜減法音訊淨化微積木。"
+      - "Inputs: input_pcm16: &[i16; 256], overlap_buffer: &mut [f32; 256], noise_profile: &[f32; 256], oversubtraction: f32, spectral_floor: f32"
+      - "Outputs: 寫入 output_pcm16: &mut [i16; 256] 並回傳處理取樣數 usize (256 或 0)"
+      - "Invariants: 零外部依賴、零堆分配 (Zero Heap Allocation)、函式行數 <= 60、無遞迴、零全域可變狀態。"
+    functions:
+      - name: "spectral_subtraction_gain_single"
+        signature: "pub fn spectral_subtraction_gain_single("
+        outputs: 1
+        domains:
+          oversubtraction: "[1.0..10.0]"
+          spectral_floor: "[0.001..0.5]"
+      - name: "estimate_noise_power_profile"
+        signature: "pub fn estimate_noise_power_profile("
+        outputs: 1
+        domains:
+          noise_pcm16.len(): "[256..65536]"
+      - name: "stft_spectral_denoise_frame"
+        signature: "pub fn stft_spectral_denoise_frame("
+        outputs: 1
+        domains:
+          oversubtraction: "[1.0..10.0]"
+          spectral_floor: "[0.001..0.5]"
   - module: "dsp_window_blackman"
     file: "src/dsp_window_blackman.rs"
     functions_count: 2

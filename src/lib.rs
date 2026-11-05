@@ -64,6 +64,7 @@ pub mod dsp_mel_filterbank;
 pub mod dsp_moving_rms;
 pub mod dsp_resample_linear;
 pub mod dsp_spectral_features;
+pub mod dsp_stft_ola_denoiser;
 pub mod dsp_window_blackman;
 pub mod dsp_window_hamming;
 pub mod dsp_window_hann;
