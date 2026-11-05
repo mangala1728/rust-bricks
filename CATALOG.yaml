@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 808
+total_functions: 814
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -762,6 +762,29 @@ modules:
       - name: "i2s_unpack_stereo_16bit"
         signature: "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)"
         outputs: 1
+  - module: "canfd_crc"
+    file: "src/canfd_crc.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: CRC-17/CAN-FD（RevEng 參數）位元組資料校驗"
+      - "Inputs: crc: u32, bit: u8, data: &[u8]"
+      - "Outputs: Option<u32>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+      - "@outputs: 2"
+      - "@domain: crc [0..0x1FFFF]"
+      - "@domain: bit [0..1]"
+    functions:
+      - name: "canfd_crc17_bit"
+        signature: "pub fn canfd_crc17_bit(crc: u32, bit: u8) -> Option<u32>"
+        outputs: 2
+        domains:
+          crc: "[0..0x1FFFF]"
+          bit: "[0..1]"
+      - name: "canfd_crc17_slice"
+        signature: "pub fn canfd_crc17_slice(data: &[u8]) -> Option<u32>"
+        outputs: 2
+        domains:
+          data.len(): "[0..16]"
   - module: "canopen_sdo_handler"
     file: "src/canopen_sdo_handler.rs"
     functions_count: 2
@@ -1394,6 +1417,20 @@ modules:
         domains:
           alpha: "[0.0, 1.0]"
           gamma: "[0.0, 1.0]"
+  - module: "dlt_extended_header"
+    file: "src/dlt_extended_header.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: AUTOSAR DLT extended header binary field parser"
+      - "Inputs: buf: &[u8]"
+      - "Outputs: Option<(bool, u8, u8, u8, [u8; 4], [u8; 4])>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dlt_parse_extended_header"
+        signature: "pub fn dlt_parse_extended_header("
+        outputs: 1
+        domains:
+          buf.len(): "[10..usize::MAX]"
   - module: "dlt_protocol_header"
     file: "src/dlt_protocol_header.rs"
     functions_count: 2
@@ -1529,6 +1566,18 @@ modules:
         outputs: 1
         domains:
           distance_pt: "[0.0, 1000.0], angle_rad [-100.0, 100.0]"
+  - module: "dsp_allpass_phaser"
+    file: "src/dsp_allpass_phaser.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: First-order canonical allpass filter step"
+      - "Inputs: input: f64, state: &mut f64, gain: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_allpass_first_order_step"
+        signature: "pub fn dsp_allpass_first_order_step("
+        outputs: 1
   - module: "dsp_biquad_bandpass"
     file: "src/dsp_biquad_bandpass.rs"
     functions_count: 2
@@ -1622,6 +1671,21 @@ modules:
         outputs: 1
         domains:
           r_coeff: "[0.0..1.0)"
+  - module: "dsp_dtmf_decoder"
+    file: "src/dsp_dtmf_decoder.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: DTMF dual-tone multi-frequency detector and key mapper (ITU-T Q.23)"
+      - "Inputs: 8‑frequency power spectrum array, threshold: f64, low_idx: u8, high_idx: u8"
+      - "Outputs: Option<(u8, u8)> or Option<char>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dtmf_detect_frequencies"
+        signature: "pub fn dtmf_detect_frequencies(powers: &[f64; 8], threshold: f64) -> Option<(u8, u8)>"
+        outputs: 1
+      - name: "dtmf_indices_to_char"
+        signature: "pub fn dtmf_indices_to_char(low_idx: u8, high_idx: u8) -> Option<char>"
+        outputs: 1
   - module: "dsp_ema_smoother"
     file: "src/dsp_ema_smoother.rs"
     functions_count: 2

@@ -118,6 +118,25 @@ fn gauge_on_challenge_len_64() -> Vec<usize> {
     fails
 }
 
+fn gauge_on_brick() -> Vec<usize> {
+    use rust_bricks::canfd_crc::*;
+    let mut fails = Vec::new();
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(b"123456789") == Some(0x04F03))).unwrap_or(false) { fails.push(1); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[0x80]) == Some(0x0587B))).unwrap_or(false) { fails.push(2); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[0x12, 0x34]) == Some(0x1ACDB))).unwrap_or(false) { fails.push(3); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[0xFF]) == Some(0x19052))).unwrap_or(false) { fails.push(4); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[]) == Some(0))).unwrap_or(false) { fails.push(5); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(0, 1) == Some(0x1685B))).unwrap_or(false) { fails.push(6); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(0x10000, 0) == Some(0x1685B))).unwrap_or(false) { fails.push(7); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(0x10000, 1) == Some(0))).unwrap_or(false) { fails.push(8); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(1, 0) == Some(2))).unwrap_or(false) { fails.push(9); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[0u8; 16]) == Some(0))).unwrap_or(false) { fails.push(10); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_slice(&[0u8; 17]).is_none())).unwrap_or(false) { fails.push(11); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(0x20000, 0).is_none())).unwrap_or(false) { fails.push(12); }
+    if !std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| canfd_crc17_bit(0, 2).is_none())).unwrap_or(false) { fails.push(13); }
+    fails
+}
+
 #[test]
 fn msa_canfd_crc() {
     let hook = std::panic::take_hook();
@@ -130,8 +149,8 @@ fn msa_canfd_crc() {
         standard_fails: gauge_on_standard(),
         challenges: vec![("challenge_no_augment".to_string(), gauge_on_challenge_no_augment()), ("challenge_iso_frame_init".to_string(), gauge_on_challenge_iso_frame_init()), ("challenge_wrong_poly".to_string(), gauge_on_challenge_wrong_poly()), ("challenge_lsb_first".to_string(), gauge_on_challenge_lsb_first()), ("challenge_len_64".to_string(), gauge_on_challenge_len_64())],
         tolerance_ratio_pct: None,
-        brick_fails: None,
-        blind: None,
+        brick_fails: Some(gauge_on_brick()),
+        blind: Some(parts::blind_check(rust_bricks::canfd_crc::canfd_crc17_slice, 20000)),
     };
     std::panic::set_hook(hook);
     let line = result_line(&input);

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 808,
+  "total_functions": 814,
   "modules": [
     {
       "module": "agent_terminal",
@@ -802,6 +802,23 @@
       ]
     },
     {
+      "module": "canfd_crc",
+      "file": "src/canfd_crc.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "canfd_crc17_bit",
+          "signature": "pub fn canfd_crc17_bit(crc: u32, bit: u8) -> Option<u32>",
+          "outputs": 2
+        },
+        {
+          "name": "canfd_crc17_slice",
+          "signature": "pub fn canfd_crc17_slice(data: &[u8]) -> Option<u32>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "canopen_sdo_handler",
       "file": "src/canopen_sdo_handler.rs",
       "functions_count": 2,
@@ -1521,6 +1538,18 @@
       ]
     },
     {
+      "module": "dlt_extended_header",
+      "file": "src/dlt_extended_header.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dlt_parse_extended_header",
+          "signature": "pub fn dlt_parse_extended_header(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dlt_protocol_header",
       "file": "src/dlt_protocol_header.rs",
       "functions_count": 2,
@@ -1652,6 +1681,18 @@
       ]
     },
     {
+      "module": "dsp_allpass_phaser",
+      "file": "src/dsp_allpass_phaser.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_allpass_first_order_step",
+          "signature": "pub fn dsp_allpass_first_order_step(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_biquad_bandpass",
       "file": "src/dsp_biquad_bandpass.rs",
       "functions_count": 2,
@@ -1715,6 +1756,23 @@
         {
           "name": "dsp_dc_blocker_slice",
           "signature": "pub fn dsp_dc_blocker_slice(samples: &mut [f64], r_coeff: f64) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_dtmf_decoder",
+      "file": "src/dsp_dtmf_decoder.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dtmf_detect_frequencies",
+          "signature": "pub fn dtmf_detect_frequencies(powers: &[f64; 8], threshold: f64) -> Option<(u8, u8)>",
+          "outputs": 1
+        },
+        {
+          "name": "dtmf_indices_to_char",
+          "signature": "pub fn dtmf_indices_to_char(low_idx: u8, high_idx: u8) -> Option<char>",
           "outputs": 1
         }
       ]
