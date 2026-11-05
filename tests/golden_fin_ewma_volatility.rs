@@ -3,6 +3,6 @@ use rust_bricks::fin_ewma_volatility::*;
 
 #[test]
 fn golden_vectors_from_spec() {
-    assert!((ewma_variance_step(0.0004, 0.03, 0.94).unwrap() - 0.000430).abs() < 1e-4, "spec golden vector #1");
-    assert!((ewma_annualized_volatility(0.000430, 252.0).unwrap() - 0.3291808).abs() < 1e-4, "spec golden vector #2");
+    assert!(((ewma_variance_step(0.0004, 0.03, 0.94).unwrap() - 0.00043) / 0.00043).abs() < 1e-9, "spec golden vector #1");
+    assert!(((ewma_annualized_volatility(0.00043, 252.0).unwrap() - 0.3291808) / 0.3291808).abs() < 1e-7, "spec golden vector #2");
 }

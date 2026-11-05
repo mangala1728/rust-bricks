@@ -14,4 +14,9 @@ fn golden_vectors_from_spec() {
     assert!(fin_cvar_historical(&r, 0.0).is_none(), "spec golden vector #8");
     assert!(fin_cvar_historical(&r, 1.0).is_none(), "spec golden vector #9");
     assert!(fin_cvar_historical(&[-0.01, f64::INFINITY], 0.90).is_none(), "spec golden vector #10");
+    assert!((fin_cvar_historical(&r, 0.90).unwrap() - 0.05).abs() < 1e-4, "spec golden vector #11");
+    assert!((fin_cvar_historical(&r, 0.80).unwrap() - 0.045).abs() < 1e-4, "spec golden vector #12");
+    assert!((fin_cvar_historical(&r, 0.70).unwrap() - 0.04).abs() < 1e-4, "spec golden vector #13");
+    let r20 = [-0.10, -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10];
+    assert!((fin_cvar_historical(&r20, 0.95).unwrap() - 0.10).abs() < 1e-4, "spec golden vector #14");
 }

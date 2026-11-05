@@ -41,7 +41,7 @@
 - **演算法規範**：
   - 邊界檢查：同函式 1。
   - 同樣排序 returns。
-  - 尾端樣本數：`let count = ((((1.0 - confidence) * (sorted.len() as f64)) + 1e-9).ceil() as usize).max(1).min(sorted.len());`
+  - 尾端樣本數（**必須減去** 1e-9：α·N 在浮點下可能略大於整數，例如 (1−0.95)·20 = 1.0000000000000009，直接 ceil 會多取一筆；2026-11-05 由 `+1e-9` 更正，原公式與本規格自己的黃金向量矛盾）：`let count = ((((1.0 - confidence) * (sorted.len() as f64)) - 1e-9).ceil() as usize).max(1).min(sorted.len());`
   - 計算前 `count` 個最差報酬之平均損失：
     - `let sum_loss: f64 = sorted[..count].iter().map(|&r| -r).sum();`
     - `let cvar = sum_loss / (count as f64);`
@@ -58,6 +58,11 @@
     - `count = (0.10 * 10).ceil() = 1` -> 最差 1 個損失為 `0.05` -> CVaR = `0.05`
   - `confidence = 0.80` (alpha = 0.20)
     - `count = (0.20 * 10).ceil() = 2` -> 最差 2 個損失平均 `(0.05 + 0.04) / 2 = 0.045` -> CVaR = `0.045`
+  - `confidence = 0.70` (alpha = 0.30；浮點下 0.30*10 = 3.0000000000000004)
+    - `count = 3` -> 最差 3 個損失平均 `(0.05 + 0.04 + 0.03) / 3 = 0.04` -> CVaR = `0.04`
+- 浮點陷阱樣本 (20 個日報酬率 `-0.10, -0.09, …, -0.01, 0.01, …, 0.10`)：
+  - `confidence = 0.95` (alpha = 0.05；浮點下 0.05*20 = 1.0000000000000009)
+    - `count = 1` -> 最差 1 個損失 -> CVaR = `0.10`（若直接 ceil 會錯取 2 筆得 0.095）
 
 ### 機器可驗證（```golden，由 cargo run -- farm-golden 產生 tests/golden_fin_var_historical.rs）
 ```golden
@@ -74,5 +79,11 @@ fin_cvar_historical(&[-0.01], 0.90).is_none()
 fin_cvar_historical(&r, 0.0).is_none()
 fin_cvar_historical(&r, 1.0).is_none()
 fin_cvar_historical(&[-0.01, f64::INFINITY], 0.90).is_none()
-// 註：規格的 CVaR 向量（0.90 -> 0.05、0.80 -> 0.045）與規格自身的 count 公式（ceil(alpha*n + 1e-9)）互相矛盾，暫不轉寫，待人類複核
+// 出處：CVaR = 最差 ceil(alpha*n) 筆損失的平均（Expected Shortfall 標準定義；Python 獨立驗算）
+(fin_cvar_historical(&r, 0.90).unwrap() - 0.05).abs() < 1e-4
+(fin_cvar_historical(&r, 0.80).unwrap() - 0.045).abs() < 1e-4
+(fin_cvar_historical(&r, 0.70).unwrap() - 0.04).abs() < 1e-4
+// 出處：浮點陷阱 (1-0.95)*20 = 1.0000000000000009，正解取 1 筆
+let r20 = [-0.10, -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10];
+(fin_cvar_historical(&r20, 0.95).unwrap() - 0.10).abs() < 1e-4
 ```

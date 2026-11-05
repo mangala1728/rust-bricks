@@ -67,8 +67,9 @@ pub fn fin_cvar_historical(returns: &[f64], confidence: f64) -> Option<f64> {
     // ---- number of tail observations ----------------------------------------
     let alpha = 1.0 - confidence;
     let n = sorted.len() as f64;
-    // `ceil` gives the smallest integer ≥ α·N; no epsilon is added (see spec).
-    let count = ((alpha * n).ceil() as usize).max(1).min(sorted.len());
+    // ceil(α·N − 1e-9)：α·N 在浮點下可能略大於整數（(1−0.95)·20 = 1.0000000000000009），
+    // 直接 ceil 會多取一筆；減去微小量才是數學上的 ceil(α·N)（Expected Shortfall 標準定義）。
+    let count = ((alpha * n - 1e-9).ceil() as usize).max(1).min(sorted.len());
 
     // ---- average loss of the worst `count` returns ---------------------------
     let sum_loss: f64 = sorted[..count].iter().map(|&r| -r).sum();
