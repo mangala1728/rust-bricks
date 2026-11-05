@@ -7,6 +7,10 @@
 // @msa-standard-source: RevEng CRC Catalogue「CRC-17/CAN-FD」width=17 poly=0x1685b init=0x00000 refin=false refout=false xorout=0x00000 check=0x04f03 residue=0x00000
 // @msa-blind: canfd_crc17_slice
 // @msa-risk: 通訊互通（CRC 算錯就無法和真實 CAN-FD 設備交換資料）
+// @msa-escape: customer
+// @msa-station-cost: high
+// 風險判斷：使用本積木的系統測試多半沒有真實 CAN-FD 設備，錯誤要到現場互通才會發現（流到客戶端），故收緊。
+// ISO 11898 是產業標準而非 CE／FCC 類法規絕對值，所以不標 @msa-regulatory。
 
 /// 多項式 x^17+x^16+x^14+x^13+x^11+x^6+x^4+x^3+x+1（最高次項隱含）
 const POLY: u32 = 0x1685B;
