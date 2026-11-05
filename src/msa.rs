@@ -19,7 +19,7 @@ pub enum RiskTier {
     Strict,
     /// 有 CE、FCC 等法規絕對值 → 沒有簽核放行區，難做也要做到
     Regulatory,
-    /// 沒宣告或寫了看不懂的值 → 視同收緊（收緊只多花機器時間，不多花付費 token）
+    /// 沒宣告或寫了看不懂的值 → 影響範圍未知：啟動調查程序，調查期間以收緊圍堵（收緊只多花機器時間，不多花付費 token）
     Undeclared,
 }
 
@@ -59,7 +59,7 @@ pub fn tier_label(tier: RiskTier) -> String {
         RiskTier::Standard => "標準".to_string(),
         RiskTier::Strict => "收緊（多站才檢出／站間代價高／可能流到客戶）".to_string(),
         RiskTier::Regulatory => "法規死線（無簽核區）".to_string(),
-        RiskTier::Undeclared => "未宣告，視同收緊".to_string(),
+        RiskTier::Undeclared => "🔍 影響未知：調查中，暫以收緊圍堵".to_string(),
     }
 }
 
@@ -257,7 +257,7 @@ pub fn report_markdown(rows: &[Vec<(String, String)>]) -> String {
     out.push_str("\n**判讀**：量具壞了 = 黃金向量連公認正確的參考實作都不過，要修規格而不是產品；量具需重做／需簽核 = 挑戰件（已知錯誤寫法）抓出率或容差比落在該風險等級的重做區／簽核區；");
     out.push_str("產品拒收 = 量具可信但產品沒過黃金向量或盲測（隨機輸入與參考實作比對）。\n\n");
     out.push_str("**各風險等級門檻**（抓出率 合格／重做線；容差比 合格／重做線；盲測筆數）：放寬 80/60%、15/40%、2000；標準 90/70%、10/30%、2000；");
-    out.push_str("收緊與未宣告 100/90%、5/10%、20000；法規死線 100%、5%、20000，無簽核放行區。\n");
+    out.push_str("收緊與影響未知（調查中） 100/90%、5/10%、20000；法規死線 100%、5%、20000，無簽核放行區。\n");
     out
 }
 
