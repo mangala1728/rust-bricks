@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 846,
+  "total_functions": 847,
   "modules": [
     {
       "module": "agent_terminal",
@@ -350,6 +350,18 @@
         {
           "name": "analyzer_can_bit_timing_sample_point",
           "signature": "pub fn analyzer_can_bit_timing_sample_point(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_solar_zenith_angle",
+      "file": "src/astro_solar_zenith_angle.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "astro_solar_zenith_and_elevation",
+          "signature": "pub fn astro_solar_zenith_and_elevation(",
           "outputs": 2
         }
       ]

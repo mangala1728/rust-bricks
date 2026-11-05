@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 846
+total_functions: 847
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -331,6 +331,23 @@ modules:
           prop_seg: "[1, 8]"
           phase_seg1: "[1, 8]"
           phase_seg2: "[1, 8]"
+  - module: "astro_solar_zenith_angle"
+    file: "src/astro_solar_zenith_angle.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Solar zenith and elevation angle computation from day-of-year and UTC time"
+      - "Inputs: day_of_year: u16, utc_hour: f64, lat_deg: f64, lon_deg: f64"
+      - "Outputs: Option<(f64, f64)> (zenith_deg, elevation_deg)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "astro_solar_zenith_and_elevation"
+        signature: "pub fn astro_solar_zenith_and_elevation("
+        outputs: 2
+        domains:
+          day_of_year: "[1..=366]"
+          utc_hour: "[0.0..=24.0]"
+          lat_deg: "[-90.0..=90.0]"
+          lon_deg: "[-180.0..=180.0]"
   - module: "audio_beamforming_doa"
     file: "src/audio_beamforming_doa.rs"
     functions_count: 10

@@ -13,6 +13,7 @@ pub mod ai_tensor_gemm;
 pub mod ai_tensor_train;
 pub mod ai_transformer_attention;
 pub mod analyzer_sigrok_protocol;
+pub mod astro_solar_zenith_angle;
 pub mod audio_beamforming_doa;
 pub mod audio_dsp;
 pub mod audio_mfcc_pitch;
