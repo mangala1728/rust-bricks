@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 801
+total_functions: 808
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2797,6 +2797,36 @@ modules:
         outputs: 1
         domains:
           pf: "[0..0xFF]"
+  - module: "json_repair"
+    file: "src/json_repair.rs"
+    functions_count: 7
+    architecture_map:
+      - "Role: core/json_repair — 純 Rust 零外部依賴之大模型輸出 JSON 容錯修復微積木。"
+      - "Inputs: raw LLM JSON 字串切片 (&str)。"
+      - "Outputs: 依序完成去籬笆、引號合併、補逗點、內部引號跳脫、尾逗點丟棄、溢出括號清理之修復字串。"
+      - "Invariants: 零外部依賴、禁止 unsafe、無遞迴 (R09-7)、有界迴圈 (R09-8)、UTF-8 安全。"
+    functions:
+      - name: "repair_json_trimmed_braces"
+        signature: "pub fn repair_json_trimmed_braces(text: &str) -> &str"
+        outputs: 1
+      - name: "repair_json_merge_leading_quotes"
+        signature: "pub fn repair_json_merge_leading_quotes(text: &str) -> String"
+        outputs: 1
+      - name: "repair_json_add_missing_commas"
+        signature: "pub fn repair_json_add_missing_commas(text: &str) -> String"
+        outputs: 1
+      - name: "repair_json_escape_inner_quotes"
+        signature: "pub fn repair_json_escape_inner_quotes(text: &str) -> String"
+        outputs: 1
+      - name: "repair_json_drop_trailing_commas"
+        signature: "pub fn repair_json_drop_trailing_commas(text: &str) -> String"
+        outputs: 1
+      - name: "repair_json_drop_excess_braces"
+        signature: "pub fn repair_json_drop_excess_braces(text: &str) -> String"
+        outputs: 1
+      - name: "repair_json_stream"
+        signature: "pub fn repair_json_stream(raw: &str) -> String"
+        outputs: 1
   - module: "log_lifecycle_dag"
     file: "src/log_lifecycle_dag.rs"
     functions_count: 2

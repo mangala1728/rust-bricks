@@ -131,6 +131,7 @@
 | [`env_sensor`](src/env_sensor.rs) | SHT3x 溫濕度 CRC8 校驗、Magnus-Tetens 露點溫度計算、美國/台灣 EPA PM2.5 AQI 換算 | 恆溫恆濕環境試驗箱、防凝露結霜控制、智慧家庭環境儀 |
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
+| [`json_repair`](src/json_repair.rs) | 大模型輸出 JSON 容錯修復（去 Markdown 圍欄、合併前導引號、自動補逗點、內部引號跳脫、尾逗點丟棄、溢出括號清理） | AI 代理結構化輸出解析、即時口譯 App、端側 LLM 輸出清洗 |
 
 ---
 

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 801,
+  "total_functions": 808,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2820,6 +2820,48 @@
         {
           "name": "j1939_is_pdu1",
           "signature": "pub fn j1939_is_pdu1(pf: u8) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "json_repair",
+      "file": "src/json_repair.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "repair_json_trimmed_braces",
+          "signature": "pub fn repair_json_trimmed_braces(text: &str) -> &str",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_merge_leading_quotes",
+          "signature": "pub fn repair_json_merge_leading_quotes(text: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_add_missing_commas",
+          "signature": "pub fn repair_json_add_missing_commas(text: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_escape_inner_quotes",
+          "signature": "pub fn repair_json_escape_inner_quotes(text: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_drop_trailing_commas",
+          "signature": "pub fn repair_json_drop_trailing_commas(text: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_drop_excess_braces",
+          "signature": "pub fn repair_json_drop_excess_braces(text: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "repair_json_stream",
+          "signature": "pub fn repair_json_stream(raw: &str) -> String",
           "outputs": 1
         }
       ]
