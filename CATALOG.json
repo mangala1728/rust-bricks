@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 798,
+  "total_functions": 796,
   "modules": [
     {
       "module": "agent_terminal",
@@ -797,23 +797,6 @@
         {
           "name": "i2s_unpack_stereo_16bit",
           "signature": "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)",
-          "outputs": 1
-        }
-      ]
-    },
-    {
-      "module": "canfd_crc",
-      "file": "src/canfd_crc.rs",
-      "functions_count": 2,
-      "functions": [
-        {
-          "name": "canfd_crc17_bit",
-          "signature": "pub fn canfd_crc17_bit(crc: u32, bit: u8) -> Option<u32>",
-          "outputs": 1
-        },
-        {
-          "name": "canfd_crc17_slice",
-          "signature": "pub fn canfd_crc17_slice(data: &[u8]) -> Option<u32>",
           "outputs": 1
         }
       ]

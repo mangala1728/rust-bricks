@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 798
+total_functions: 796
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -762,25 +762,6 @@ modules:
       - name: "i2s_unpack_stereo_16bit"
         signature: "pub fn i2s_unpack_stereo_16bit(left_slot_32: u32, right_slot_32: u32, is_left_justified: bool) -> (i16, i16)"
         outputs: 1
-  - module: "canfd_crc"
-    file: "src/canfd_crc.rs"
-    functions_count: 2
-    architecture_map:
-      - "Role: ISO 11898-1:2015 CAN-FD 17-bit CRC calculation"
-      - "Inputs: crc: u32, bit: u8, data: &[u8]"
-      - "Outputs: Option<u32> or u32"
-      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
-    functions:
-      - name: "canfd_crc17_bit"
-        signature: "pub fn canfd_crc17_bit(crc: u32, bit: u8) -> Option<u32>"
-        outputs: 1
-        domains:
-          crc: "[0..0x1FFFF], bit [0..1]"
-      - name: "canfd_crc17_slice"
-        signature: "pub fn canfd_crc17_slice(data: &[u8]) -> Option<u32>"
-        outputs: 1
-        domains:
-          data.len(): "[0..64]"
   - module: "canopen_sdo_handler"
     file: "src/canopen_sdo_handler.rs"
     functions_count: 2

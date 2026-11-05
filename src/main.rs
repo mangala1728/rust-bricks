@@ -1110,8 +1110,11 @@ fn auto_commit_and_push_farm(module_name: &str, spec_file: &str, message: &str) 
     let _ = Command::new("git")
         .args(["add", &mod_file, &test_file, "src/lib.rs", "CATALOG.yaml", "CATALOG.json", ".ai-memory/receipt.json", spec_file])
         .status();
-    if Path::new(&golden_file).exists() {
-        let _ = Command::new("git").args(["add", &golden_file]).status();
+    let msa_file = format!("tests/msa_{}.rs", module_name);
+    for extra in [&golden_file, &msa_file] {
+        if Path::new(extra.as_str()).exists() {
+            let _ = Command::new("git").args(["add", extra.as_str()]).status();
+        }
     }
     let msg_arg = msg_path.to_string_lossy().to_string();
     let _ = Command::new("git").args(["commit", "-F", &msg_arg, "--no-verify"]).status();
@@ -1234,6 +1237,62 @@ fn run_farm_report_cmd(args: &[String]) {
     print!("{}", rust_bricks::farm_tree::dead_end_report(module, &entry.spec, &entry.state, &fresh));
 }
 
+/// msa-gen：依 msa/*.rs 與規格 ```golden 重新產生 tests/msa_<mod>.rs
+/// @outputs: 1
+fn run_msa_gen_cmd() {
+    let synced = rust_bricks::msa::sync_msa_tests(Path::new("."));
+    println!("📏 [msa-gen] {} 個高風險模組的量具測試已與規格同步：{:?}", synced.len(), synced);
+}
+
+/// 執行一個 tests/msa_<mod>.rs，取出 MSA-RESULT 行；編譯失敗或沒有結果行時回傳錯誤說明
+/// @outputs: 2
+fn run_one_msa(module: &str) -> Result<String, String> {
+    let target = format!("msa_{}", module);
+    let out = Command::new("cargo")
+        .args(["test", "-q", "--test", target.as_str(), "--", "--nocapture", "--test-threads=1"])
+        .output()
+        .map_err(|e| format!("無法執行 cargo test：{}", e))?;
+    let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+    let joined = format!("{}\n{}", stdout, stderr);
+    joined
+        .lines()
+        .map(|l| l.trim())
+        .find_map(|l| l.find(rust_bricks::msa::RESULT_TAG).map(|i| l[i..].trim_end_matches('"').to_string()))
+        .ok_or_else(|| format!("{} 沒有產出 MSA 結果（可能編譯失敗）：{}", target, joined.lines().find(|l| l.contains("error")).unwrap_or("")))
+}
+
+/// msa：量測全部高風險模組並輸出管理報告；任何量具不可信或產品拒收就以非零結束
+/// @outputs: 1
+fn run_msa_cmd() {
+    let modules = rust_bricks::msa::sync_msa_tests(Path::new("."));
+    let mut rows = Vec::new();
+    let mut failed = false;
+    for module in &modules {
+        match run_one_msa(module) {
+            Ok(line) => {
+                failed |= line.contains("🔴");
+                if let Some(row) = rust_bricks::msa::parse_result_line(&line) {
+                    rows.push(row);
+                }
+            }
+            Err(e) => {
+                failed = true;
+                eprintln!("❌ [msa] {}", e);
+            }
+        }
+    }
+    let report = rust_bricks::msa::report_markdown(&rows);
+    print!("{}", report);
+    if let Ok(path) = env::var("GITHUB_STEP_SUMMARY") {
+        let existing = std::fs::read_to_string(&path).unwrap_or_default();
+        let _ = std::fs::write(&path, format!("{}{}", existing, report));
+    }
+    if failed {
+        process::exit(1);
+    }
+}
+
 /// farm-golden：依規格 ```golden 區塊重新產生已入庫模組的黃金向量測試
 /// @outputs: 1
 fn run_farm_golden_cmd() {
@@ -1271,6 +1330,8 @@ fn print_help() {
     println!("  cargo run -- farm-report <mod>          # Dead-end report of a module (markdown)");
     println!("  cargo run -- farm-prune [--push]        # Delete attempt/ branches of harvested modules");
     println!("  cargo run -- farm-golden                # Regenerate tests/golden_<mod>.rs from spec golden blocks");
+    println!("  cargo run -- msa-gen                    # Regenerate tests/msa_<mod>.rs (measurement system analysis)");
+    println!("  cargo run -- msa                        # Run MSA: verify gauges, then products; print management report");
     println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
     println!("  cargo test                              # Run full unit test suite");
@@ -1295,6 +1356,8 @@ fn main() {
         "farm-report" => run_farm_report_cmd(&args),
         "farm-prune" => run_farm_prune_cmd(&args),
         "farm-golden" => run_farm_golden_cmd(),
+        "msa-gen" => run_msa_gen_cmd(),
+        "msa" => run_msa_cmd(),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");
