@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 817,
+  "total_functions": 835,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1974,6 +1974,23 @@
       ]
     },
     {
+      "module": "dsp_pink_noise",
+      "file": "src/dsp_pink_noise.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_pink_filter_step",
+          "signature": "pub fn dsp_pink_filter_step(white: f64, state: &mut [f64; 3]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_pink_filter_slice",
+          "signature": "pub fn dsp_pink_filter_slice(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_resample_linear",
       "file": "src/dsp_resample_linear.rs",
       "functions_count": 1,
@@ -2352,6 +2369,23 @@
       ]
     },
     {
+      "module": "fin_downside_deviation",
+      "file": "src/fin_downside_deviation.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_downside_deviation",
+          "signature": "pub fn fin_downside_deviation(returns: &[f64], target_mar: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_upside_potential_ratio",
+          "signature": "pub fn fin_upside_potential_ratio(returns: &[f64], target_mar: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "fin_ewma_volatility",
       "file": "src/fin_ewma_volatility.rs",
       "functions_count": 2,
@@ -2364,6 +2398,45 @@
         {
           "name": "ewma_annualized_volatility",
           "signature": "pub fn ewma_annualized_volatility(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_garch11",
+      "file": "src/fin_garch11.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "fin_garch11_step",
+          "signature": "pub fn fin_garch11_step(",
+          "outputs": 1
+        },
+        {
+          "name": "fin_garch11_unconditional_variance",
+          "signature": "pub fn fin_garch11_unconditional_variance(omega: f64, alpha: f64, beta: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_garch11_series",
+          "signature": "pub fn fin_garch11_series(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_implied_volatility",
+      "file": "src/fin_implied_volatility.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_bs_call_price",
+          "signature": "pub fn fin_bs_call_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_implied_volatility_bisection",
+          "signature": "pub fn fin_implied_volatility_bisection(",
           "outputs": 1
         }
       ]
@@ -2389,6 +2462,23 @@
           "name": "bond_duration",
           "signature": "pub fn bond_duration(cash_flows: &[f64], ytm: f64) -> Option<(f64, f64)>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "fin_ruin_probability",
+      "file": "src/fin_ruin_probability.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_lundberg_adjustment_coefficient",
+          "signature": "pub fn fin_lundberg_adjustment_coefficient(safety_loading: f64, mean_claim: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_ruin_probability_exponential",
+          "signature": "pub fn fin_ruin_probability_exponential(",
+          "outputs": 1
         }
       ]
     },
@@ -2524,6 +2614,23 @@
       ]
     },
     {
+      "module": "geo_polygon_area_centroid",
+      "file": "src/geo_polygon_area_centroid.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "geo_polygon_signed_area",
+          "signature": "pub fn geo_polygon_signed_area(vertices: &[(f64, f64)]) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "geo_polygon_centroid",
+          "signature": "pub fn geo_polygon_centroid(vertices: &[(f64, f64)]) -> Option<(f64, f64)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "geo_spatial_projection",
       "file": "src/geo_spatial_projection.rs",
       "functions_count": 10,
@@ -2577,6 +2684,18 @@
           "name": "spherical_polygon_area_m2",
           "signature": "pub fn spherical_polygon_area_m2(excess_steradians: f64) -> Option<f64>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "geo_vincenty_inverse",
+      "file": "src/geo_vincenty_inverse.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "geo_vincenty_inverse",
+          "signature": "pub fn geo_vincenty_inverse(",
+          "outputs": 2
         }
       ]
     },
@@ -2981,6 +3100,23 @@
       ]
     },
     {
+      "module": "math_cubic_spline",
+      "file": "src/math_cubic_spline.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "math_cubic_spline_eval",
+          "signature": "pub fn math_cubic_spline_eval(",
+          "outputs": 1
+        },
+        {
+          "name": "math_cubic_spline_derivative",
+          "signature": "pub fn math_cubic_spline_derivative(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "math_golden_section",
       "file": "src/math_golden_section.rs",
       "functions_count": 1,
@@ -3017,6 +3153,23 @@
         {
           "name": "rk4_step_2d<F>",
           "signature": "pub fn rk4_step_2d<F>(t: f64, y: (f64, f64), dt: f64, derivative_fn: F) -> Option<(f64, f64)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "math_secant_method",
+      "file": "src/math_secant_method.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "math_secant_step",
+          "signature": "pub fn math_secant_step(",
+          "outputs": 1
+        },
+        {
+          "name": "math_secant_solve<F>",
+          "signature": "pub fn math_secant_solve<F>(",
           "outputs": 2
         }
       ]

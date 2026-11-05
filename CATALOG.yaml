@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 817
+total_functions: 835
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1915,6 +1915,25 @@ modules:
         outputs: 1
         domains:
           signal.len(): "[1..∞]"
+  - module: "dsp_pink_noise"
+    file: "src/dsp_pink_noise.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 3-pole IIR pink noise generator filter"
+      - "Inputs: white: f64, state: &mut [f64; 3]"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_pink_filter_step"
+        signature: "pub fn dsp_pink_filter_step(white: f64, state: &mut [f64; 3]) -> Option<f64>"
+        outputs: 1
+        domains:
+          white: "[-1.0..=1.0]"
+      - name: "dsp_pink_filter_slice"
+        signature: "pub fn dsp_pink_filter_slice("
+        outputs: 1
+        domains:
+          white_samples.len(): "[0..65536]"
   - module: "dsp_resample_linear"
     file: "src/dsp_resample_linear.rs"
     functions_count: 1
@@ -2305,6 +2324,25 @@ modules:
         outputs: 1
         domains:
           max_drawdown: "[0.0..=1.0]"
+  - module: "fin_downside_deviation"
+    file: "src/fin_downside_deviation.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Downside semi-deviation and upside potential ratio below MAR target"
+      - "Inputs: returns: &[f64], target_mar: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_downside_deviation"
+        signature: "pub fn fin_downside_deviation(returns: &[f64], target_mar: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          returns.len(): "[1..1000000]"
+      - name: "fin_upside_potential_ratio"
+        signature: "pub fn fin_upside_potential_ratio(returns: &[f64], target_mar: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          returns.len(): "[1..1000000]"
   - module: "fin_ewma_volatility"
     file: "src/fin_ewma_volatility.rs"
     functions_count: 2
@@ -2327,6 +2365,41 @@ modules:
         domains:
           daily_variance: "[0.0..1.0e12]"
           trading_days_per_year: "[200.0..365.0]"
+  - module: "fin_garch11"
+    file: "src/fin_garch11.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: GARCH(1,1) conditional variance recursion and long-term equilibrium variance"
+      - "Inputs: omega, alpha, beta, prev_var, prev_return: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_garch11_step"
+        signature: "pub fn fin_garch11_step("
+        outputs: 1
+      - name: "fin_garch11_unconditional_variance"
+        signature: "pub fn fin_garch11_unconditional_variance(omega: f64, alpha: f64, beta: f64) -> Option<f64>"
+        outputs: 1
+      - name: "fin_garch11_series"
+        signature: "pub fn fin_garch11_series("
+        outputs: 1
+        domains:
+          returns.len(): "[1..1000000]"
+  - module: "fin_implied_volatility"
+    file: "src/fin_implied_volatility.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Black-Scholes analytical call pricing and bisection implied volatility inversion"
+      - "Inputs: s, k, r, t, sigma, market_price, tol: f64, max_iter: u32"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_bs_call_price"
+        signature: "pub fn fin_bs_call_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> Option<f64>"
+        outputs: 1
+      - name: "fin_implied_volatility_bisection"
+        signature: "pub fn fin_implied_volatility_bisection("
+        outputs: 1
   - module: "fin_kelly_criterion"
     file: "src/fin_kelly_criterion.rs"
     functions_count: 1
@@ -2357,6 +2430,21 @@ modules:
         outputs: 2
         domains:
           ytm: "[0.0..1.0]"
+  - module: "fin_ruin_probability"
+    file: "src/fin_ruin_probability.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Analytical Cramer-Lundberg ruin probability for exponential claims"
+      - "Inputs: initial_capital: f64, safety_loading: f64, mean_claim: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_lundberg_adjustment_coefficient"
+        signature: "pub fn fin_lundberg_adjustment_coefficient(safety_loading: f64, mean_claim: f64) -> Option<f64>"
+        outputs: 1
+      - name: "fin_ruin_probability_exponential"
+        signature: "pub fn fin_ruin_probability_exponential("
+        outputs: 1
   - module: "fin_sharpe_ratio"
     file: "src/fin_sharpe_ratio.rs"
     functions_count: 2
@@ -2530,6 +2618,25 @@ modules:
         domains:
           px: "[-1.0e308..1.0e308]"
           py: "[-1.0e308..1.0e308]"
+  - module: "geo_polygon_area_centroid"
+    file: "src/geo_polygon_area_centroid.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 2D polygon shoelace signed area and centroid coordinates"
+      - "Inputs: vertices: &[(f64, f64)]"
+      - "Outputs: Option<f64> or Option<(f64, f64)>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "geo_polygon_signed_area"
+        signature: "pub fn geo_polygon_signed_area(vertices: &[(f64, f64)]) -> Option<f64>"
+        outputs: 1
+        domains:
+          vertices.len(): "[3..100000]"
+      - name: "geo_polygon_centroid"
+        signature: "pub fn geo_polygon_centroid(vertices: &[(f64, f64)]) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          vertices.len(): "[3..100000]"
   - module: "geo_spatial_projection"
     file: "src/geo_spatial_projection.rs"
     functions_count: 10
@@ -2583,6 +2690,20 @@ modules:
       - name: "spherical_polygon_area_m2"
         signature: "pub fn spherical_polygon_area_m2(excess_steradians: f64) -> Option<f64>"
         outputs: 1
+  - module: "geo_vincenty_inverse"
+    file: "src/geo_vincenty_inverse.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Vincenty inverse geodesic calculation on WGS-84 ellipsoid"
+      - "Inputs: lat1, lon1, lat2, lon2: f64 in degrees"
+      - "Outputs: Option<(f64, f64)> (distance_m, initial_bearing_deg)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "geo_vincenty_inverse"
+        signature: "pub fn geo_vincenty_inverse("
+        outputs: 2
+        domains:
+          lat1, lat2 in: "[-90.0..=90.0], lon1, lon2 in [-180.0..=180.0]"
   - module: "gnss_nmea_geodesy"
     file: "src/gnss_nmea_geodesy.rs"
     functions_count: 10
@@ -2961,6 +3082,25 @@ modules:
         outputs: 1
         domains:
           coeffs.len(): "[1..=usize::MAX], x [-1.0..=1.0]"
+  - module: "math_cubic_spline"
+    file: "src/math_cubic_spline.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Natural cubic spline single segment evaluation"
+      - "Inputs: x, x0, x1, y0, y1, m0, m1: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "math_cubic_spline_eval"
+        signature: "pub fn math_cubic_spline_eval("
+        outputs: 1
+        domains:
+          x0 < x1, x in: "[x0..=x1], all inputs finite"
+      - name: "math_cubic_spline_derivative"
+        signature: "pub fn math_cubic_spline_derivative("
+        outputs: 1
+        domains:
+          x0 < x1, x in: "[x0..=x1], all inputs finite"
   - module: "math_golden_section"
     file: "src/math_golden_section.rs"
     functions_count: 1
@@ -3002,6 +3142,21 @@ modules:
         outputs: 2
         domains:
           dt: "[1.0e-9..1000.0]"
+  - module: "math_secant_method"
+    file: "src/math_secant_method.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: 1D numerical root finding using secant line approximation"
+      - "Inputs: x_prev, x_curr, f_prev, f_curr: f64, tol: f64, max_iter: u32, f: Fn(f64)->f64"
+      - "Outputs: Option<f64> or Option<(f64, u32)>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "math_secant_step"
+        signature: "pub fn math_secant_step("
+        outputs: 1
+      - name: "math_secant_solve<F>"
+        signature: "pub fn math_secant_solve<F>("
+        outputs: 2
   - module: "math_simpson_integral"
     file: "src/math_simpson_integral.rs"
     functions_count: 1

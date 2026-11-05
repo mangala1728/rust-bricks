@@ -15,7 +15,7 @@ use rust_bricks::{
     touch_control, vision_camera_calibration_pnp, vision_feature, vision_morphology_fast, vision_optical_flow_homography, vision_yuv,
 };
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 /// @outputs: 1
@@ -1237,19 +1237,38 @@ fn run_farm_report_cmd(args: &[String]) {
     print!("{}", rust_bricks::farm_tree::dead_end_report(module, &entry.spec, &entry.state, &fresh));
 }
 
+/// 自動尋找專案根目錄（支援 CARGO_MANIFEST_DIR 與當前路徑溯源）
+/// @outputs: 1
+fn find_repo_root() -> PathBuf {
+    if let Ok(dir) = env::var("CARGO_MANIFEST_DIR") {
+        return PathBuf::from(dir);
+    }
+    let mut curr = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    while !curr.join("Cargo.toml").exists() {
+        if let Some(parent) = curr.parent() {
+            curr = parent.to_path_buf();
+        } else {
+            return PathBuf::from(".");
+        }
+    }
+    curr
+}
+
 /// msa-gen：依 msa/*.rs 與規格 ```golden 重新產生 tests/msa_<mod>.rs
 /// @outputs: 1
 fn run_msa_gen_cmd() {
-    let synced = rust_bricks::msa::sync_msa_tests(Path::new("."));
+    let root = find_repo_root();
+    let synced = rust_bricks::msa::sync_msa_tests(&root);
     println!("📏 [msa-gen] {} 個高風險模組的量具測試已與規格同步：{:?}", synced.len(), synced);
 }
 
 /// 執行一個 tests/msa_<mod>.rs，取出 MSA-RESULT 行；編譯失敗或沒有結果行時回傳錯誤說明
 /// @outputs: 2
-fn run_one_msa(module: &str) -> Result<String, String> {
+fn run_one_msa(repo_root: &Path, module: &str) -> Result<String, String> {
     let target = format!("msa_{}", module);
     let out = Command::new("cargo")
         .args(["test", "-q", "--test", target.as_str(), "--", "--nocapture", "--test-threads=1"])
+        .current_dir(repo_root)
         .output()
         .map_err(|e| format!("無法執行 cargo test：{}", e))?;
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();
@@ -1265,11 +1284,12 @@ fn run_one_msa(module: &str) -> Result<String, String> {
 /// msa：量測全部高風險模組並輸出管理報告；任何量具不可信或產品拒收就以非零結束
 /// @outputs: 1
 fn run_msa_cmd() {
-    let modules = rust_bricks::msa::sync_msa_tests(Path::new("."));
+    let root = find_repo_root();
+    let modules = rust_bricks::msa::sync_msa_tests(&root);
     let mut rows = Vec::new();
     let mut failed = false;
     for module in &modules {
-        match run_one_msa(module) {
+        match run_one_msa(&root, module) {
             Ok(line) => {
                 failed |= line.contains("🔴");
                 if let Some(row) = rust_bricks::msa::parse_result_line(&line) {
