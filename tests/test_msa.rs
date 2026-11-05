@@ -4,6 +4,7 @@ fn input(reference_ok: bool, standard: Vec<usize>, killed: usize, total: usize, 
     let challenges = (0..total).map(|i| (format!("c{}", i), if i < killed { vec![1] } else { vec![] })).collect();
     MsaInput {
         module: "m".to_string(),
+        tier: RiskTier::Standard,
         golden_total: 5,
         reference_ok,
         standard_fails: standard,
@@ -72,7 +73,7 @@ fn tolerance_ratio_reads_absolute_and_relative_forms() {
 #[test]
 fn result_line_round_trips_into_the_management_report() {
     let line = result_line(&input(true, vec![2, 7], 4, 5, None, None, None));
-    assert!(line.starts_with("MSA-RESULT|module=m|gauge=🔴 量具壞了|product=⚪ 產品未量測|"));
+    assert!(line.starts_with("MSA-RESULT|module=m|tier=標準|gauge=🔴 量具壞了|product=⚪ 產品未量測|"));
     let row = match parse_result_line(&format!("    {}", line)) {
         Some(r) => r,
         None => panic!("結果行必須能被解析"),
@@ -82,7 +83,7 @@ fn result_line_round_trips_into_the_management_report() {
     assert_eq!(get("kill"), "4/5");
     assert_eq!(get("missed"), "c4");
     let report = report_markdown(&[row]);
-    assert!(report.contains("| `m` | 🔴 量具壞了 | ⚪ 產品未量測 |"));
+    assert!(report.contains("| `m` | 標準 | 🔴 量具壞了 | ⚪ 產品未量測 |"));
     assert_eq!(parse_result_line("other output"), None);
 }
 
@@ -99,9 +100,44 @@ fn generator_needs_a_standard_part_and_golden_assertions() {
     };
     assert!(with_brick.contains("fn gauge_on_challenge_b() -> Vec<usize>"));
     assert!(with_brick.contains("use rust_bricks::m::*;"));
-    assert!(with_brick.contains("Some(parts::blind_check(rust_bricks::m::f_slice, 2000))"));
+    assert!(with_brick.contains("Some(parts::blind_check(rust_bricks::m::f_slice, 20000))"));
+    assert!(with_brick.contains("tier: RiskTier::Undeclared,"));
     let without = render_msa_test("m", src, &lines, false).unwrap_or_default();
     assert!(!without.contains("rust_bricks::m::") && without.contains("brick_fails: None"));
     assert_eq!(render_msa_test("m", "pub mod challenge_a {}", &lines, true), None);
     assert_eq!(render_msa_test("m", src, &["let x = 1;".to_string()], true), None);
+}
+
+#[test]
+fn risk_tier_follows_escape_distance_station_cost_and_regulation() {
+    assert_eq!(risk_tier("// @msa-escape: next-station\n// @msa-station-cost: low"), RiskTier::Relaxed);
+    assert_eq!(risk_tier("// @msa-escape: next-station\n// @msa-station-cost: high"), RiskTier::Standard);
+    assert_eq!(risk_tier("// @msa-escape: multi-station\n// @msa-station-cost: low"), RiskTier::Standard);
+    assert_eq!(risk_tier("// @msa-escape: multi-station\n// @msa-station-cost: high"), RiskTier::Strict);
+    assert_eq!(risk_tier("// @msa-escape: Customer"), RiskTier::Strict);
+    assert_eq!(risk_tier("// @msa-escape: next-station\n// @msa-regulatory: FCC Part 15 輻射上限"), RiskTier::Regulatory);
+    assert_eq!(risk_tier("// @msa-escape: someday"), RiskTier::Undeclared);
+    assert_eq!(risk_tier(""), RiskTier::Undeclared);
+    assert_eq!(risk_tier("// @msa-regulatory:"), RiskTier::Undeclared);
+}
+
+#[test]
+fn the_same_gauge_is_judged_by_its_risk_tier() {
+    // 抓出 8/10、容差比 20%：放寬可過、標準要簽核、收緊要重做、法規沒有簽核區
+    let mut x = input(true, vec![], 8, 10, None, None, None);
+    for (tier, want) in [(RiskTier::Relaxed, GaugeVerdict::Pass), (RiskTier::Standard, GaugeVerdict::SignOff), (RiskTier::Strict, GaugeVerdict::Redo), (RiskTier::Undeclared, GaugeVerdict::Redo)] {
+        x.tier = tier;
+        assert_eq!(gauge_verdict(&x), want, "{:?}", tier);
+    }
+    let mut y = input(true, vec![], 10, 10, Some(4.0), None, None);
+    y.tier = RiskTier::Regulatory;
+    assert_eq!(gauge_verdict(&y), GaugeVerdict::Pass);
+    y.tolerance_ratio_pct = Some(5.0);
+    assert_eq!(gauge_verdict(&y), GaugeVerdict::Redo);
+    let mut z = input(true, vec![], 9, 10, Some(1.0), None, None);
+    z.tier = RiskTier::Strict;
+    assert_eq!(gauge_verdict(&z), GaugeVerdict::SignOff);
+    z.tier = RiskTier::Regulatory;
+    assert_eq!(gauge_verdict(&z), GaugeVerdict::Redo);
+    assert!(thresholds(RiskTier::Strict).blind_samples > thresholds(RiskTier::Standard).blind_samples);
 }

@@ -124,6 +124,7 @@ fn msa_canfd_crc() {
     std::panic::set_hook(Box::new(|_| {}));
     let input = MsaInput {
         module: "canfd_crc".to_string(),
+        tier: RiskTier::Strict,
         golden_total: 13,
         reference_ok: parts::standard_parts_ok(),
         standard_fails: gauge_on_standard(),

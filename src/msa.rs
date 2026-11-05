@@ -2,19 +2,85 @@
 // Role: core/msa — 量測系統分析（MSA，IATF 16949 精神）：先驗量具（測試組）再驗產品（積木）。
 // Inputs: msa/<模組>.rs 的 MSA 零件（參考實作、公開標準件、挑戰件、盲測）、規格書 ```golden 區塊、各候選實作的量測結果。
 // Outputs: tests/msa_<模組>.rs 產生器、量具判定（通過／需簽核／重做／量具壞了）、產品判定（允收／拒收／未量測）、管理報告。
-// Invariants: 零外部依賴、無遞迴、零全域可變狀態、單一函式 <= 60 行；門檻集中於常數，可依實績校正。
+// Invariants: 零外部依賴、無遞迴、零全域可變狀態、單一函式 <= 60 行；門檻依風險等級集中於 thresholds()，可依實績校正。
 
 use std::fs;
 use std::path::Path;
 
-/// 挑戰件抓出率 ≥ 此值：量具鑑別力合格
-pub const KILL_PASS_PCT: f64 = 90.0;
-/// 挑戰件抓出率 < 此值：量具鑑別力不足，重做；介於兩者之間需簽核
-pub const KILL_REDO_PCT: f64 = 70.0;
-/// 容差比（斷言容差 ÷ 預期值，P/T 類比）< 此值：合格
-pub const TOL_PASS_PCT: f64 = 10.0;
-/// 容差比 > 此值：量具太粗，重做；介於兩者之間需簽核
-pub const TOL_REDO_PCT: f64 = 30.0;
+/// 風險等級：決定量具門檻的鬆緊（見 docs/MSA.md「門檻怎麼定」）
+/// 判斷軸：量測不準時，錯誤要過幾站才會被發現？站與站之間的驗收代價高不高？有沒有法規絕對值？
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RiskTier {
+    /// 下一站（系統測試）就能便宜地檢出 → 放寬
+    Relaxed,
+    /// 下一站檢出但站間代價高，或要過多站但代價低 → 標準
+    Standard,
+    /// 要過多站且代價高，或可能流到客戶端 → 收緊
+    Strict,
+    /// 有 CE、FCC 等法規絕對值 → 沒有簽核放行區，難做也要做到
+    Regulatory,
+    /// 沒宣告或寫了看不懂的值 → 視同收緊（收緊只多花機器時間，不多花付費 token）
+    Undeclared,
+}
+
+/// 一個風險等級的門檻
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Thresholds {
+    /// 挑戰件抓出率 ≥ 此值：鑑別力合格
+    pub kill_pass_pct: f64,
+    /// 挑戰件抓出率 < 此值：重做；介於兩者之間需簽核
+    pub kill_redo_pct: f64,
+    /// 容差比（斷言容差 ÷ 預期值，P/T 類比）< 此值：合格
+    pub tol_pass_pct: f64,
+    /// 容差比 > 此值：重做；介於兩者之間需簽核
+    pub tol_redo_pct: f64,
+    /// false = 沒有簽核放行區，落在中間一律重做
+    pub sign_off_allowed: bool,
+    /// 盲測筆數：只耗機器時間、不耗付費 token，所以收緊時直接加量
+    pub blind_samples: usize,
+}
+
+/// 風險等級 → 門檻
+/// @outputs: 4
+pub fn thresholds(tier: RiskTier) -> Thresholds {
+    match tier {
+        RiskTier::Relaxed => Thresholds { kill_pass_pct: 80.0, kill_redo_pct: 60.0, tol_pass_pct: 15.0, tol_redo_pct: 40.0, sign_off_allowed: true, blind_samples: 2_000 },
+        RiskTier::Standard => Thresholds { kill_pass_pct: 90.0, kill_redo_pct: 70.0, tol_pass_pct: 10.0, tol_redo_pct: 30.0, sign_off_allowed: true, blind_samples: 2_000 },
+        RiskTier::Strict | RiskTier::Undeclared => Thresholds { kill_pass_pct: 100.0, kill_redo_pct: 90.0, tol_pass_pct: 5.0, tol_redo_pct: 10.0, sign_off_allowed: true, blind_samples: 20_000 },
+        RiskTier::Regulatory => Thresholds { kill_pass_pct: 100.0, kill_redo_pct: 100.0, tol_pass_pct: 5.0, tol_redo_pct: 5.0, sign_off_allowed: false, blind_samples: 20_000 },
+    }
+}
+
+/// 風險等級的白話名稱
+/// @outputs: 5
+pub fn tier_label(tier: RiskTier) -> String {
+    match tier {
+        RiskTier::Relaxed => "放寬（下一站可便宜檢出）".to_string(),
+        RiskTier::Standard => "標準".to_string(),
+        RiskTier::Strict => "收緊（多站才檢出／站間代價高／可能流到客戶）".to_string(),
+        RiskTier::Regulatory => "法規死線（無簽核區）".to_string(),
+        RiskTier::Undeclared => "未宣告，視同收緊".to_string(),
+    }
+}
+
+/// 從 msa/<模組>.rs 的標籤判定風險等級：
+/// `// @msa-regulatory: <規範與絕對值>`（有就是法規死線）、
+/// `// @msa-escape: next-station | multi-station | customer`、`// @msa-station-cost: low | high`
+/// @outputs: 5
+pub fn risk_tier(msa_src: &str) -> RiskTier {
+    let tag = |name: &str| msa_src.lines().find_map(|l| l.trim().strip_prefix(name).map(|v| v.trim().to_ascii_lowercase()));
+    if tag("// @msa-regulatory:").map(|v| !v.is_empty()).unwrap_or(false) {
+        return RiskTier::Regulatory;
+    }
+    let escape = tag("// @msa-escape:").unwrap_or_default();
+    let cost = tag("// @msa-station-cost:").unwrap_or_default();
+    match (escape.as_str(), cost.as_str()) {
+        ("customer", _) | ("multi-station", "high") => RiskTier::Strict,
+        ("next-station", "low") => RiskTier::Relaxed,
+        ("next-station", "high") | ("multi-station", "low") => RiskTier::Standard,
+        _ => RiskTier::Undeclared,
+    }
+}
 /// 測試輸出中 MSA 結果行的前綴
 pub const RESULT_TAG: &str = "MSA-RESULT";
 
@@ -39,6 +105,7 @@ pub enum ProductVerdict {
 #[derive(Clone, Debug, PartialEq)]
 pub struct MsaInput {
     pub module: String,
+    pub tier: RiskTier,
     pub golden_total: usize,
     pub reference_ok: bool,
     pub standard_fails: Vec<usize>,
@@ -64,13 +131,14 @@ pub fn gauge_verdict(input: &MsaInput) -> GaugeVerdict {
     if !input.reference_ok || !input.standard_fails.is_empty() || input.golden_total == 0 {
         return GaugeVerdict::Broken;
     }
+    let t = thresholds(input.tier);
     let kill = kill_rate_pct(&input.challenges);
     let tol = input.tolerance_ratio_pct.unwrap_or(0.0);
-    if kill < KILL_REDO_PCT || tol > TOL_REDO_PCT {
+    if kill < t.kill_redo_pct || tol > t.tol_redo_pct {
         return GaugeVerdict::Redo;
     }
-    if kill < KILL_PASS_PCT || tol >= TOL_PASS_PCT {
-        return GaugeVerdict::SignOff;
+    if kill < t.kill_pass_pct || tol >= t.tol_pass_pct {
+        return if t.sign_off_allowed { GaugeVerdict::SignOff } else { GaugeVerdict::Redo };
     }
     GaugeVerdict::Pass
 }
@@ -154,8 +222,8 @@ pub fn result_line(input: &MsaInput) -> String {
     let brick = input.brick_fails.as_ref().map(|f| fail_list(f)).unwrap_or_else(|| "（產品不存在）".to_string());
     let blind = input.blind.map(|(b, n)| format!("{}/{}", b, n)).unwrap_or_else(|| "（未執行）".to_string());
     format!(
-        "{}|module={}|gauge={}|product={}|golden={}|reference={}|standard_fail={}|kill={}/{}|missed={}|tol={}|brick_fail={}|blind_mismatch={}",
-        RESULT_TAG, input.module, gauge_label(gauge_verdict(input)), product_label(product_verdict(input)), input.golden_total,
+        "{}|module={}|tier={}|gauge={}|product={}|golden={}|reference={}|standard_fail={}|kill={}/{}|missed={}|tol={}|brick_fail={}|blind_mismatch={}",
+        RESULT_TAG, input.module, tier_label(input.tier), gauge_label(gauge_verdict(input)), product_label(product_verdict(input)), input.golden_total,
         if input.reference_ok { "通過公開標準件" } else { "未通過公開標準件" }, fail_list(&input.standard_fails),
         killed, input.challenges.len(), if missed.is_empty() { "無".to_string() } else { missed.join(",") }, tol, brick, blind
     )
@@ -178,16 +246,18 @@ pub fn parse_result_line(line: &str) -> Option<Vec<(String, String)>> {
 pub fn report_markdown(rows: &[Vec<(String, String)>]) -> String {
     let get = |row: &Vec<(String, String)>, key: &str| row.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone()).unwrap_or_default();
     let mut out = String::from("## 量測系統分析（MSA）報告：先驗量具，再驗產品\n\n");
-    out.push_str("| 模組 | 量具 | 產品 | 參考實作 vs 公開標準件 | 標準件失敗 | 挑戰件抓出 | 漏抓的挑戰件 | 容差比 | 產品黃金向量失敗 | 盲測不一致 |\n|---|---|---|---|---|---|---|---|---|---|\n");
+    out.push_str("| 模組 | 風險等級 | 量具 | 產品 | 參考實作 vs 公開標準件 | 標準件失敗 | 挑戰件抓出 | 漏抓的挑戰件 | 容差比 | 產品黃金向量失敗 | 盲測不一致 |\n|---|---|---|---|---|---|---|---|---|---|---|\n");
     for row in rows {
         out.push_str(&format!(
-            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
-            get(row, "module"), get(row, "gauge"), get(row, "product"), get(row, "reference"), get(row, "standard_fail"),
+            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
+            get(row, "module"), get(row, "tier"), get(row, "gauge"), get(row, "product"), get(row, "reference"), get(row, "standard_fail"),
             get(row, "kill"), get(row, "missed"), get(row, "tol"), get(row, "brick_fail"), get(row, "blind_mismatch")
         ));
     }
-    out.push_str("\n**判讀**：量具壞了 = 黃金向量連公認正確的參考實作都不過，要修規格而不是產品；量具需重做 = 挑戰件（已知錯誤寫法）抓出率 < 70% 或容差比 > 30%；");
-    out.push_str("需簽核 = 抓出率 70–90% 或容差比 10–30%；產品拒收 = 量具可信但產品沒過黃金向量或盲測（隨機輸入與參考實作比對）。\n");
+    out.push_str("\n**判讀**：量具壞了 = 黃金向量連公認正確的參考實作都不過，要修規格而不是產品；量具需重做／需簽核 = 挑戰件（已知錯誤寫法）抓出率或容差比落在該風險等級的重做區／簽核區；");
+    out.push_str("產品拒收 = 量具可信但產品沒過黃金向量或盲測（隨機輸入與參考實作比對）。\n\n");
+    out.push_str("**各風險等級門檻**（抓出率 合格／重做線；容差比 合格／重做線；盲測筆數）：放寬 80/60%、15/40%、2000；標準 90/70%、10/30%、2000；");
+    out.push_str("收緊與未宣告 100/90%、5/10%、20000；法規死線 100%、5%、20000，無簽核放行區。\n");
     out
 }
 
@@ -237,6 +307,7 @@ pub fn render_msa_test(module: &str, msa_src: &str, golden_lines: &[String], bri
         return None;
     }
     let (challenges, blind) = scan_parts(msa_src);
+    let tier = risk_tier(msa_src);
     let mut out = format!(
         "// 本檔由 cargo run -- msa-gen 依 msa/{0}.rs 與 specs/{0}.md 的 ```golden 區塊自動產生，請勿手改。\n#![allow(unused)]\n#[path = \"../msa/{0}.rs\"]\nmod parts;\nuse rust_bricks::msa::*;\n\n",
         module
@@ -251,7 +322,7 @@ pub fn render_msa_test(module: &str, msa_src: &str, golden_lines: &[String], bri
     let challenge_list: Vec<String> = challenges.iter().map(|c| format!("(\"{0}\".to_string(), gauge_on_{0}())", c)).collect();
     let brick = if brick_exists { "Some(gauge_on_brick())".to_string() } else { "None".to_string() };
     let blind_expr = match (&blind, brick_exists) {
-        (Some(f), true) => format!("Some(parts::blind_check(rust_bricks::{}::{}, 2000))", module, f),
+        (Some(f), true) => format!("Some(parts::blind_check(rust_bricks::{}::{}, {}))", module, f, thresholds(tier).blind_samples),
         _ => "None".to_string(),
     };
     let tol = match tolerance_ratio_pct(golden_lines) {
@@ -259,8 +330,8 @@ pub fn render_msa_test(module: &str, msa_src: &str, golden_lines: &[String], bri
         None => "None".to_string(),
     };
     out.push_str(&format!(
-        "#[test]\nfn msa_{0}() {{\n    let hook = std::panic::take_hook();\n    std::panic::set_hook(Box::new(|_| {{}}));\n    let input = MsaInput {{\n        module: \"{0}\".to_string(),\n        golden_total: {1},\n        reference_ok: parts::standard_parts_ok(),\n        standard_fails: gauge_on_standard(),\n        challenges: vec![{2}],\n        tolerance_ratio_pct: {3},\n        brick_fails: {4},\n        blind: {5},\n    }};\n    std::panic::set_hook(hook);\n    let line = result_line(&input);\n    println!(\"{{}}\", line);\n    let gauge = gauge_verdict(&input);\n    assert!(gauge != GaugeVerdict::Broken && gauge != GaugeVerdict::Redo, \"量具不可信：{{}}\", line);\n    assert!(product_verdict(&input) != ProductVerdict::Reject, \"產品拒收：{{}}\", line);\n}}\n",
-        module, total, challenge_list.join(", "), tol, brick, blind_expr
+        "#[test]\nfn msa_{0}() {{\n    let hook = std::panic::take_hook();\n    std::panic::set_hook(Box::new(|_| {{}}));\n    let input = MsaInput {{\n        module: \"{0}\".to_string(),\n        tier: RiskTier::{6:?},\n        golden_total: {1},\n        reference_ok: parts::standard_parts_ok(),\n        standard_fails: gauge_on_standard(),\n        challenges: vec![{2}],\n        tolerance_ratio_pct: {3},\n        brick_fails: {4},\n        blind: {5},\n    }};\n    std::panic::set_hook(hook);\n    let line = result_line(&input);\n    println!(\"{{}}\", line);\n    let gauge = gauge_verdict(&input);\n    assert!(gauge != GaugeVerdict::Broken && gauge != GaugeVerdict::Redo, \"量具不可信：{{}}\", line);\n    assert!(product_verdict(&input) != ProductVerdict::Reject, \"產品拒收：{{}}\", line);\n}}\n",
+        module, total, challenge_list.join(", "), tol, brick, blind_expr, tier
     ));
     Some(out)
 }
