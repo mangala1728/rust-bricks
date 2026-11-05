@@ -532,6 +532,12 @@ fn try_single_farm_attempt(ctx: &FarmContext, feedback: &str, attempt: usize, sh
         let _ = fs::write(root.join("tests").join(format!("{}.rs", golden_name)), golden);
         targets.push(golden_name);
     }
+    let msa_src = fs::read_to_string(root.join("msa").join(format!("{}.rs", ctx.module))).ok();
+    let golden_lines = crate::farm_tree::extract_golden_lines(&ctx.spec_text);
+    if let Some(msa_test) = msa_src.and_then(|src| crate::msa::render_msa_test(&ctx.module, &src, &golden_lines, true)) {
+        let _ = fs::write(root.join("tests").join(format!("msa_{}.rs", ctx.module)), msa_test);
+        targets.push(format!("msa_{}", ctx.module));
+    }
     targets.push(test_name);
 
     let summary = verify_farmed_module(root, &targets).map_err(|e| (provider.clone(), e))?;
@@ -602,6 +608,27 @@ fn rollback_workspace(ctx: &FarmContext) {
     let _ = fs::remove_file(root.join("src").join(format!("{}.rs", ctx.module)));
     let _ = fs::remove_file(root.join("tests").join(format!("test_{}.rs", ctx.module)));
     let _ = fs::remove_file(root.join("tests").join(format!("golden_{}.rs", ctx.module)));
+    let _ = crate::msa::sync_msa_tests(root);
+}
+
+/// 高風險模組（有 msa/<mod>.rs）開工前先驗量具：量具不可信就不呼叫模型（要修的是規格）
+/// @outputs: 2
+fn gauge_precheck(repo_root: &Path, module: &str) -> Result<(), String> {
+    if !repo_root.join("msa").join(format!("{}.rs", module)).exists() {
+        return Ok(());
+    }
+    let _ = crate::msa::sync_msa_tests(repo_root);
+    let target = format!("msa_{}", module);
+    let out = Command::new("cargo")
+        .args(["test", "-q", "--target-dir", "target/farmer_check", "--test", target.as_str()])
+        .current_dir(repo_root)
+        .output()
+        .map_err(|e| format!("無法執行量具驗收: {}", e))?;
+    if out.status.success() {
+        return Ok(());
+    }
+    let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    Err(first_error_line(&text))
 }
 
 /// 這一輪失敗的結論：規格可疑 → 升級裁判 → 卡關 → 一般放棄
@@ -646,6 +673,7 @@ pub fn farm_brick_from_spec(repo_root: &Path, spec_path: &Path, module_name: &st
     let all_dead_ends = load_dead_ends(repo_root, module_name);
     let fresh = fresh_dead_ends(&all_dead_ends, &spec_hash);
     precheck_farm(repo_root, module_name, &fresh)?;
+    gauge_precheck(repo_root, module_name).map_err(|e| fail("gauge-broken", format!("量具驗收未過，請先校正規格：{}", e)))?;
     let spec_text = fs::read_to_string(spec_path).map_err(|e| fail("error", format!("讀取規格書失敗: {}", e)))?;
     let orig_lib = fs::read_to_string(repo_root.join("src").join("lib.rs")).map_err(|e| fail("error", format!("讀取 lib.rs 失敗: {}", e)))?;
     let golden_lines = extract_golden_lines(&spec_text);
@@ -730,6 +758,9 @@ fn harvest_single_branch(repo_root: &Path, remote_branch: &str, module_name: &st
         let _ = fs::write(&golden_path, golden);
         targets.push(format!("golden_{}", module_name));
     }
+    if crate::msa::sync_msa_tests(repo_root).iter().any(|m| m == module_name) {
+        targets.push(format!("msa_{}", module_name));
+    }
     targets.push(test_name);
 
     if let Err(e) = verify_farmed_module(repo_root, &targets) {
@@ -737,6 +768,7 @@ fn harvest_single_branch(repo_root: &Path, remote_branch: &str, module_name: &st
         let _ = fs::remove_file(&mod_path);
         let _ = fs::remove_file(&test_path);
         let _ = fs::remove_file(&golden_path);
+        let _ = crate::msa::sync_msa_tests(repo_root);
         return Err(format!("收割驗證衝突或失敗 (已自動回滾): {}", e));
     }
     Ok(())

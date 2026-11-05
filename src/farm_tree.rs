@@ -129,6 +129,12 @@ pub fn classify_failure(err_log: &str) -> String {
     if let Some(k) = golden_index(err_log) {
         return format!("golden:#{}", k);
     }
+    if err_log.contains("量具不可信") {
+        return "msa:gauge".to_string();
+    }
+    if err_log.contains("產品拒收") {
+        return "msa:blind".to_string();
+    }
     if let Some(rule) = guard_rule(err_log) {
         return format!("guard:{}", rule);
     }
@@ -660,6 +666,7 @@ pub fn record_abandoned_round(repo_root: &Path, module: &str, message: &str, pus
         format!("src/{}.rs", module),
         format!("tests/test_{}.rs", module),
         format!("tests/golden_{}.rs", module),
+        format!("tests/msa_{}.rs", module),
         "src/lib.rs".to_string(),
     ];
     for f in files.iter().filter(|f| repo_root.join(f.as_str()).exists()) {
@@ -820,7 +827,11 @@ pub fn test_pass_summary(stdout: &str) -> String {
 /// @outputs: 1
 pub fn sync_golden_tests(repo_root: &Path) -> Vec<(String, usize)> {
     let mut synced = Vec::new();
-    for entry in scan_queue(repo_root).iter().filter(|e| e.state == ModuleState::Done) {
+    let queue = scan_queue(repo_root);
+    for entry in queue.iter().filter(|e| e.state != ModuleState::Done) {
+        let _ = fs::remove_file(repo_root.join("tests").join(format!("golden_{}.rs", entry.module)));
+    }
+    for entry in queue.iter().filter(|e| e.state == ModuleState::Done) {
         let spec = fs::read_to_string(repo_root.join(&entry.spec)).unwrap_or_default();
         let lines = extract_golden_lines(&spec);
         let path = repo_root.join("tests").join(format!("golden_{}.rs", entry.module));

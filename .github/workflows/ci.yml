@@ -28,6 +28,9 @@ jobs:
       - name: Spec Golden Vectors in Sync (specs/*.md ```golden -> tests/golden_*.rs)
         run: cargo run -- farm-golden
 
+      - name: MSA Gauge Tests in Sync (msa/*.rs + golden -> tests/msa_*.rs)
+        run: cargo run -- msa-gen
+
       - name: Machine Catalog Generator (YAML & JSON)
         run: cargo run -- catalog
 
@@ -35,3 +38,22 @@ jobs:
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)" || (echo "❌ CATALOG or files out of sync after build!" && exit 1)
+
+  msa-reproducibility:
+    name: MSA Gauge R&R (${{ matrix.os }})
+    needs: contract-quality-gates
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: MSA report (red light fails the job; report goes to job summary)
+        shell: bash
+        run: cargo run -- msa
