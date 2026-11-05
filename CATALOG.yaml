@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 835
+total_functions: 846
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3168,6 +3168,21 @@ modules:
         outputs: 1
         domains:
           intervals: "[2..100000]"
+  - module: "math_svd_2x2"
+    file: "src/math_svd_2x2.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Analytical 2x2 SVD singular values and condition number"
+      - "Inputs: a, b, c, d: f64"
+      - "Outputs: Option<(f64, f64)> or Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "math_svd_2x2_singular_values"
+        signature: "pub fn math_svd_2x2_singular_values(a: f64, b: f64, c: f64, d: f64) -> Option<(f64, f64)>"
+        outputs: 2
+      - name: "math_matrix_2x2_condition_number"
+        signature: "pub fn math_matrix_2x2_condition_number(a: f64, b: f64, c: f64, d: f64) -> Option<f64>"
+        outputs: 1
   - module: "math_time"
     file: "src/math_time.rs"
     functions_count: 5
@@ -3457,6 +3472,26 @@ modules:
       - name: "nmea_parse_lat_lon"
         signature: "pub fn nmea_parse_lat_lon("
         outputs: 2
+  - module: "nmea2000_fast_packet"
+    file: "src/nmea2000_fast_packet.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: NMEA 2000 fast packet protocol multi-frame header parser"
+      - "Inputs: first_byte: u8, can_frame: &[u8; 8], out_buf: &mut [u8; 223]"
+      - "Outputs: (u8, u8) or Option<(u8, usize)>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "nmea2000_parse_header"
+        signature: "pub fn nmea2000_parse_header(first_byte: u8) -> (u8, u8)"
+        outputs: 2
+      - name: "nmea2000_extract_first_frame"
+        signature: "pub fn nmea2000_extract_first_frame("
+        outputs: 2
+      - name: "nmea2000_extract_subsequent_frame"
+        signature: "pub fn nmea2000_extract_subsequent_frame("
+        outputs: 1
+        domains:
+          expected_seq <= 7, expected_index in: "[1..31]"
   - module: "numerical_optimization_gradient"
     file: "src/numerical_optimization_gradient.rs"
     functions_count: 10
@@ -4479,6 +4514,38 @@ modules:
         outputs: 1
         domains:
           mtreg: "[31..254]"
+  - module: "sensor_ecg_derived_resp"
+    file: "src/sensor_ecg_derived_resp.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: ECG R-peak baseline amplitude extraction and respiration rate estimation"
+      - "Inputs: ecg_samples: &[f64], peak_idx: usize, baseline: f64, intervals: &[f64]"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "sensor_edr_r_peak_amplitude"
+        signature: "pub fn sensor_edr_r_peak_amplitude("
+        outputs: 1
+      - name: "sensor_respiration_rate_from_intervals"
+        signature: "pub fn sensor_respiration_rate_from_intervals(intervals: &[f64]) -> Option<f64>"
+        outputs: 1
+        domains:
+          intervals.len() in: "[2..100000], all elements in [1.0..=10.0]"
+  - module: "sensor_fall_detection"
+    file: "src/sensor_fall_detection.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Accelerometer SVM freefall and impact fall detection state machine"
+      - "Inputs: ax: f64, ay: f64, az: f64, svm: f64, lower_threshold: f64, upper_threshold: f64, in_freefall: bool"
+      - "Outputs: Option<f64> or Option<(bool, bool)>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "sensor_svm_magnitude"
+        signature: "pub fn sensor_svm_magnitude(ax: f64, ay: f64, az: f64) -> Option<f64>"
+        outputs: 1
+      - name: "sensor_fall_detect_impact"
+        signature: "pub fn sensor_fall_detect_impact("
+        outputs: 2
   - module: "sensor_hardware"
     file: "src/sensor_hardware.rs"
     functions_count: 4
@@ -4677,6 +4744,25 @@ modules:
         outputs: 1
         domains:
           r: "[0.1..3.0]"
+  - module: "sensor_skin_temp_ema"
+    file: "src/sensor_skin_temp_ema.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Wearable skin temperature EMA filter and medical fever triage"
+      - "Inputs: raw_celsius, prev_celsius, alpha, temp_celsius, normal_high, fever_high: f64"
+      - "Outputs: Option<f64> or Option<u8>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "sensor_skin_temp_smooth"
+        signature: "pub fn sensor_skin_temp_smooth("
+        outputs: 1
+        domains:
+          raw_celsius in: "[10.0..=50.0], prev_celsius in [10.0..=50.0], alpha in [0.0..=1.0]"
+      - name: "sensor_fever_triage"
+        signature: "pub fn sensor_fever_triage("
+        outputs: 1
+        domains:
+          temp in: "[25.0..=45.0], normal_high in [36.0..=38.0], fever_high in [38.0..=42.0]"
   - module: "sensor_step_counter"
     file: "src/sensor_step_counter.rs"
     functions_count: 2

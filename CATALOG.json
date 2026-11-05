@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 835,
+  "total_functions": 846,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3187,6 +3187,23 @@
       ]
     },
     {
+      "module": "math_svd_2x2",
+      "file": "src/math_svd_2x2.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "math_svd_2x2_singular_values",
+          "signature": "pub fn math_svd_2x2_singular_values(a: f64, b: f64, c: f64, d: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "math_matrix_2x2_condition_number",
+          "signature": "pub fn math_matrix_2x2_condition_number(a: f64, b: f64, c: f64, d: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "math_time",
       "file": "src/math_time.rs",
       "functions_count": 5,
@@ -3468,6 +3485,28 @@
           "name": "nmea_parse_lat_lon",
           "signature": "pub fn nmea_parse_lat_lon(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "nmea2000_fast_packet",
+      "file": "src/nmea2000_fast_packet.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "nmea2000_parse_header",
+          "signature": "pub fn nmea2000_parse_header(first_byte: u8) -> (u8, u8)",
+          "outputs": 2
+        },
+        {
+          "name": "nmea2000_extract_first_frame",
+          "signature": "pub fn nmea2000_extract_first_frame(",
+          "outputs": 2
+        },
+        {
+          "name": "nmea2000_extract_subsequent_frame",
+          "signature": "pub fn nmea2000_extract_subsequent_frame(",
+          "outputs": 1
         }
       ]
     },
@@ -4565,6 +4604,40 @@
       ]
     },
     {
+      "module": "sensor_ecg_derived_resp",
+      "file": "src/sensor_ecg_derived_resp.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "sensor_edr_r_peak_amplitude",
+          "signature": "pub fn sensor_edr_r_peak_amplitude(",
+          "outputs": 1
+        },
+        {
+          "name": "sensor_respiration_rate_from_intervals",
+          "signature": "pub fn sensor_respiration_rate_from_intervals(intervals: &[f64]) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "sensor_fall_detection",
+      "file": "src/sensor_fall_detection.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "sensor_svm_magnitude",
+          "signature": "pub fn sensor_svm_magnitude(ax: f64, ay: f64, az: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "sensor_fall_detect_impact",
+          "signature": "pub fn sensor_fall_detect_impact(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "sensor_hardware",
       "file": "src/sensor_hardware.rs",
       "functions_count": 4,
@@ -4711,6 +4784,23 @@
         {
           "name": "ppg_estimate_spo2",
           "signature": "pub fn ppg_estimate_spo2(r: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "sensor_skin_temp_ema",
+      "file": "src/sensor_skin_temp_ema.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "sensor_skin_temp_smooth",
+          "signature": "pub fn sensor_skin_temp_smooth(",
+          "outputs": 1
+        },
+        {
+          "name": "sensor_fever_triage",
+          "signature": "pub fn sensor_fever_triage(",
           "outputs": 1
         }
       ]
