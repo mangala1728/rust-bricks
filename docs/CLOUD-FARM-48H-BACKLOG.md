@@ -121,7 +121,19 @@
 
 ---
 
-## 五、48小時巡邏與收割作戰指引
+## 五、Phase 5 個人硬體公司前瞻工程（Signex + Fyrox + Blender 全閉環）
+
+> 詳細待辦清單與五大支柱微積木規劃，請參閱專屬作戰文件：[`docs/HARDWARE-EDA-DIGITAL-TWIN-BACKLOG.md`](HARDWARE-EDA-DIGITAL-TWIN-BACKLOG.md)。  
+> 涵蓋：
+> 1. **EDA-RF**：微帶線/帶狀線/共面波導阻抗、S 參數、史密斯圓圖、趨膚深度。
+> 2. **EDA-GEO**：DRC 點線距離、差分蛇形繞線、淚滴圓弧、IPC-7351 焊盤尺寸、Gerber/Drill 解析。
+> 3. **EDA-THM**：晶片結溫 TJ、散熱過孔熱阻、IPC-2152 電流溫升、2D 穩態熱傳導 FDM。
+> 4. **EDA-3D**：2D 板框拉伸 3D Mesh、AABB/OBB 機殼干涉、glTF 頂點串流解析。
+> 5. **EDA-DOC**：晶片規格書視覺+OCR 表格萃取、暫存器位元欄位驗證、電氣邊界守衛。
+
+---
+
+## 六、48小時巡邏與收割作戰指引
 
 1. **雲端農夫運作**：
    - GitHub Actions 透過 `cloud_farmer.yml` 手動觸發或定時排程。
