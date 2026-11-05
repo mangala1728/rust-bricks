@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 848,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1210,6 +1210,18 @@
           "name": "bus_unpack_32bit_to_8bit_bytes",
           "signature": "pub fn bus_unpack_32bit_to_8bit_bytes(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "control_pid_antiwindup",
+      "file": "src/control_pid_antiwindup.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "control_pid_step",
+          "signature": "pub fn control_pid_step(",
+          "outputs": 2
         }
       ]
     },
