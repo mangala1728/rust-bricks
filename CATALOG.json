@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 796,
+  "total_functions": 801,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2825,6 +2825,23 @@
       ]
     },
     {
+      "module": "log_lifecycle_dag",
+      "file": "src/log_lifecycle_dag.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "resolve_terminal_node",
+          "signature": "pub fn resolve_terminal_node(",
+          "outputs": 3
+        },
+        {
+          "name": "classify_epoch_pivot",
+          "signature": "pub fn classify_epoch_pivot(",
+          "outputs": 4
+        }
+      ]
+    },
+    {
       "module": "math_chebyshev_poly",
       "file": "src/math_chebyshev_poly.rs",
       "functions_count": 2,
@@ -4635,6 +4652,28 @@
           "name": "storage_capacity_gib_from_lba",
           "signature": "pub fn storage_capacity_gib_from_lba(total_sectors: u64, sector_size_bytes: u32) -> Option<f64>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "subtitle_cps_vad",
+      "file": "src/subtitle_cps_vad.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "subtitle_cps_tenths",
+          "signature": "pub fn subtitle_cps_tenths(readable_chars: u32, duration_ms: u32) -> Option<u32>",
+          "outputs": 2
+        },
+        {
+          "name": "subtitle_cps_band",
+          "signature": "pub fn subtitle_cps_band(cps_tenths: u32, children_mode: u8) -> Option<u8>",
+          "outputs": 4
+        },
+        {
+          "name": "subtitle_vad_drift_ok",
+          "signature": "pub fn subtitle_vad_drift_ok(",
+          "outputs": 2
         }
       ]
     },

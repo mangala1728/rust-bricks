@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 796
+total_functions: 801
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2797,6 +2797,31 @@ modules:
         outputs: 1
         domains:
           pf: "[0..0xFF]"
+  - module: "log_lifecycle_dag"
+    file: "src/log_lifecycle_dag.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: core/log_lifecycle_dag — 日誌取代鏈一跳終端壓縮（Pointer-Jumping）與領域 PIVOT 世代淘汰狀態判定微積木。"
+      - "Inputs: start_id: usize, targets: &[usize], max_hops: usize, entry/pivot metadata。"
+      - "Outputs: Option<(usize, u8)>, Option<u8>。"
+      - "Invariants: 零外部依賴、第一行領域邊界守衛、顯式有界迴圈 <= 64、單一函式 <= 60 行、無遞迴。"
+    functions:
+      - name: "resolve_terminal_node"
+        signature: "pub fn resolve_terminal_node("
+        outputs: 3
+        domains:
+          start_id: "[0..4095]"
+          targets: "[1..4096]"
+          max_hops: "[1..64]"
+      - name: "classify_epoch_pivot"
+        signature: "pub fn classify_epoch_pivot("
+        outputs: 4
+        domains:
+          entry_id: "[1..100000]"
+          entry_scope: "[0..65535]"
+          pivot_id: "[0..100000]"
+          pivot_scope: "[0..65535]"
+          already_superseded: "[0..1]"
   - module: "math_chebyshev_poly"
     file: "src/math_chebyshev_poly.rs"
     functions_count: 2
@@ -4571,6 +4596,36 @@ modules:
       - name: "storage_capacity_gib_from_lba"
         signature: "pub fn storage_capacity_gib_from_lba(total_sectors: u64, sector_size_bytes: u32) -> Option<f64>"
         outputs: 1
+  - module: "subtitle_cps_vad"
+    file: "src/subtitle_cps_vad.rs"
+    functions_count: 3
+    architecture_map:
+      - "Role: media/subtitle_cps_vad — 影視字幕 CPS 定點語速計算、Netflix 繁中三段分級與外部基準時間漂移驗收微積木。"
+      - "Inputs: readable_chars: u32, duration_ms: u32, cps_tenths: u32, children_mode: u8, cand/ref timestamps (u32)。"
+      - "Outputs: Option<u32>, Option<u8>, Option<(u8, u32)>。"
+      - "Invariants: 零外部依賴、第一行領域邊界守衛、單一函式 <= 60 行、無遞迴。"
+    functions:
+      - name: "subtitle_cps_tenths"
+        signature: "pub fn subtitle_cps_tenths(readable_chars: u32, duration_ms: u32) -> Option<u32>"
+        outputs: 2
+        domains:
+          readable_chars: "[0..5000]"
+          duration_ms: "[1..600000]"
+      - name: "subtitle_cps_band"
+        signature: "pub fn subtitle_cps_band(cps_tenths: u32, children_mode: u8) -> Option<u8>"
+        outputs: 4
+        domains:
+          cps_tenths: "[0..10000]"
+          children_mode: "[0..1]"
+      - name: "subtitle_vad_drift_ok"
+        signature: "pub fn subtitle_vad_drift_ok("
+        outputs: 2
+        domains:
+          cand_start_ms: "[0..86400000]"
+          cand_end_ms: "[1..86400000]"
+          ref_start_ms: "[0..86400000]"
+          ref_end_ms: "[1..86400000]"
+          tol_ms: "[1..5000]"
   - module: "sys_path"
     file: "src/sys_path.rs"
     functions_count: 3
