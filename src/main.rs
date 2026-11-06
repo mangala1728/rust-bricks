@@ -97,7 +97,7 @@ fn verify_motor_dukpt_and_env() -> bool {
     let mut ksn = [0u8; 10];
     let ok_dukpt = crypto_dukpt::dukpt_ksn_increment_counter(&mut ksn);
     let ok_crc = env_sensor::sht3x_crc8(&[0xBE, 0xEF]) == 0x92;
-    let ok_aqi = env_sensor::aqi_pm25_us_standard(12.0) == 50;
+    let ok_aqi = env_sensor::aqi_pm25_us_standard(9.0) == 50;
     ok_motor && ok_dukpt && ok_crc && ok_aqi
 }
 
