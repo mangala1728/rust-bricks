@@ -56,6 +56,7 @@ pub mod dsp_comb_filter;
 pub mod dsp_dc_blocker;
 pub mod dsp_dtmf_decoder;
 pub mod dsp_ema_smoother;
+pub mod dsp_envelope_follower;
 pub mod dsp_envelope_peak_hold;
 pub mod dsp_fft_multirate_2d;
 pub mod dsp_fft_radix2;

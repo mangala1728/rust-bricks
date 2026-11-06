@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 848,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1803,6 +1803,18 @@
           "name": "dema_step_f64",
           "signature": "pub fn dema_step_f64(",
           "outputs": 3
+        }
+      ]
+    },
+    {
+      "module": "dsp_envelope_follower",
+      "file": "src/dsp_envelope_follower.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_envelope_follower_step",
+          "signature": "pub fn dsp_envelope_follower_step(",
+          "outputs": 1
         }
       ]
     },

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 848
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1727,6 +1727,20 @@ modules:
           ema1_prev: "[-1000000.0..1000000.0]"
           ema2_prev: "[-1000000.0..1000000.0]"
           alpha: "[0.0001..1.0]"
+  - module: "dsp_envelope_follower"
+    file: "src/dsp_envelope_follower.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Real-time audio envelope follower with attack/release coefficients"
+      - "Inputs: input_sample: f64, prev_env: f64, attack_coeff: f64, release_coeff: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_envelope_follower_step"
+        signature: "pub fn dsp_envelope_follower_step("
+        outputs: 1
+        domains:
+          input_sample in: "[-1e6..=1e6], prev_env >= 0.0, attack_coeff in [0.0..=1.0], release_coeff in [0.0..=1.0]"
   - module: "dsp_envelope_peak_hold"
     file: "src/dsp_envelope_peak_hold.rs"
     functions_count: 2
