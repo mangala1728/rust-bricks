@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 848,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1210,6 +1210,18 @@
           "name": "bus_unpack_32bit_to_8bit_bytes",
           "signature": "pub fn bus_unpack_32bit_to_8bit_bytes(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "control_sliding_mode_1d",
+      "file": "src/control_sliding_mode_1d.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "control_sliding_mode_step",
+          "signature": "pub fn control_sliding_mode_step(",
+          "outputs": 2
         }
       ]
     },

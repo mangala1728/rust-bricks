@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 848
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1144,6 +1144,22 @@ modules:
       - name: "bus_unpack_32bit_to_8bit_bytes"
         signature: "pub fn bus_unpack_32bit_to_8bit_bytes("
         outputs: 1
+  - module: "control_sliding_mode_1d"
+    file: "src/control_sliding_mode_1d.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: 1D Sliding mode control with boundary layer chattering alleviation"
+      - "Inputs: error, error_dot, c, k, epsilon: f64"
+      - "Outputs: Option<(f64, f64)> (sliding_surface_s, control_u)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "control_sliding_mode_step"
+        signature: "pub fn control_sliding_mode_step("
+        outputs: 2
+        domains:
+          c: "[0.0..]"
+          k: "[0.0..]"
+          epsilon: "[0.0..]"
   - module: "control_systems_estimation"
     file: "src/control_systems_estimation.rs"
     functions_count: 10
