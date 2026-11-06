@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 848
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1669,6 +1669,22 @@ modules:
       - name: "dsp_feedforward_comb_step"
         signature: "pub fn dsp_feedforward_comb_step("
         outputs: 1
+  - module: "dsp_cross_correlation_lag"
+    file: "src/dsp_cross_correlation_lag.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Cross-correlation peak lag and TDOA time-delay estimator"
+      - "Inputs: x: &[f64], y: &[f64], max_lag: usize"
+      - "Outputs: Option<(i32, f64)> (best_lag, peak_correlation)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_find_peak_cross_correlation_lag"
+        signature: "pub fn dsp_find_peak_cross_correlation_lag("
+        outputs: 2
+        domains:
+          x.len(): "[4..usize::MAX]"
+          y.len(): "[4..usize::MAX]"
+          max_lag: "[1..usize::MAX]"
   - module: "dsp_dc_blocker"
     file: "src/dsp_dc_blocker.rs"
     functions_count: 2

@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 848,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1752,6 +1752,18 @@
           "name": "dsp_feedforward_comb_step",
           "signature": "pub fn dsp_feedforward_comb_step(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_cross_correlation_lag",
+      "file": "src/dsp_cross_correlation_lag.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_find_peak_cross_correlation_lag",
+          "signature": "pub fn dsp_find_peak_cross_correlation_lag(",
+          "outputs": 2
         }
       ]
     },

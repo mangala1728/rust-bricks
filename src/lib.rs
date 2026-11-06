@@ -53,6 +53,7 @@ pub mod dsp_allpass_phaser;
 pub mod dsp_biquad_bandpass;
 pub mod dsp_biquad_notch;
 pub mod dsp_comb_filter;
+pub mod dsp_cross_correlation_lag;
 pub mod dsp_dc_blocker;
 pub mod dsp_dtmf_decoder;
 pub mod dsp_ema_smoother;
