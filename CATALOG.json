@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 849,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1943,6 +1943,23 @@
           "name": "goertzel_detect",
           "signature": "pub fn goertzel_detect(samples: &[f64], coeff: f64) -> Option<(f64, f64)>",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "dsp_iir_comb_filter",
+      "file": "src/dsp_iir_comb_filter.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_iir_comb_feedback_step",
+          "signature": "pub fn dsp_iir_comb_feedback_step(x: f64, delayed_y: f64, gain: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_comb_feedforward_step",
+          "signature": "pub fn dsp_comb_feedforward_step(x: f64, delayed_x: f64, gain: f64) -> Option<f64>",
+          "outputs": 1
         }
       ]
     },

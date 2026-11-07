@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 849
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1881,6 +1881,25 @@ modules:
         outputs: 2
         domains:
           coeff: "[-2.0..2.0]"
+  - module: "dsp_iir_comb_filter"
+    file: "src/dsp_iir_comb_filter.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Feedback and feedforward comb filter single step computation"
+      - "Inputs: x: f64, delayed: f64, gain: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_iir_comb_feedback_step"
+        signature: "pub fn dsp_iir_comb_feedback_step(x: f64, delayed_y: f64, gain: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], delayed_y in [-1e6..=1e6], gain in [-0.999..=0.999]"
+      - name: "dsp_comb_feedforward_step"
+        signature: "pub fn dsp_comb_feedforward_step(x: f64, delayed_x: f64, gain: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], delayed_x in [-1e6..=1e6], gain in [-1.0..=1.0]"
   - module: "dsp_mel_filterbank"
     file: "src/dsp_mel_filterbank.rs"
     functions_count: 3

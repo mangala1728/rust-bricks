@@ -1,6 +1,6 @@
 {
   "schema": "agy-arbitration-receipt-v1",
-  "model": "kev-4b",
+  "model": "gemini:gemini-3.5-flash",
   "verdict": "PASS",
-  "diff_sha256": "63f45a6c2951a1afc0c61d97b103430b50f44713bef16986b9054c1c350c8a0c"
+  "diff_sha256": "bbbfe2109a9c3eb45f4b80358ec0b730c37bf84a0f554f2ca32985541f52ea80"
 }
