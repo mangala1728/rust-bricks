@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 849,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1998,6 +1998,23 @@
         {
           "name": "dsp_pink_filter_slice",
           "signature": "pub fn dsp_pink_filter_slice(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_preemphasis_deemphasis",
+      "file": "src/dsp_preemphasis_deemphasis.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_preemphasis_step",
+          "signature": "pub fn dsp_preemphasis_step(x: f64, prev_x: f64, alpha: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_deemphasis_step",
+          "signature": "pub fn dsp_deemphasis_step(y: f64, prev_x: f64, alpha: f64) -> Option<f64>",
           "outputs": 1
         }
       ]

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 849
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1951,6 +1951,25 @@ modules:
         outputs: 1
         domains:
           white_samples.len(): "[0..65536]"
+  - module: "dsp_preemphasis_deemphasis"
+    file: "src/dsp_preemphasis_deemphasis.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Speech signal pre-emphasis high-frequency boost and de-emphasis recovery"
+      - "Inputs: sample: f64, prev_sample: f64, alpha: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_preemphasis_step"
+        signature: "pub fn dsp_preemphasis_step(x: f64, prev_x: f64, alpha: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], prev_x in [-1e6..=1e6], alpha in [0.0..=1.0]"
+      - name: "dsp_deemphasis_step"
+        signature: "pub fn dsp_deemphasis_step(y: f64, prev_x: f64, alpha: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          y in: "[-1e6..=1e6], prev_x in [-1e6..=1e6], alpha in [0.0..=1.0]"
   - module: "dsp_resample_linear"
     file: "src/dsp_resample_linear.rs"
     functions_count: 1

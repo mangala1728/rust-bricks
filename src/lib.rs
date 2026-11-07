@@ -64,6 +64,7 @@ pub mod dsp_goertzel;
 pub mod dsp_mel_filterbank;
 pub mod dsp_moving_rms;
 pub mod dsp_pink_noise;
+pub mod dsp_preemphasis_deemphasis;
 pub mod dsp_resample_linear;
 pub mod dsp_spectral_features;
 pub mod dsp_stft_ola_denoiser;
