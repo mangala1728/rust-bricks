@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 873
+total_functions: 876
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -405,6 +405,27 @@ modules:
           utc_hour: "[0.0..=24.0]"
           lat_deg: "[-90.0..=90.0]"
           lon_deg: "[-180.0..=180.0]"
+  - module: "astro_varga_cusp_analysis"
+    file: "src/astro_varga_cusp_analysis.rs"
+    functions_count: 3
+    architecture_map:
+    functions:
+      - name: "astro_d300_cusp_analysis_mas"
+        signature: "pub fn astro_d300_cusp_analysis_mas(sidereal_mas: u64) -> Option<(u8, u64, u8)>"
+        outputs: 1
+        domains:
+          sidereal_mas: "[0..=1296000000000]"
+      - name: "astro_topocentric_parallax_max_arcsec"
+        signature: "pub fn astro_topocentric_parallax_max_arcsec(distance_au_fp4: u16) -> Option<u32>"
+        outputs: 1
+        domains:
+          distance_au_fp4: "[2000..=20000] (0.2000 AU .. 2.0000 AU)"
+      - name: "astro_varga_error_amplification"
+        signature: "pub fn astro_varga_error_amplification("
+        outputs: 1
+        domains:
+          physical_error_mas: "[0..=10000000]"
+          varga_n: "[1..=300]"
   - module: "astro_varga_super"
     file: "src/astro_varga_super.rs"
     functions_count: 2

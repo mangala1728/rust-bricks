@@ -17,6 +17,7 @@ pub mod astro_historical_dst;
 pub mod astro_pipeline;
 pub mod astro_prenatal_dasha;
 pub mod astro_solar_zenith_angle;
+pub mod astro_varga_cusp_analysis;
 pub mod astro_varga_super;
 pub mod audio_beamforming_doa;
 pub mod audio_dsp;

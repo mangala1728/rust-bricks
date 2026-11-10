@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 873,
+  "total_functions": 876,
   "modules": [
     {
       "module": "agent_terminal",
@@ -419,6 +419,28 @@
           "name": "astro_solar_zenith_and_elevation",
           "signature": "pub fn astro_solar_zenith_and_elevation(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_varga_cusp_analysis",
+      "file": "src/astro_varga_cusp_analysis.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "astro_d300_cusp_analysis_mas",
+          "signature": "pub fn astro_d300_cusp_analysis_mas(sidereal_mas: u64) -> Option<(u8, u64, u8)>",
+          "outputs": 1
+        },
+        {
+          "name": "astro_topocentric_parallax_max_arcsec",
+          "signature": "pub fn astro_topocentric_parallax_max_arcsec(distance_au_fp4: u16) -> Option<u32>",
+          "outputs": 1
+        },
+        {
+          "name": "astro_varga_error_amplification",
+          "signature": "pub fn astro_varga_error_amplification(",
+          "outputs": 1
         }
       ]
     },
