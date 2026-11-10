@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 847,
+  "total_functions": 864,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1214,6 +1214,30 @@
       ]
     },
     {
+      "module": "control_pid_antiwindup",
+      "file": "src/control_pid_antiwindup.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "control_pid_step",
+          "signature": "pub fn control_pid_step(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "control_sliding_mode_1d",
+      "file": "src/control_sliding_mode_1d.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "control_sliding_mode_step",
+          "signature": "pub fn control_sliding_mode_step(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "control_systems_estimation",
       "file": "src/control_systems_estimation.rs",
       "functions_count": 10,
@@ -1756,6 +1780,18 @@
       ]
     },
     {
+      "module": "dsp_cross_correlation_lag",
+      "file": "src/dsp_cross_correlation_lag.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_find_peak_cross_correlation_lag",
+          "signature": "pub fn dsp_find_peak_cross_correlation_lag(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "dsp_dc_blocker",
       "file": "src/dsp_dc_blocker.rs",
       "functions_count": 2,
@@ -1803,6 +1839,18 @@
           "name": "dema_step_f64",
           "signature": "pub fn dema_step_f64(",
           "outputs": 3
+        }
+      ]
+    },
+    {
+      "module": "dsp_envelope_follower",
+      "file": "src/dsp_envelope_follower.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_envelope_follower_step",
+          "signature": "pub fn dsp_envelope_follower_step(",
+          "outputs": 1
         }
       ]
     },
@@ -1947,6 +1995,23 @@
       ]
     },
     {
+      "module": "dsp_iir_comb_filter",
+      "file": "src/dsp_iir_comb_filter.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_iir_comb_feedback_step",
+          "signature": "pub fn dsp_iir_comb_feedback_step(x: f64, delayed_y: f64, gain: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_comb_feedforward_step",
+          "signature": "pub fn dsp_comb_feedforward_step(x: f64, delayed_x: f64, gain: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_mel_filterbank",
       "file": "src/dsp_mel_filterbank.rs",
       "functions_count": 3,
@@ -2003,6 +2068,23 @@
       ]
     },
     {
+      "module": "dsp_preemphasis_deemphasis",
+      "file": "src/dsp_preemphasis_deemphasis.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "dsp_preemphasis_step",
+          "signature": "pub fn dsp_preemphasis_step(x: f64, prev_x: f64, alpha: f64) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "dsp_deemphasis_step",
+          "signature": "pub fn dsp_deemphasis_step(y: f64, prev_x: f64, alpha: f64) -> Option<f64>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
       "module": "dsp_resample_linear",
       "file": "src/dsp_resample_linear.rs",
       "functions_count": 1,
@@ -2028,6 +2110,18 @@
           "name": "spectral_rolloff",
           "signature": "pub fn spectral_rolloff(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "dsp_state_variable_filter",
+      "file": "src/dsp_state_variable_filter.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "dsp_svf_step",
+          "signature": "pub fn dsp_svf_step(",
+          "outputs": 6
         }
       ]
     },
@@ -2117,6 +2211,18 @@
         {
           "name": "aqi_pm25_us_standard",
           "signature": "pub fn aqi_pm25_us_standard(pm25: f32) -> u16",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "ethercat_datagram_header",
+      "file": "src/ethercat_datagram_header.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "ethercat_parse_datagram_header",
+          "signature": "pub fn ethercat_parse_datagram_header(header: &[u8]) -> Option<EthercatDatagramHeader>",
           "outputs": 1
         }
       ]
@@ -2364,6 +2470,18 @@
       ]
     },
     {
+      "module": "fin_bollinger_bands",
+      "file": "src/fin_bollinger_bands.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "fin_compute_bollinger_bands",
+          "signature": "pub fn fin_compute_bollinger_bands(",
+          "outputs": 5
+        }
+      ]
+    },
+    {
       "module": "fin_calmar_ratio",
       "file": "src/fin_calmar_ratio.rs",
       "functions_count": 2,
@@ -2394,6 +2512,18 @@
           "name": "fin_upside_potential_ratio",
           "signature": "pub fn fin_upside_potential_ratio(returns: &[f64], target_mar: f64) -> Option<f64>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "fin_drawdown_recovery",
+      "file": "src/fin_drawdown_recovery.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "fin_compute_drawdown_metrics",
+          "signature": "pub fn fin_compute_drawdown_metrics(",
+          "outputs": 3
         }
       ]
     },
@@ -2437,6 +2567,18 @@
       ]
     },
     {
+      "module": "fin_hurst_exponent_rs",
+      "file": "src/fin_hurst_exponent_rs.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "fin_compute_hurst_rs",
+          "signature": "pub fn fin_compute_hurst_rs(series: &[f64]) -> Option<(f64, f64)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "fin_implied_volatility",
       "file": "src/fin_implied_volatility.rs",
       "functions_count": 2,
@@ -2473,6 +2615,35 @@
         {
           "name": "bond_duration",
           "signature": "pub fn bond_duration(cash_flows: &[f64], ytm: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "fin_macd_oscillator",
+      "file": "src/fin_macd_oscillator.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "fin_macd_step",
+          "signature": "pub fn fin_macd_step(",
+          "outputs": 5
+        }
+      ]
+    },
+    {
+      "module": "fin_merton_jump_diffusion",
+      "file": "src/fin_merton_jump_diffusion.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "fin_merton_poisson_weight",
+          "signature": "pub fn fin_merton_poisson_weight(lambda: f64, t: f64, n: u32) -> Option<f64>",
+          "outputs": 1
+        },
+        {
+          "name": "fin_merton_jump_parameters",
+          "signature": "pub fn fin_merton_jump_parameters(lambda: f64, mu_j: f64, delta: f64) -> Option<(f64, f64)>",
           "outputs": 2
         }
       ]
@@ -2581,6 +2752,18 @@
           "name": "convex_hull_2d",
           "signature": "pub fn convex_hull_2d(mut points: Vec<(f64, f64)>) -> Option<Vec<(f64, f64)>>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "geo_ecef_to_lla",
+      "file": "src/geo_ecef_to_lla.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "geo_ecef_to_geodetic_lla",
+          "signature": "pub fn geo_ecef_to_geodetic_lla(",
+          "outputs": 3
         }
       ]
     },

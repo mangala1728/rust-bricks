@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 847
+total_functions: 864
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1144,6 +1144,34 @@ modules:
       - name: "bus_unpack_32bit_to_8bit_bytes"
         signature: "pub fn bus_unpack_32bit_to_8bit_bytes("
         outputs: 1
+  - module: "control_pid_antiwindup"
+    file: "src/control_pid_antiwindup.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Discrete PID step controller with clamping anti-windup protection"
+      - "Inputs: setpoint, measured, integral, prev_error, dt, kp, ki, kd, out_min, out_max: f64"
+      - "Outputs: Option<(f64, f64)> (output, next_integral)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "control_pid_step"
+        signature: "pub fn control_pid_step("
+        outputs: 2
+  - module: "control_sliding_mode_1d"
+    file: "src/control_sliding_mode_1d.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: 1D Sliding mode control with boundary layer chattering alleviation"
+      - "Inputs: error, error_dot, c, k, epsilon: f64"
+      - "Outputs: Option<(f64, f64)> (sliding_surface_s, control_u)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "control_sliding_mode_step"
+        signature: "pub fn control_sliding_mode_step("
+        outputs: 2
+        domains:
+          c: "[0.0..]"
+          k: "[0.0..]"
+          epsilon: "[0.0..]"
   - module: "control_systems_estimation"
     file: "src/control_systems_estimation.rs"
     functions_count: 10
@@ -1669,6 +1697,22 @@ modules:
       - name: "dsp_feedforward_comb_step"
         signature: "pub fn dsp_feedforward_comb_step("
         outputs: 1
+  - module: "dsp_cross_correlation_lag"
+    file: "src/dsp_cross_correlation_lag.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Cross-correlation peak lag and TDOA time-delay estimator"
+      - "Inputs: x: &[f64], y: &[f64], max_lag: usize"
+      - "Outputs: Option<(i32, f64)> (best_lag, peak_correlation)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_find_peak_cross_correlation_lag"
+        signature: "pub fn dsp_find_peak_cross_correlation_lag("
+        outputs: 2
+        domains:
+          x.len(): "[4..usize::MAX]"
+          y.len(): "[4..usize::MAX]"
+          max_lag: "[1..usize::MAX]"
   - module: "dsp_dc_blocker"
     file: "src/dsp_dc_blocker.rs"
     functions_count: 2
@@ -1727,6 +1771,20 @@ modules:
           ema1_prev: "[-1000000.0..1000000.0]"
           ema2_prev: "[-1000000.0..1000000.0]"
           alpha: "[0.0001..1.0]"
+  - module: "dsp_envelope_follower"
+    file: "src/dsp_envelope_follower.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Real-time audio envelope follower with attack/release coefficients"
+      - "Inputs: input_sample: f64, prev_env: f64, attack_coeff: f64, release_coeff: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_envelope_follower_step"
+        signature: "pub fn dsp_envelope_follower_step("
+        outputs: 1
+        domains:
+          input_sample in: "[-1e6..=1e6], prev_env >= 0.0, attack_coeff in [0.0..=1.0], release_coeff in [0.0..=1.0]"
   - module: "dsp_envelope_peak_hold"
     file: "src/dsp_envelope_peak_hold.rs"
     functions_count: 2
@@ -1881,6 +1939,25 @@ modules:
         outputs: 2
         domains:
           coeff: "[-2.0..2.0]"
+  - module: "dsp_iir_comb_filter"
+    file: "src/dsp_iir_comb_filter.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Feedback and feedforward comb filter single step computation"
+      - "Inputs: x: f64, delayed: f64, gain: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_iir_comb_feedback_step"
+        signature: "pub fn dsp_iir_comb_feedback_step(x: f64, delayed_y: f64, gain: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], delayed_y in [-1e6..=1e6], gain in [-0.999..=0.999]"
+      - name: "dsp_comb_feedforward_step"
+        signature: "pub fn dsp_comb_feedforward_step(x: f64, delayed_x: f64, gain: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], delayed_x in [-1e6..=1e6], gain in [-1.0..=1.0]"
   - module: "dsp_mel_filterbank"
     file: "src/dsp_mel_filterbank.rs"
     functions_count: 3
@@ -1951,6 +2028,25 @@ modules:
         outputs: 1
         domains:
           white_samples.len(): "[0..65536]"
+  - module: "dsp_preemphasis_deemphasis"
+    file: "src/dsp_preemphasis_deemphasis.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Speech signal pre-emphasis high-frequency boost and de-emphasis recovery"
+      - "Inputs: sample: f64, prev_sample: f64, alpha: f64"
+      - "Outputs: Option<f64>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_preemphasis_step"
+        signature: "pub fn dsp_preemphasis_step(x: f64, prev_x: f64, alpha: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          x in: "[-1e6..=1e6], prev_x in [-1e6..=1e6], alpha in [0.0..=1.0]"
+      - name: "dsp_deemphasis_step"
+        signature: "pub fn dsp_deemphasis_step(y: f64, prev_x: f64, alpha: f64) -> Option<f64>"
+        outputs: 1
+        domains:
+          y in: "[-1e6..=1e6], prev_x in [-1e6..=1e6], alpha in [0.0..=1.0]"
   - module: "dsp_resample_linear"
     file: "src/dsp_resample_linear.rs"
     functions_count: 1
@@ -1990,6 +2086,20 @@ modules:
         domains:
           rolloff_ratio: "[0.5..0.99]"
           sample_rate_hz: "[1.0..1000000.0]"
+  - module: "dsp_state_variable_filter"
+    file: "src/dsp_state_variable_filter.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Chamberlin Digital State Variable Filter single-step computation"
+      - "Inputs: input: f64, s1: f64, s2: f64, f: f64, q: f64"
+      - "Outputs: Option<(f64, f64, f64, f64, f64, f64)> (lp, bp, hp, notch, next_s1, next_s2)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "dsp_svf_step"
+        signature: "pub fn dsp_svf_step("
+        outputs: 6
+        domains:
+          input in: "[-1e6..=1e6], s1 in [-1e6..=1e6], s2 in [-1e6..=1e6], f in [0.0001..=0.8], q in [0.0001..=2.0]"
   - module: "dsp_stft_ola_denoiser"
     file: "src/dsp_stft_ola_denoiser.rs"
     functions_count: 3
@@ -2092,6 +2202,18 @@ modules:
         outputs: 1
         domains:
           pm25: "[0.0..1000.0]"
+  - module: "ethercat_datagram_header"
+    file: "src/ethercat_datagram_header.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: IEC 61158-4-12 EtherCAT 10-byte datagram header parser"
+      - "Inputs: header: &[u8]"
+      - "Outputs: Option<EthercatDatagramHeader>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "ethercat_parse_datagram_header"
+        signature: "pub fn ethercat_parse_datagram_header(header: &[u8]) -> Option<EthercatDatagramHeader>"
+        outputs: 1
   - module: "fast_math"
     file: "src/fast_math.rs"
     functions_count: 4
@@ -2324,6 +2446,20 @@ modules:
           rate: "[-0.5..1.0]"
           sigma: "[0.001..10.0]"
           t_years: "[0.001..100.0]"
+  - module: "fin_bollinger_bands"
+    file: "src/fin_bollinger_bands.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Bollinger Bands channel computation with %B and Bandwidth indicators"
+      - "Inputs: prices: &[f64], k: f64"
+      - "Outputs: Option<(f64, f64, f64, f64, f64)> (middle, upper, lower, percent_b, bandwidth)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_compute_bollinger_bands"
+        signature: "pub fn fin_compute_bollinger_bands("
+        outputs: 5
+        domains:
+          prices.len() in: "[2..=256], k > 0.0, prices > 0.0"
   - module: "fin_calmar_ratio"
     file: "src/fin_calmar_ratio.rs"
     functions_count: 2
@@ -2360,6 +2496,20 @@ modules:
         outputs: 1
         domains:
           returns.len(): "[1..1000000]"
+  - module: "fin_drawdown_recovery"
+    file: "src/fin_drawdown_recovery.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Portfolio maximum drawdown (MDD) and underwater duration analysis"
+      - "Inputs: equity_curve: &[f64]"
+      - "Outputs: Option<(f64, usize, f64)> (max_drawdown_pct, max_underwater_len, current_drawdown_pct)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_compute_drawdown_metrics"
+        signature: "pub fn fin_compute_drawdown_metrics("
+        outputs: 3
+        domains:
+          equity_curve.len() in: "[1..=2048]"
   - module: "fin_ewma_volatility"
     file: "src/fin_ewma_volatility.rs"
     functions_count: 2
@@ -2402,6 +2552,20 @@ modules:
         outputs: 1
         domains:
           returns.len(): "[1..1000000]"
+  - module: "fin_hurst_exponent_rs"
+    file: "src/fin_hurst_exponent_rs.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Rescaled Range (R/S) analysis and Hurst exponent estimation"
+      - "Inputs: series: &[f64]"
+      - "Outputs: Option<(f64, f64)> (rs_ratio, hurst_exponent)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_compute_hurst_rs"
+        signature: "pub fn fin_compute_hurst_rs(series: &[f64]) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          series.len(): "[8..=1024]"
   - module: "fin_implied_volatility"
     file: "src/fin_implied_volatility.rs"
     functions_count: 2
@@ -2447,6 +2611,35 @@ modules:
         outputs: 2
         domains:
           ytm: "[0.0..1.0]"
+  - module: "fin_macd_oscillator"
+    file: "src/fin_macd_oscillator.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Single-step MACD line, signal line, and histogram recursive computation"
+      - "Inputs: price, prev_fast, prev_slow, prev_signal, a_fast, a_slow, a_signal: f64"
+      - "Outputs: Option<(f64, f64, f64, f64, f64)> (macd_line, signal_line, histogram, next_fast, next_slow)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_macd_step"
+        signature: "pub fn fin_macd_step("
+        outputs: 5
+  - module: "fin_merton_jump_diffusion"
+    file: "src/fin_merton_jump_diffusion.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role: Merton Jump Diffusion jump amplitude and Poisson weight calculator"
+      - "Inputs: lambda, t, mu_j, delta: f64, n: u32"
+      - "Outputs: Option<f64> or Option<(f64, f64)>"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "fin_merton_poisson_weight"
+        signature: "pub fn fin_merton_poisson_weight(lambda: f64, t: f64, n: u32) -> Option<f64>"
+        outputs: 1
+      - name: "fin_merton_jump_parameters"
+        signature: "pub fn fin_merton_jump_parameters(lambda: f64, mu_j: f64, delta: f64) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          lambda >= 0.0, mu_j in: "[-2.0..=2.0], delta >= 0.0"
   - module: "fin_ruin_probability"
     file: "src/fin_ruin_probability.rs"
     functions_count: 2
@@ -2576,6 +2769,22 @@ modules:
         domains:
           points: "[i].x [MIN..MAX] (checked for every point)"
           points: "[i].y [MIN..MAX] (checked for every point)"
+  - module: "geo_ecef_to_lla"
+    file: "src/geo_ecef_to_lla.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: ECEF cartesian to WGS-84 Geodetic Latitude, Longitude, Altitude (LLA)"
+      - "Inputs: x, y, z: f64 (meters)"
+      - "Outputs: Option<(f64, f64, f64)> (lat_deg, lon_deg, alt_m)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "geo_ecef_to_geodetic_lla"
+        signature: "pub fn geo_ecef_to_geodetic_lla("
+        outputs: 3
+        domains:
+          x: "[-1e8..1e8]"
+          y: "[-1e8..1e8]"
+          z: "[-1e8..1e8]"
   - module: "geo_geohash"
     file: "src/geo_geohash.rs"
     functions_count: 2
