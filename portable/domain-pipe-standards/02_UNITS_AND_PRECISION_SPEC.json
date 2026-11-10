@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UniversalDomainUnitAndPrecisionSpecification",
+  "version": "1.0.0",
+  "description": "數位史官與微觀市場物理學 — 全域領域單位與定點數精度下水道規格書",
+  "conventions": {
+    "math_model": "pure_integer_fixed_point",
+    "endianness": "little_endian",
+    "wire_size_bytes": 32,
+    "bitemporal_invariant": "event_period_ts <= public_known_ts <= sim_clock_ts"
+  },
+  "unit_definitions": {
+    "temporal": {
+      "ts_us": {
+        "type": "u64",
+        "unit": "microseconds",
+        "epoch": "1970-01-01T00:00:00Z (Unix Epoch UTC)",
+        "domain": [0, 18446744073709551615],
+        "description": "微秒級絕對單調時間戳記（Bus 1 專用）"
+      },
+      "ts_sec": {
+        "type": "u64",
+        "unit": "seconds",
+        "epoch": "1970-01-01T00:00:00Z (Unix Epoch UTC)",
+        "domain": [0, 4102444800],
+        "description": "秒級絕對時間戳記（Bus 2/3 專用，支援至 2100 年）"
+      },
+      "date_yyyymmdd": {
+        "type": "u32",
+        "unit": "calendar_date",
+        "format": "YYYYMMDD",
+        "domain": [19000101, 20991231],
+        "description": "整數型日曆日快照"
+      }
+    },
+    "spatial_and_angular": {
+      "angle_milli_deg": {
+        "type": "u32",
+        "unit": "milli_degree (10^-3 deg)",
+        "scaling_factor": 1000,
+        "domain": [0, 360000],
+        "description": "黃道經度、地心緯度或行星相位角 (0.000° ~ 360.000°)"
+      },
+      "angle_micro_deg": {
+        "type": "u32",
+        "unit": "micro_degree (10^-6 deg)",
+        "scaling_factor": 1000000,
+        "domain": [0, 360000000],
+        "description": "高精度恆星赤經赤緯"
+      },
+      "orb_tolerance_bp": {
+        "type": "u16",
+        "unit": "basis_points (0.01 deg)",
+        "scaling_factor": 100,
+        "domain": [0, 1500],
+        "description": "相位容許度 (0.00° ~ 15.00°)"
+      },
+      "distance_au_fp4": {
+        "type": "u32",
+        "unit": "astronomical_unit_fp4 (10^-4 AU)",
+        "scaling_factor": 10000,
+        "domain": [1, 1000000],
+        "description": "天體距日或距心距離 (0.0001 AU ~ 100.0000 AU)"
+      },
+      "speed_milli_deg_day": {
+        "type": "i32",
+        "unit": "milli_deg_per_ephemeris_day",
+        "scaling_factor": 1000,
+        "domain": [-100000, 100000],
+        "description": "天體黃道視日位移速度（正值順行，負值逆行）"
+      }
+    },
+    "celestial_identities": {
+      "celestial_body_id": {
+        "type": "u16",
+        "domain": [1, 999],
+        "mapping": {
+          "1": "Sun (太陽)",
+          "2": "Moon (月球)",
+          "3": "Mercury (水星)",
+          "4": "Venus (金星)",
+          "5": "Mars (火星)",
+          "6": "Jupiter (木星)",
+          "7": "Saturn (土星)",
+          "8": "Uranus (天王星)",
+          "9": "Neptune (海王星)",
+          "10": "Pluto (冥王星)",
+          "11": "Rahu / North Node (北交點)",
+          "12": "Ketu / South Node (南交點)"
+        }
+      },
+      "aspect_type_code": {
+        "type": "u8",
+        "domain": [0, 15],
+        "mapping": {
+          "0": "Conjunction (合相 0°)",
+          "1": "Sextile (六合 60°)",
+          "2": "Square (刑 90°)",
+          "3": "Trine (拱 120°)",
+          "4": "Opposition (沖 180°)",
+          "5": "Inconjunct (梅花相 150°)",
+          "6": "Semi-Square (半刑 45°)",
+          "7": "None / Out-of-Orb (無相位)"
+        }
+      },
+      "motion_flag_bits": {
+        "type": "u8",
+        "bitmask_definitions": {
+          "bit_0": "0x01 = Retrograde (逆行中)",
+          "bit_1": "0x02 = Stationary (留/停滯)",
+          "bit_2": "0x04 = Solar Eclipse (日食發生中)",
+          "bit_3": "0x08 = Lunar Eclipse (月食發生中)",
+          "bit_4": "0x10 = Planetary Transit (凌日/互掩)",
+          "bit_5": "0x20 = Out of Bounds (黃緯越出赤緯極值)",
+          "bit_6": "0x40 = Combustion (被太陽焦傷 / 距離<8.5°)",
+          "bit_7": "0x80 = Cazimi (日心合相 / 距離<17')"
+        }
+      }
+    },
+    "market_and_physics": {
+      "price_fp4": {
+        "type": "i32",
+        "unit": "fixed_point_4 (10^-4)",
+        "scaling_factor": 10000,
+        "domain": [-2000000000, 2000000000],
+        "description": "價格（1050.50 元 -> 10505000）"
+      },
+      "rate_bp": {
+        "type": "i16",
+        "unit": "basis_points (0.01%)",
+        "scaling_factor": 100,
+        "domain": [-10000, 10000],
+        "description": "漲跌幅、利率或比率（+5.25% -> +525 bp）"
+      },
+      "probability_pct": {
+        "type": "u8",
+        "unit": "percentage",
+        "domain": [0, 100],
+        "description": "勝率、破產率或信心百分比"
+      }
+    },
+    "vedic_identities": {
+      "vedic_tithi_id": {
+        "type": "u8",
+        "domain": [1, 30],
+        "description": "吠陀第 (Tithi, 1..15 白月 Shukla, 16..30 黑月 Krishna)"
+      },
+      "vedic_nakshatra_id": {
+        "type": "u8",
+        "domain": [1, 27],
+        "description": "吠陀 27 宿 (1=Ashwini .. 27=Revati)"
+      },
+      "vedic_pada_id": {
+        "type": "u8",
+        "domain": [1, 4],
+        "description": "吠陀宿足 (1..4 Pada，對應 D9 九分盤 Navamsha)"
+      },
+      "vedic_yoga_id": {
+        "type": "u8",
+        "domain": [1, 27],
+        "description": "吠陀 27 曜 (1=Vishkambha .. 27=Vaidhriti)"
+      },
+      "vedic_karana_id": {
+        "type": "u8",
+        "domain": [1, 60],
+        "description": "吠陀 60 關 (Karana，半個 Tithi)"
+      },
+      "vedic_dasha_planet_id": {
+        "type": "u8",
+        "domain": [1, 9],
+        "mapping": {
+          "1": "Ketu",
+          "2": "Venus",
+          "3": "Sun",
+          "4": "Moon",
+          "5": "Mars",
+          "6": "Rahu",
+          "7": "Jupiter",
+          "8": "Saturn",
+          "9": "Mercury"
+        }
+      },
+      "ayanamsha_system_id": {
+        "type": "u8",
+        "domain": [0, 15],
+        "mapping": {
+          "0": "Lahiri (Chitra Paksha)",
+          "1": "Krishnamurti (KP)",
+          "2": "Raman (B.V. Raman)",
+          "3": "Fagan-Bradley",
+          "4": "Yukteshwar",
+          "5": "True Chitra"
+        }
+      },
+      "ayanamsha_arcsec": {
+        "type": "u32",
+        "unit": "arcseconds (1/3600 deg)",
+        "scaling_factor": 1,
+        "domain": [0, 1296000],
+        "description": "分點歲差偏移值 (Lahiri J2000 = 85871 arcsec)"
+      }
+    },
+    "spatiotemporal_frames": {
+      "frame_id": {
+        "type": "u8",
+        "domain": [0, 7],
+        "mapping": {
+          "0": "ICRF_SSB (太陽系質心天文慣性系)",
+          "1": "ICRF_GEO (地心天文慣性系)",
+          "2": "ECEF (地基地固旋轉座標系 WGS-84)",
+          "3": "ENU_TOPOCENTRIC (觀測者局部切面站心座標系)",
+          "4": "NED (北東地導航座標系)",
+          "5": "CAMERA_LOCAL (鏡頭/VR 視網膜視角座標系)"
+        }
+      },
+      "local_enu_mm": {
+        "type": "i32",
+        "unit": "millimeters",
+        "scaling_factor": 1,
+        "domain": [-2000000000, 2000000000],
+        "description": "局部浮動原點相對位移 (公釐，避免 f32 抖動)"
+      },
+      "relativistic_drift_ps": {
+        "type": "i64",
+        "unit": "picoseconds (10^-12 s)",
+        "scaling_factor": 1,
+        "description": "狹義與廣義相對論原時與協調時累積時間膨脹偏移"
+      }
+    }
+  }
+}

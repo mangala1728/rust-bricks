@@ -133,7 +133,25 @@
 
 ---
 
-## 六、48小時巡邏與收割作戰指引
+## 六、Phase 6 吠陀五分曆、人生事件記錄器與時空數位孿生微積木（Vedic Panchanga & Spatiotemporal Pipeline）
+
+> 依據 `portable/domain-pipe-standards/04_VEDIC_ASTRO_SPATIOTEMPORAL_EXT.md` 之跨倉庫標準規格，為線上/手機/本地版吠陀占星、人生事件記錄器與高精度街景VR星空數位孿生提供純 Rust 09 合約積木：
+
+| 領域代號 | 領域名稱 | 核心工程價值 | 規範與演算法 | 預計模組名 |
+| :--- | :--- | :--- | :--- | :--- |
+| **ASTRO-01** | 純整數 Tithi 與月相百分比計算 | 純整數毫度計算 30 Tithi (1..30) 與月相百分比 (0..100) | $\Delta = (M + 360000 - S) \pmod{360000} / 12000 + 1$ | `astro_panchanga_tithi` |
+| **ASTRO-02** | 27 宿與 4 足 (Nakshatra & Pada) | 月球經度轉角分純整數計算 27 宿與 4 足 (D9 Navamsha) | $M_{\text{min}} = M \times 3 / 50$; $Nak = M_{\text{min}} / 800 + 1$ | `astro_panchanga_nakshatra` |
+| **ASTRO-03** | 27 曜與 60 關 (Yoga & Karana) | 日月經度和與半 Tithi 關位純整數計算 | $Yoga = (S_{\text{min}} + M_{\text{min}}) \pmod{21600} / 800 + 1$ | `astro_panchanga_yoga_karana` |
+| **ASTRO-04** | 缺日與增日檢測 (Kshaya / Vriddhi) | 比對日出日落時間戳記判定無日出之虧日或跨雙日出之增日 | 比較 `ts_sunrise_curr` 與 `ts_sunrise_next` 之包含性 | `astro_tithi_special_detector` |
+| **ASTRO-05** | Vimshottari 運限 32-bit 位元封裝 | 大運/小運/次小運/微運/呼吸運多層階梯式整數壓縮編解碼 | 5 層 4-bit + 12-bit 餘量封裝至 `dasha_packed: u32` | `astro_vimshottari_dasha` |
+| **ASTRO-06** | 歲差與恆星/熱帶黃道轉換 | 支援 Lahiri, KP, Raman, Fagan-Bradley, Yukteshwar 歲差角秒轉換 | $\lambda_{\text{sidereal}} = (\lambda_{\text{tropical}} + 360000 - \text{Ayanamsha}) \pmod{360000}$ | `astro_ayanamsha_converter` |
+| **ASTRO-07** | 行星留與逆行轉換狀態機 | 根據黃道每日日視速度符號與門檻判定順行/逆行/停滯 | 遲滯雙門檻判定留 (Stationary) 與逆行開始/結束 | `astro_planetary_station` |
+| **ASTRO-08** | 局部站心座標系 (ENU) 毫米旋轉 | 浮動原點 (Floating Origin) 消除 VR 與街景 32-bit 浮點抽搐 | 觀測者腳下為 (0,0,0)，毫米整數轉換 | `geo_enu_floating_origin` |
+| **ASTRO-09** | 相對論皮秒時間膨脹偏移 | 根據高度差 (重力場) 與載具速度計算愛因斯坦原時膨脹 | $\Delta \tau = \int (1 - gh/c^2 - v^2/2c^2) dt$ (皮秒整數) | `phys_relativistic_drift_ps` |
+
+---
+
+## 七、48小時巡邏與收割作戰指引
 
 1. **雲端農夫運作**：
    - GitHub Actions 透過 `cloud_farmer.yml` 手動觸發或定時排程。
