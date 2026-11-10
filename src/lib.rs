@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod README;
 pub mod agent_terminal;
 pub mod ai_autograd_train;
 pub mod ai_rl_policy_gradient;
