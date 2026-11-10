@@ -135,7 +135,47 @@
 
 ---
 
-## 三、快速使用範例
+## 三、通用領域下水道標準與子函數規格邊界指南（Universal Domain Pipe Standards）
+
+> **【三方同一把尺・刻度不踩雷】**  
+> 為杜絕跨語言、跨平台（x86/ARM/Wasm/Android）的浮點誤差、NaN 毒化及時空抖動，**定義者（Architect）、碼工（Coder/Cloud Farmer）、用戶（AI 代理/調用端）**全體依據同一套剛性量尺協同作業。  
+> 完整規格請參閱：[`docs/SUBFUNCTION-BOUNDARY-AND-PIPE-STANDARDS.md`](docs/SUBFUNCTION-BOUNDARY-AND-PIPE-STANDARDS.md) 與 [`specs/README.md`](specs/README.md)。
+
+### 1. 通用度量衡與定點數精度刻度表（The Common Precision Scale）
+
+| 領域刻度 | 欄位型別 | 比例因數 (Scale) | 合法定義域 (Domain) | 物理意義與轉換範例 |
+|---|---|---|---|---|
+| **時間 (Bus 1)** | `ts_us: u64` | $1\text{ us}$ | `0 .. 1.84e19` | Unix Epoch UTC 微秒（高速串流磁軌專用） |
+| **時間 (Bus 2/3)** | `ts_sec: u64` | $1\text{ s}$ | `0 .. 4.10e9` | Unix Epoch UTC 秒（歷史雙時態地層，至 2100 年） |
+| **時間 (相對論)** | `relativistic_drift_ps: i64` | $1\text{ ps} (10^{-12}\text{ s})$ | $-2^{63} .. 2^{63}-1$ | 愛因斯坦廣義/狹義相對論原時時間膨脹累積偏移 |
+| **角度 (黃道/經緯)** | `angle_milli_deg: u32/i32` | $10^{-3}\text{ deg}$ | `0..360000` / $\pm 180000$ | 毫度：$180.5^\circ \to 180500$；黃道 1 宮 $= 30000$ 毫度 |
+| **角度 (角分)** | `angle_arcmin: u32` | $1/60\text{ deg}$ | `0 .. 21600` | 毫度轉角分純整數：$(\text{milli\_deg} \times 3) / 50$ |
+| **距離 (天文)** | `distance_au_fp4: u16/u32` | $10^{-4}\text{ AU}$ | `1 .. 65535` / `1e6` | 地日平均距離 $1.0000\text{ AU} \to 10000$ |
+| **距離 (局部站心)** | `local_enu_mm: i32` | $1\text{ mm} (10^{-3}\text{ m})$ | $-2\times 10^9 .. 2\times 10^9$ | 浮動原點 (Floating Origin) 毫米，消滅 32-bit 浮點抽搐 |
+| **容許度與比率** | `orb_tolerance_bp: u16/i16` | $0.01^\circ$ 或 $0.01\%$ | `0 .. 1500` / $\pm 10000$ | 基點 (Basis Points)：$1.5^\circ = 150\text{ bp} = 1500\text{ milli-deg}$ |
+| **吠陀第 (Tithi)** | `vedic_tithi_id: u8` | 1 | `1 .. 30` | 1..15 白月 (Shukla), 16..30 黑月 (Krishna) |
+| **吠陀宿 (Nakshatra)**| `vedic_nakshatra_id: u8` | 1 | `1 .. 27` | 1=Ashwini .. 27=Revati (每宿 800 角分) |
+| **吠陀足 (Pada)** | `vedic_pada_id: u8` | 1 | `1 .. 4` | 每足 200 角分，對應 D9 九分盤 (Navamsha) |
+| **分點歲差角秒** | `ayanamsha_arcsec: u32` | $1''$ ($1/3600\text{ deg}$) | `0 .. 1296000` | Lahiri J2000 = $85871''$ ($23^\circ 51' 11''$) |
+
+### 2. 三方同一把尺職責邊界
+
+1. **定義者（Architect）**：
+   - 撰寫 `specs/<name>.md`，依據度量衡表指定輸入定義域與型別。
+   - 必須提供不可篡改之確定性黃金向量區塊（` ```golden `），預期值來自國際規範或古籍公式，嚴禁跑錯代碼反填。
+2. **碼工／雲端農夫（Coder / Cloud Farmer）**：
+   - 實作 100% 純 Rust `std` 函式，檔案開頭標注 `## Map`，具名函式標注 `// @outputs: N` 與 `// @domain:`。
+   - **函式第一行剛性實作邊界守衛**：`if param < min || param > max { return None; }`，嚴禁裸 `panic!`。
+   - NASA JPL $\le 60$ 行、控制流巢狀 $\le 2$、零 `static mut`、禁止遞迴、全程防溢位。
+3. **用戶／AI 代理呼叫端（Consumer / Calling Agent）**：
+   - 呼叫子函數前，先在 [`CATALOG.yaml`](CATALOG.yaml) 檢索參數定義域與型別。
+   - **必須進行前置尺度縮放（Scale-Up）**：嚴禁傳入度數浮點，必須乘上比例因數轉為毫度整數。
+   - 所有回傳 `Option` 或 `Result` 必須安全解包，妥善處理極限邊界。
+   - 高速二進位串流一律對齊定長 32-Byte 封包（如 `CelestialPacket32`, `VedicEventPacket32`）。
+
+---
+
+## 四、快速使用範例
 
 ### 1. 引用方式 (在其他專案的 `Cargo.toml`)
 
@@ -170,7 +210,7 @@ fn main() {
 
 ---
 
-## 四、AI 代理專用機器索引（Machine-Readable Catalog）
+## 五、AI 代理專用機器索引（Machine-Readable Catalog）
 
 > **【甩手掌櫃免讀】** 本庫所有函式均已被結構化抽取至索引清單。  
 > AI 碼工代理在跨專案開發時，請直接讀取下列檔案即可在 O(1) 時間內獲得可用積木、型別簽章與邊界定義，無需逐一掃描各個 `.rs` 原始檔：
@@ -181,7 +221,7 @@ fn main() {
 
 ---
 
-## 五、倉庫容量與合約守門員（100% 純 Rust 內建守護）
+## 六、倉庫容量與合約守門員（100% 純 Rust 內建守護）
 
 為防止 AI 代理隨意提交二進位大檔或破壞 09 合約，本庫內建純 Rust 剛性守門員（`cargo run -- guard`）並接線至 Git `pre-commit` 與 `.agents/hooks.json`：
 
@@ -216,7 +256,7 @@ cargo run -- wish list
 
 ---
 
-## 六、多專案防撞車與核心策展管家協議（Curation & Integration）
+## 七、多專案防撞車與核心策展管家協議（Curation & Integration）
 
 為防止跨專案多 AI 代理並行上傳 Rust 代碼造成版本衝突與重複造輪子，本庫建立了「核心策展管家與防撞車協議」（詳見 [`docs/CURATION-AND-INTEGRATION.md`](docs/CURATION-AND-INTEGRATION.md)、[`docs/ZERO-TRUST-QUALITY-DIRECTOR.md`](docs/ZERO-TRUST-QUALITY-DIRECTOR.md)、[`docs/DUAL-AXIS-EVOLUTION-STRATEGY.md`](docs/DUAL-AXIS-EVOLUTION-STRATEGY.md)、[`docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md`](docs/QUALITY-PATROL-AND-AUTOMATION-SCHEDULE.md)、[`docs/TRANSPILATION-METHODOLOGY.md`](docs/TRANSPILATION-METHODOLOGY.md)、[`docs/HUNTING-HIGH-VALUE-BRICKS.md`](docs/HUNTING-HIGH-VALUE-BRICKS.md) 與 [`CONTRIBUTING.md`](CONTRIBUTING.md)）：
 
