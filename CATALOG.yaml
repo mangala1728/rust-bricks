@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 871
+total_functions: 873
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -405,6 +405,22 @@ modules:
           utc_hour: "[0.0..=24.0]"
           lat_deg: "[-90.0..=90.0]"
           lon_deg: "[-180.0..=180.0]"
+  - module: "astro_varga_super"
+    file: "src/astro_varga_super.rs"
+    functions_count: 2
+    architecture_map:
+    functions:
+      - name: "astro_super_varga_arcsec"
+        signature: "pub fn astro_super_varga_arcsec("
+        outputs: 1
+        domains:
+          sidereal_arcsec: "[0..=1296000]"
+          varga_n: "[1..=300]"
+      - name: "astro_pada_to_super_varga_steps"
+        signature: "pub fn astro_pada_to_super_varga_steps(varga_n: u16) -> Option<u16>"
+        outputs: 1
+        domains:
+          varga_n: "[1..=300]"
   - module: "audio_beamforming_doa"
     file: "src/audio_beamforming_doa.rs"
     functions_count: 10
