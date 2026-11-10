@@ -196,6 +196,96 @@ pub fn decode_celestial_packet_32(buf: &[u8; 32]) -> Option<CelestialPacket32> {
     })
 }
 
+pub const FLAG_SOLAR_RETURN: u16 = 0x0001;
+pub const FLAG_PRE_NATAL_EVENT: u16 = 0x0002;
+pub const FLAG_BTR_CALIBRATED: u16 = 0x0004;
+
+/// Bus 1 Canonical 32-Byte Vedic Life Event Packet.
+/// Layout: 8 + 4 + 4 + 4 + 4 + 4 + 2 + 2 = 32 Bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C, packed)]
+pub struct VedicEventPacket32 {
+    pub ts_us: u64,
+    pub lat_milli_deg: i32,
+    pub lon_milli_deg: i32,
+    pub ayanamsha_arcsec: u32,
+    pub dasha_packed: u32,
+    pub transit_summary_hash: u32,
+    pub event_category_code: u16,
+    pub flags: u16,
+}
+
+/// Serializes a `VedicEventPacket32` into a 32-byte fixed binary slice (Little-Endian).
+/// @outputs: 1
+pub fn encode_vedic_event_packet_32(pkt: &VedicEventPacket32) -> [u8; 32] {
+    let mut buf = [0u8; 32];
+    buf[0..8].copy_from_slice(&pkt.ts_us.to_le_bytes());
+    buf[8..12].copy_from_slice(&pkt.lat_milli_deg.to_le_bytes());
+    buf[12..16].copy_from_slice(&pkt.lon_milli_deg.to_le_bytes());
+    buf[16..20].copy_from_slice(&pkt.ayanamsha_arcsec.to_le_bytes());
+    buf[20..24].copy_from_slice(&pkt.dasha_packed.to_le_bytes());
+    buf[24..28].copy_from_slice(&pkt.transit_summary_hash.to_le_bytes());
+    buf[28..30].copy_from_slice(&pkt.event_category_code.to_le_bytes());
+    buf[30..32].copy_from_slice(&pkt.flags.to_le_bytes());
+    buf
+}
+
+/// Decodes a 32-byte fixed binary slice into a `VedicEventPacket32`.
+/// @outputs: 1
+pub fn decode_vedic_event_packet_32(buf: &[u8; 32]) -> Option<VedicEventPacket32> {
+    let mut ts_b = [0u8; 8];
+    ts_b.copy_from_slice(&buf[0..8]);
+    let ts_us = u64::from_le_bytes(ts_b);
+
+    let mut lat_b = [0u8; 4];
+    lat_b.copy_from_slice(&buf[8..12]);
+    let lat_milli_deg = i32::from_le_bytes(lat_b);
+    if lat_milli_deg < -90_000 || lat_milli_deg > 90_000 {
+        return None;
+    }
+
+    let mut lon_b = [0u8; 4];
+    lon_b.copy_from_slice(&buf[12..16]);
+    let lon_milli_deg = i32::from_le_bytes(lon_b);
+    if lon_milli_deg < -180_000 || lon_milli_deg > 180_000 {
+        return None;
+    }
+
+    let mut ayan_b = [0u8; 4];
+    ayan_b.copy_from_slice(&buf[16..20]);
+    let ayanamsha_arcsec = u32::from_le_bytes(ayan_b);
+    if ayanamsha_arcsec > 1_296_000 {
+        return None;
+    }
+
+    let mut dasha_b = [0u8; 4];
+    dasha_b.copy_from_slice(&buf[20..24]);
+    let dasha_packed = u32::from_le_bytes(dasha_b);
+
+    let mut hash_b = [0u8; 4];
+    hash_b.copy_from_slice(&buf[24..28]);
+    let transit_summary_hash = u32::from_le_bytes(hash_b);
+
+    let mut cat_b = [0u8; 2];
+    cat_b.copy_from_slice(&buf[28..30]);
+    let event_category_code = u16::from_le_bytes(cat_b);
+
+    let mut flg_b = [0u8; 2];
+    flg_b.copy_from_slice(&buf[30..32]);
+    let flags = u16::from_le_bytes(flg_b);
+
+    Some(VedicEventPacket32 {
+        ts_us,
+        lat_milli_deg,
+        lon_milli_deg,
+        ayanamsha_arcsec,
+        dasha_packed,
+        transit_summary_hash,
+        event_category_code,
+        flags,
+    })
+}
+
 /// Bus 2 Bitemporal Ephemeris Stratigraphy Record.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EphemerisRecord {
@@ -383,5 +473,30 @@ mod tests {
         let tsv = format_ephemeris_tsv(&rec);
         let parsed = parse_ephemeris_tsv(&tsv).expect("tsv parse failed");
         assert_eq!(rec, parsed);
+    }
+
+    #[test]
+    /// @outputs: 1
+    fn test_vedic_event_packet_32_roundtrip() {
+        assert_eq!(std::mem::size_of::<VedicEventPacket32>(), 32);
+
+        let pkt = VedicEventPacket32 {
+            ts_us: 1_700_000_000_987_654,
+            lat_milli_deg: 25_033,
+            lon_milli_deg: 121_565,
+            ayanamsha_arcsec: 85_871,
+            dasha_packed: 0x0001_0703,
+            transit_summary_hash: 0xABCD_1234,
+            event_category_code: 101,
+            flags: FLAG_PRE_NATAL_EVENT | FLAG_BTR_CALIBRATED,
+        };
+
+        let encoded = encode_vedic_event_packet_32(&pkt);
+        assert_eq!(encoded.len(), 32);
+
+        let decoded = decode_vedic_event_packet_32(&encoded).unwrap();
+        assert_eq!(decoded, pkt);
+        let flg = decoded.flags;
+        assert_eq!(flg & FLAG_PRE_NATAL_EVENT, FLAG_PRE_NATAL_EVENT);
     }
 }

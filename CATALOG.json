@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 864,
+  "total_functions": 871,
   "modules": [
     {
       "module": "agent_terminal",
@@ -351,6 +351,62 @@
           "name": "analyzer_can_bit_timing_sample_point",
           "signature": "pub fn analyzer_can_bit_timing_sample_point(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_historical_dst",
+      "file": "src/astro_historical_dst.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "astro_clock_to_utc_seconds",
+          "signature": "pub fn astro_clock_to_utc_seconds(",
+          "outputs": 1
+        },
+        {
+          "name": "astro_validate_historical_dst",
+          "signature": "pub fn astro_validate_historical_dst(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_pipeline",
+      "file": "src/astro_pipeline.rs",
+      "functions_count": 3,
+      "functions": [
+        {
+          "name": "encode_vedic_event_packet_32",
+          "signature": "pub fn encode_vedic_event_packet_32(pkt: &VedicEventPacket32) -> [u8; 32]",
+          "outputs": 1
+        },
+        {
+          "name": "decode_vedic_event_packet_32",
+          "signature": "pub fn decode_vedic_event_packet_32(buf: &[u8; 32]) -> Option<VedicEventPacket32>",
+          "outputs": 1
+        },
+        {
+          "name": "verify_signed_bitemporal",
+          "signature": "pub fn verify_signed_bitemporal(event_ts: i64, public_ts: i64, sim_ts: i64) -> bool",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_prenatal_dasha",
+      "file": "src/astro_prenatal_dasha.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "astro_vimshottari_reverse_step",
+          "signature": "pub fn astro_vimshottari_reverse_step(",
+          "outputs": 1
+        },
+        {
+          "name": "astro_btr_varga_subdivision",
+          "signature": "pub fn astro_btr_varga_subdivision(",
+          "outputs": 1
         }
       ]
     },
