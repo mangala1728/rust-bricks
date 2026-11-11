@@ -140,7 +140,7 @@
 | 領域代號 | 領域名稱 | 核心工程價值 | 規範與演算法 | 預計模組名 |
 | :--- | :--- | :--- | :--- | :--- |
 | **ASTRO-01** | 純整數 Tithi 與月相百分比計算 | 純整數毫度計算 30 Tithi (1..30) 與月相百分比 (0..100) | $\Delta = (M + 360000 - S) \pmod{360000} / 12000 + 1$ | `astro_panchanga_tithi` |
-| **ASTRO-02** | 27 宿與 4 足 (Nakshatra & Pada) | 月球經度轉角分純整數計算 27 宿與 4 足 (D9 Navamsha) | $M_{\text{min}} = M \times 3 / 50$; $Nak = M_{\text{min}} / 800 + 1$ | `astro_panchanga_nakshatra` |
+| **ASTRO-02** | 27 宿與 4 足 (Nakshatra & Pada) | 月球經度轉角分純整數計算 27 宿與 4 足 (D9 Navamsha) | $M_{\text{min}} = M \times 3 / 50$; $Nak = M_{\text{min}} / 800 + 1$ | `astro_panchanga_nakshatra` | ✅ 已入庫 (雲端農夫收割) |
 | **ASTRO-03** | 27 曜與 60 關 (Yoga & Karana) | 日月經度和與半 Tithi 關位純整數計算 | $Yoga = (S_{\text{min}} + M_{\text{min}}) \pmod{21600} / 800 + 1$ | `astro_panchanga_yoga_karana` |
 | **ASTRO-04** | 缺日與增日檢測 (Kshaya / Vriddhi) | 比對日出日落時間戳記判定無日出之虧日或跨雙日出之增日 | 比較 `ts_sunrise_curr` 與 `ts_sunrise_next` 之包含性 | `astro_tithi_special_detector` |
 | **ASTRO-05** | Vimshottari 運限 32-bit 位元封裝 | 大運/小運/次小運/微運/呼吸運多層階梯式整數壓縮編解碼 | 5 層 4-bit + 12-bit 餘量封裝至 `dasha_packed: u32` | `astro_vimshottari_dasha` |

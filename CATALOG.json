@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 878,
+  "total_functions": 879,
   "modules": [
     {
       "module": "agent_terminal",
@@ -384,6 +384,18 @@
         {
           "name": "astro_validate_historical_dst",
           "signature": "pub fn astro_validate_historical_dst(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_panchanga_nakshatra",
+      "file": "src/astro_panchanga_nakshatra.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "astro_panchanga_nakshatra",
+          "signature": "pub fn astro_panchanga_nakshatra(moon_milli_deg: u32) -> Option<(u8, u8, u16)>",
           "outputs": 1
         }
       ]
