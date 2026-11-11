@@ -186,7 +186,14 @@ fn evidence_redacts_keys_and_summaries_parse() {
 }
 
 fn git(dir: &Path, args: &[&str]) -> String {
-    let out = Command::new("git").args(args).current_dir(dir).output();
+    let out = Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .env_remove("GIT_DIR")
+        .env_remove("GIT_INDEX_FILE")
+        .env_remove("GIT_WORK_TREE")
+        .env_remove("GIT_PREFIX")
+        .output();
     match out {
         Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
         Ok(o) => panic!("git {:?} 失敗：{}", args, String::from_utf8_lossy(&o.stderr)),

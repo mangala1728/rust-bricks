@@ -727,7 +727,7 @@ pub fn scan_queue(repo_root: &Path) -> Vec<QueueEntry> {
     let mut specs: Vec<String> = fs::read_dir(repo_root.join("specs"))
         .map(|rd| rd.flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect())
         .unwrap_or_default();
-    specs.retain(|n| n.ends_with(".md") && n != "template.md");
+    specs.retain(|n| n.ends_with(".md") && n != "template.md" && n != "README.md");
     specs.sort();
     let claimed = claimed_modules(repo_root);
     let mut out = Vec::new();
