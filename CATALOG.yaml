@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 879
+total_functions: 880
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -379,6 +379,17 @@ modules:
         outputs: 1
         domains:
           moon_milli_deg: "[0..360000]"
+  - module: "astro_panchanga_tithi"
+    file: "src/astro_panchanga_tithi.rs"
+    functions_count: 1
+    architecture_map:
+    functions:
+      - name: "astro_panchanga_tithi"
+        signature: "pub fn astro_panchanga_tithi(moon_milli_deg: u32, sun_milli_deg: u32) -> Option<(u8, u16)>"
+        outputs: 1
+        domains:
+          moon_milli_deg: "[0..360000]"
+          sun_milli_deg: "[0..360000]"
   - module: "astro_pipeline"
     file: "src/astro_pipeline.rs"
     functions_count: 3
