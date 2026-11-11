@@ -144,7 +144,7 @@
 | **ASTRO-03** | 27 曜與 60 關 (Yoga & Karana) | 日月經度和與半 Tithi 關位純整數計算 | $Yoga = (S_{\text{min}} + M_{\text{min}}) \pmod{21600} / 800 + 1$ | `astro_panchanga_yoga_karana` |
 | **ASTRO-04** | 缺日與增日檢測 (Kshaya / Vriddhi) | 比對日出日落時間戳記判定無日出之虧日或跨雙日出之增日 | 比較 `ts_sunrise_curr` 與 `ts_sunrise_next` 之包含性 | `astro_tithi_special_detector` |
 | **ASTRO-05** | Vimshottari 運限 32-bit 位元封裝 | 大運/小運/次小運/微運/呼吸運多層階梯式整數壓縮編解碼 | 5 層 4-bit + 12-bit 餘量封裝至 `dasha_packed: u32` | `astro_vimshottari_dasha` |
-| **ASTRO-06** | 歲差與恆星/熱帶黃道轉換 | 支援 Lahiri, KP, Raman, Fagan-Bradley, Yukteshwar 歲差角秒轉換 | $\lambda_{\text{sidereal}} = (\lambda_{\text{tropical}} + 360000 - \text{Ayanamsha}) \pmod{360000}$ | `astro_ayanamsha_converter` |
+| **ASTRO-06** | 歲差與恆星/熱帶黃道轉換 | 支援 Lahiri, KP, Raman, Fagan-Bradley, Yukteshwar 歲差角秒轉換 | $\lambda_{\text{sidereal}} = (\lambda_{\text{tropical}} + 360000 - \text{Ayanamsha}) \pmod{360000}$ | `astro_ayanamsha_converter` | ✅ 已入庫 (雲端農夫收割) |
 | **ASTRO-07** | 行星留與逆行轉換狀態機 | 根據黃道每日日視速度符號與門檻判定順行/逆行/停滯 | 遲滯雙門檻判定留 (Stationary) 與逆行開始/結束 | `astro_planetary_station` |
 | **ASTRO-08** | 局部站心座標系 (ENU) 毫米旋轉 | 浮動原點 (Floating Origin) 消除 VR 與街景 32-bit 浮點抽搐 | 觀測者腳下為 (0,0,0)，毫米整數轉換 | `geo_enu_floating_origin` |
 | **ASTRO-09** | 相對論皮秒時間膨脹偏移 | 根據高度差 (重力場) 與載具速度計算愛因斯坦原時膨脹 | $\Delta \tau = \int (1 - gh/c^2 - v^2/2c^2) dt$ (皮秒整數) | `phys_relativistic_drift_ps` |

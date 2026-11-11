@@ -13,6 +13,7 @@ pub mod ai_tensor_gemm;
 pub mod ai_tensor_train;
 pub mod ai_transformer_attention;
 pub mod analyzer_sigrok_protocol;
+pub mod astro_ayanamsha_converter;
 pub mod astro_historical_dst;
 pub mod astro_pipeline;
 pub mod astro_prenatal_dasha;

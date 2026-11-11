@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 876
+total_functions: 878
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -331,6 +331,23 @@ modules:
           prop_seg: "[1, 8]"
           phase_seg1: "[1, 8]"
           phase_seg2: "[1, 8]"
+  - module: "astro_ayanamsha_converter"
+    file: "src/astro_ayanamsha_converter.rs"
+    functions_count: 2
+    architecture_map:
+    functions:
+      - name: "astro_tropical_to_sidereal"
+        signature: "pub fn astro_tropical_to_sidereal("
+        outputs: 1
+        domains:
+          tropical_milli_deg: "[0..360000]"
+          ayanamsha_arcsec: "[0..1296000]"
+      - name: "astro_sidereal_to_tropical"
+        signature: "pub fn astro_sidereal_to_tropical("
+        outputs: 1
+        domains:
+          sidereal_milli_deg: "[0..360000]"
+          ayanamsha_arcsec: "[0..1296000]"
   - module: "astro_historical_dst"
     file: "src/astro_historical_dst.rs"
     functions_count: 2

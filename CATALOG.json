@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 876,
+  "total_functions": 878,
   "modules": [
     {
       "module": "agent_terminal",
@@ -351,6 +351,23 @@
           "name": "analyzer_can_bit_timing_sample_point",
           "signature": "pub fn analyzer_can_bit_timing_sample_point(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_ayanamsha_converter",
+      "file": "src/astro_ayanamsha_converter.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "astro_tropical_to_sidereal",
+          "signature": "pub fn astro_tropical_to_sidereal(",
+          "outputs": 1
+        },
+        {
+          "name": "astro_sidereal_to_tropical",
+          "signature": "pub fn astro_sidereal_to_tropical(",
+          "outputs": 1
         }
       ]
     },
