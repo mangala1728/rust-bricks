@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 879
+total_functions: 884
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3939,6 +3939,48 @@ modules:
         outputs: 2
         domains:
           total_span: "[0.0..10000.0]"
+  - module: "osint_compliance_fcc"
+    file: "src/osint_compliance_fcc.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: core/osint_compliance_fcc — Bus 3 慢速反爬蟲 FCC / NCC / 專利情報採集與相依邊推導純函數積木。"
+      - "Inputs: FCC / 專利認證中繼資料、保密狀態、頻譜與功率、供應鏈實體代碼。"
+      - "Outputs: Bus 3 ChronicleNode / CausalEdge TSV 行字串、供應鏈 target ID、解密破梗評分。"
+      - "Invariants: 零全域可變狀態、零外部第三方依賴、無遞迴、控制流巢狀深度 <= 2、100% 符合 09 號合約。"
+    functions:
+      - name: "sanitize_chronicle_slug"
+        signature: "pub fn sanitize_chronicle_slug(raw: &str) -> String"
+        outputs: 1
+      - name: "generate_chronicle_node_tsv"
+        signature: "pub fn generate_chronicle_node_tsv("
+        outputs: 2
+        domains:
+          node_id: "[1..1000000]"
+          known_ts: "[1..2000000000]"
+          cadence: "[1..10]"
+          entity: "[1..1000000]"
+          facets: "[0..127]"
+          score: "[1..5]"
+          bottleneck: "[0..10]"
+      - name: "generate_causal_edge_tsv"
+        signature: "pub fn generate_causal_edge_tsv("
+        outputs: 2
+        domains:
+          edge_id: "[1..100000000]"
+          from_id: "[1..1000000]"
+          to_id: "[1..100000000]"
+          lag_days: "[0..3650]"
+          score: "[1..5]"
+          discovered_ts: "[1..2000000000]"
+      - name: "evaluate_fcc_filing_score"
+        signature: "pub fn evaluate_fcc_filing_score(is_unsealed: bool, freq_mhz: u32, power_dbm: f32) -> u8"
+        outputs: 2
+        domains:
+          freq_mhz: "[0..300000]"
+          power_dbm: "[-100..100]"
+      - name: "derive_supplier_target_id"
+        signature: "pub fn derive_supplier_target_id(supplier_ticker: &str) -> u32"
+        outputs: 1
   - module: "packet_checksum"
     file: "src/packet_checksum.rs"
     functions_count: 6

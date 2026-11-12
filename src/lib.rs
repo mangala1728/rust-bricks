@@ -150,6 +150,7 @@ pub mod nmea0183_gprmc;
 pub mod nmea2000_fast_packet;
 pub mod numerical_optimization_gradient;
 pub mod office_calc_layout;
+pub mod osint_compliance_fcc;
 pub mod packet_checksum;
 pub mod pcb_cad_fem;
 pub mod physics_gjk_epa_contact;

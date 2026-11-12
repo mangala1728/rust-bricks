@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 879,
+  "total_functions": 884,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3930,6 +3930,38 @@
           "name": "ppt_distribute_elements_1d",
           "signature": "pub fn ppt_distribute_elements_1d(element_sizes: &[f32], total_span: f32, out_positions: &mut [f32]) -> bool",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "osint_compliance_fcc",
+      "file": "src/osint_compliance_fcc.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "sanitize_chronicle_slug",
+          "signature": "pub fn sanitize_chronicle_slug(raw: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "generate_chronicle_node_tsv",
+          "signature": "pub fn generate_chronicle_node_tsv(",
+          "outputs": 2
+        },
+        {
+          "name": "generate_causal_edge_tsv",
+          "signature": "pub fn generate_causal_edge_tsv(",
+          "outputs": 2
+        },
+        {
+          "name": "evaluate_fcc_filing_score",
+          "signature": "pub fn evaluate_fcc_filing_score(is_unsealed: bool, freq_mhz: u32, power_dbm: f32) -> u8",
+          "outputs": 2
+        },
+        {
+          "name": "derive_supplier_target_id",
+          "signature": "pub fn derive_supplier_target_id(supplier_ticker: &str) -> u32",
+          "outputs": 1
         }
       ]
     },
