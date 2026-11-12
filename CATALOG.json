@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 892,
+  "total_functions": 894,
   "modules": [
     {
       "module": "agent_terminal",
@@ -486,6 +486,23 @@
         {
           "name": "astro_pada_to_super_varga_steps",
           "signature": "pub fn astro_pada_to_super_varga_steps(varga_n: u16) -> Option<u16>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_vimshottari_dasha",
+      "file": "src/astro_vimshottari_dasha.rs",
+      "functions_count": 2,
+      "functions": [
+        {
+          "name": "astro_vimshottari_dasha_pack",
+          "signature": "pub fn astro_vimshottari_dasha_pack(",
+          "outputs": 1
+        },
+        {
+          "name": "astro_vimshottari_dasha_unpack",
+          "signature": "pub fn astro_vimshottari_dasha_unpack(packed: u32) -> (u8, u8, u8, u8, u8, u16)",
           "outputs": 1
         }
       ]

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 892
+total_functions: 894
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -469,6 +469,28 @@ modules:
         outputs: 1
         domains:
           varga_n: "[1..=300]"
+  - module: "astro_vimshottari_dasha"
+    file: "src/astro_vimshottari_dasha.rs"
+    functions_count: 2
+    architecture_map:
+      - "Role:   Pure‑Rust packing / unpacking of Vimshottari Dasha data."
+      - "Inputs: maha, antar, prat, sookshma, prana ∈ 1..=9, balance_permille ∈ 0..=4095"
+      - "Outputs: 1 packed u32, or unpacked tuple."
+      - "Invariants: each field fits its allocated bit‑width, no overflow, no panics."
+    functions:
+      - name: "astro_vimshottari_dasha_pack"
+        signature: "pub fn astro_vimshottari_dasha_pack("
+        outputs: 1
+        domains:
+          maha: "[1..9]"
+          antar: "[1..9]"
+          prat: "[1..9]"
+          sookshma: "[1..9]"
+          prana: "[1..9]"
+          balance_permille: "[0..4095]"
+      - name: "astro_vimshottari_dasha_unpack"
+        signature: "pub fn astro_vimshottari_dasha_unpack(packed: u32) -> (u8, u8, u8, u8, u8, u16)"
+        outputs: 1
   - module: "audio_beamforming_doa"
     file: "src/audio_beamforming_doa.rs"
     functions_count: 10

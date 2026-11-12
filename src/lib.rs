@@ -21,6 +21,7 @@ pub mod astro_prenatal_dasha;
 pub mod astro_solar_zenith_angle;
 pub mod astro_varga_cusp_analysis;
 pub mod astro_varga_super;
+pub mod astro_vimshottari_dasha;
 pub mod audio_beamforming_doa;
 pub mod audio_dsp;
 pub mod audio_mfcc_pitch;
