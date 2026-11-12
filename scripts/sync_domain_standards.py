@@ -27,7 +27,19 @@ if hasattr(sys.stdout, "reconfigure"):
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_DIR = REPO_ROOT / "portable" / "domain-pipe-standards"
-UPSTREAM_DIR = Path("C:/For Gemini/digital-historian/portable/domain-pipe-standards")
+
+
+def resolve_upstream_dir() -> Path:
+    env_dir = os.environ.get("UPSTREAM_STANDARDS_DIR")
+    if env_dir:
+        return Path(env_dir)
+    sibling = REPO_ROOT.parent / "digital-historian" / "portable" / "domain-pipe-standards"
+    if sibling.exists():
+        return sibling
+    return Path("C:/For Gemini/digital-historian/portable/domain-pipe-standards")
+
+
+UPSTREAM_DIR = resolve_upstream_dir()
 
 
 def calc_sha256(path: Path) -> str:

@@ -44,7 +44,11 @@ install_deps_rhel() {
     sudo dnf install -y curl git python3 python3-pip jq openssl-devel || sudo yum install -y curl git python3 python3-pip jq openssl-devel
 }
 
-if command -v apt-get >/dev/null 2>&1; then
+if command -v gcc >/dev/null 2>&1 && command -v git >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+    echo -e "${GREEN}必備編譯工具 (gcc, git, python3) 已就緒，跳過系統套件安裝。${NC}"
+elif [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+    echo -e "${YELLOW}⚠️ 無 sudo 權限，依賴使用者空間已預裝之工具鏈。${NC}"
+elif command -v apt-get >/dev/null 2>&1; then
     install_deps_debian
 elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
     install_deps_rhel
@@ -66,7 +70,9 @@ fi
 
 # 3. 建立雲端專案主目錄
 echo -e "\n${BLUE}[Step 3/6] 佈局專案目錄與倉庫克隆...${NC}"
-BASE_DIR="${CLOUD_WORKSPACE_DIR:-$HOME/workspace}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+BASE_DIR="${CLOUD_WORKSPACE_DIR:-$(cd "$REPO_DIR/.." && pwd)}"
 mkdir -p "$BASE_DIR"
 cd "$BASE_DIR"
 echo -e "主工作區路徑: ${CYAN}$BASE_DIR${NC}"
@@ -75,15 +81,19 @@ echo -e "主工作區路徑: ${CYAN}$BASE_DIR${NC}"
 if [ ! -d "$BASE_DIR/rust-bricks" ]; then
     echo -e "正在克隆主微積木庫 rust-bricks..."
     git clone https://github.com/mangala1728/rust-bricks.git "$BASE_DIR/rust-bricks"
+elif [ "$BASE_DIR/rust-bricks" -ef "$REPO_DIR" ]; then
+    echo -e "目前正位於主微積木庫: ${GREEN}$REPO_DIR${NC}"
 else
     echo -e "更新現有 rust-bricks..."
-    git -C "$BASE_DIR/rust-bricks" pull origin main
+    git -C "$BASE_DIR/rust-bricks" pull origin main || true
 fi
 
 # 檢查或提示 digital-historian
 if [ ! -d "$BASE_DIR/digital-historian" ]; then
     echo -e "${YELLOW}ℹ️ digital-historian 尚未在同層目錄。若您有獨立遠端倉庫，可執行：${NC}"
     echo -e "   git clone <digital-historian-url> \"$BASE_DIR/digital-historian\""
+else
+    echo -e "檢測到延伸專案: ${GREEN}$BASE_DIR/digital-historian${NC}"
 fi
 
 # 4. 配置環境變數模板
