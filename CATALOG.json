@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 879,
+  "total_functions": 880,
   "modules": [
     {
       "module": "agent_terminal",
@@ -396,6 +396,18 @@
         {
           "name": "astro_panchanga_nakshatra",
           "signature": "pub fn astro_panchanga_nakshatra(moon_milli_deg: u32) -> Option<(u8, u8, u16)>",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_panchanga_yoga_karana",
+      "file": "src/astro_panchanga_yoga_karana.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "astro_panchanga_yoga_karana",
+          "signature": "pub fn astro_panchanga_yoga_karana(moon_milli_deg: u32, sun_milli_deg: u32) -> Option<(u8, u8)>",
           "outputs": 1
         }
       ]
