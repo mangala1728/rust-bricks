@@ -2,6 +2,7 @@
 
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](#)
 [![09 Contract Compliant](https://img.shields.io/badge/09--contract-100%25-blue.svg)](#)
+[![Pure Bricks](https://img.shields.io/badge/bricks-890_pure_functions-purple.svg)](#)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#)
 
 > **「不求快開發，一切以狀態可窮舉、邊界可靜態驗證、出事 3 分鐘內定位為最高原則。」**  
@@ -132,6 +133,8 @@
 | [`thermal_pid`](src/thermal_pid.rs) | 抗積分飽和 PID 閉環控制器、10k NTC 阻值轉攝氏度、人眼對數視覺 PWM 映射、電功率計算 | 恆溫烙鐵/烘烤箱韌體、智能溫控濕度箱、LED 呼吸燈、電量監控 |
 | [`text_cleaner`](src/text_cleaner.rs) | UTF-8 邊界安全截斷、字詞邊界智能折行、CJK 字元計數 | 字幕視線居中 (RSVP)、翻譯文字流緩衝管理 |
 | [`json_repair`](src/json_repair.rs) | 大模型輸出 JSON 容錯修復（去 Markdown 圍欄、合併前導引號、自動補逗點、內部引號跳脫、尾逗點丟棄、溢出括號清理） | AI 代理結構化輸出解析、即時口譯 App、端側 LLM 輸出清洗 |
+| [`decision_systemone`](src/decision_systemone.rs) | System One 輕量決策模型 (Verdict: Allow/Block/Escalate)、微微秒風險評估、發票金額與統編確定性對齊、Modal 帳單快照解析與 $30 免費額度健康守衛 | AI 代理 Hook 防禦攔截、發票自動核銷對齊、雲端 Serverless GPU 帳單配額管理 |
+| [`osint_compliance_fcc`](src/osint_compliance_fcc.rs) | FCC OSINT 認證情報採集與 TSV 生成、5 星供應鏈相依邊衍生、合規評分與識別碼解密 | 工業情報採集、硬體供應鏈相依分析、FCC 設備認證破梗與知識圖譜生成 |
 
 ---
 
