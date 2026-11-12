@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 884,
+  "total_functions": 890,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1694,6 +1694,43 @@
           "name": "decision_bellman_optimality_step",
           "signature": "pub fn decision_bellman_optimality_step(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "decision_systemone",
+      "file": "src/decision_systemone.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "as_str",
+          "signature": "pub fn as_str(&self) -> &'static str",
+          "outputs": 4
+        },
+        {
+          "name": "sanitize_state_text",
+          "signature": "pub fn sanitize_state_text(text: &str, max_len: usize) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "evaluate_probabilities",
+          "signature": "pub fn evaluate_probabilities(",
+          "outputs": 3
+        },
+        {
+          "name": "extract_choice_from_json",
+          "signature": "pub fn extract_choice_from_json(json_str: &str) -> (DecisionVerdict, f64)",
+          "outputs": 2
+        },
+        {
+          "name": "verify_invoice_match",
+          "signature": "pub fn verify_invoice_match(",
+          "outputs": 2
+        },
+        {
+          "name": "parse_modal_billing_summary",
+          "signature": "pub fn parse_modal_billing_summary(json_str: &str) -> (f64, f64, f64, bool)",
+          "outputs": 4
         }
       ]
     },

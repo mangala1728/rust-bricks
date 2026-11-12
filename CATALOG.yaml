@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 884
+total_functions: 890
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1583,6 +1583,41 @@ modules:
         domains:
           alpha: "[0.0, 1.0]"
           gamma: "[0.0, 1.0]"
+  - module: "decision_systemone"
+    file: "src/decision_systemone.rs"
+    functions_count: 6
+    architecture_map:
+    functions:
+      - name: "as_str"
+        signature: "pub fn as_str(&self) -> &'static str"
+        outputs: 4
+      - name: "sanitize_state_text"
+        signature: "pub fn sanitize_state_text(text: &str, max_len: usize) -> String"
+        outputs: 1
+        domains:
+          max_len: "[100..10000]"
+      - name: "evaluate_probabilities"
+        signature: "pub fn evaluate_probabilities("
+        outputs: 3
+        domains:
+          p_allow: "[0.0..1.0]"
+          p_block: "[0.0..1.0]"
+          p_escalate: "[0.0..1.0]"
+          block_thresh: "[0.5..1.0]"
+          escalate_thresh: "[0.4..1.0]"
+      - name: "extract_choice_from_json"
+        signature: "pub fn extract_choice_from_json(json_str: &str) -> (DecisionVerdict, f64)"
+        outputs: 2
+      - name: "verify_invoice_match"
+        signature: "pub fn verify_invoice_match("
+        outputs: 2
+        domains:
+          claimed_amt: "[0.0..100000000.0]"
+          inv_amt: "[0.0..100000000.0]"
+          max_diff: "[0.0..10.0]"
+      - name: "parse_modal_billing_summary"
+        signature: "pub fn parse_modal_billing_summary(json_str: &str) -> (f64, f64, f64, bool)"
+        outputs: 4
   - module: "dlt_extended_header"
     file: "src/dlt_extended_header.rs"
     functions_count: 1

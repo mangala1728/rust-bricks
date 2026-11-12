@@ -54,6 +54,7 @@ pub mod crypto_vault;
 pub mod curve_fit_trend;
 pub mod decision_mcts;
 pub mod decision_minimax_alphabeta;
+pub mod decision_systemone;
 pub mod dlt_extended_header;
 pub mod dlt_protocol_header;
 pub mod doc_layout_typography;
