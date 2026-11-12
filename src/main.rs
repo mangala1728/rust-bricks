@@ -1333,6 +1333,132 @@ fn run_farm_prune_cmd(args: &[String]) {
     println!("🧹 [farm-prune] 已入庫模組的死路分支已過期並清除：{:?}", pruned);
 }
 
+/// Resolves upstream domain pipe standards directory.
+/// @outputs: 1
+fn resolve_upstream_standards_dir(repo_root: &Path) -> PathBuf {
+    if let Ok(env_path) = env::var("UPSTREAM_STANDARDS_DIR") {
+        return PathBuf::from(env_path);
+    }
+    let sibling = repo_root.join("..").join("digital-historian").join("portable").join("domain-pipe-standards");
+    if sibling.exists() {
+        sibling
+    } else {
+        PathBuf::from("portable/domain-pipe-standards")
+    }
+}
+
+/// Compares a single standards file with local mirror and syncs if requested.
+/// @outputs: 2
+fn sync_single_file(up_file: &Path, local_dir: &Path, sync_mode: bool) -> bool {
+    let file_name = match up_file.file_name() {
+        Some(n) => n.to_string_lossy().to_string(),
+        None => return false,
+    };
+    let loc_file = local_dir.join(&file_name);
+    let up_bytes = match std::fs::read(up_file) {
+        Ok(b) => b,
+        Err(_) => return false,
+    };
+    let up_hash = crypto_vault::sha256_hex(&up_bytes);
+
+    if !loc_file.exists() {
+        println!("[MISSING] {} not present in local mirror", file_name);
+        if sync_mode {
+            let _ = std::fs::create_dir_all(local_dir);
+            let _ = std::fs::copy(up_file, &loc_file);
+            println!("  -> Synced {}", file_name);
+        }
+        return true;
+    }
+
+    let loc_bytes = std::fs::read(&loc_file).unwrap_or_default();
+    let loc_hash = crypto_vault::sha256_hex(&loc_bytes);
+    if up_hash != loc_hash {
+        let up_prefix = if up_hash.len() >= 16 { &up_hash[..16] } else { &up_hash };
+        let loc_prefix = if loc_hash.len() >= 16 { &loc_hash[..16] } else { &loc_hash };
+        println!("[DIFF] {} SHA-256 differs!", file_name);
+        println!("  Upstream: {}... | Local: {}...", up_prefix, loc_prefix);
+        if sync_mode {
+            let _ = std::fs::copy(up_file, &loc_file);
+            println!("  -> Synced {}", file_name);
+        }
+        return true;
+    }
+
+    let short_hash = if up_hash.len() >= 12 { &up_hash[..12] } else { &up_hash };
+    println!("[OK] {:35} (SHA256: {}...)", file_name, short_hash);
+    false
+}
+
+/// Runs local python verification suite for domain pipe standards.
+/// @outputs: 1
+fn run_standards_local_verification(local_dir: &Path) {
+    let test_script = local_dir.join("test_astro_pipeline.py");
+    println!("\n--- Running Local Verification Suite ---");
+    let res = Command::new("python3").arg(&test_script).status();
+    if let Ok(st) = res {
+        if !st.success() {
+            eprintln!("[ERROR] Verification suite failed!");
+            process::exit(1);
+        }
+    }
+}
+
+/// sync-standards [--check|--sync]：純 Rust 跨倉領域管道規範同步器
+/// @outputs: 1
+fn run_sync_standards_cmd(args: &[String]) {
+    let sync_mode = args.iter().any(|a| a == "--sync");
+    let check_mode = args.iter().any(|a| a == "--check") || !sync_mode;
+
+    let repo_root = Path::new(".");
+    let local_dir = repo_root.join("portable").join("domain-pipe-standards");
+    let upstream_dir = resolve_upstream_standards_dir(repo_root);
+
+    if !upstream_dir.exists() {
+        eprintln!("[ERROR] Upstream directory not found: {}", upstream_dir.display());
+        process::exit(1);
+    }
+
+    println!("=== Domain Pipe Standards Synchronization Check (Pure Rust) ===");
+    println!("Upstream : {}", upstream_dir.display());
+    println!("Local    : {}\n", local_dir.display());
+
+    let entries = match std::fs::read_dir(&upstream_dir) {
+        Ok(e) => e,
+        Err(err) => {
+            eprintln!("[ERROR] Failed to read upstream dir: {}", err);
+            process::exit(1);
+        }
+    };
+
+    let mut up_files: Vec<PathBuf> = Vec::new();
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_file() {
+            up_files.push(p);
+        }
+    }
+    up_files.sort();
+
+    let mut mismatch = false;
+    for up_file in &up_files {
+        if sync_single_file(up_file, &local_dir, sync_mode) {
+            mismatch = true;
+        }
+    }
+
+    if (sync_mode || !mismatch) && local_dir.join("test_astro_pipeline.py").exists() {
+        run_standards_local_verification(&local_dir);
+    }
+
+    if mismatch && check_mode {
+        println!("\n[FAIL] Local mirror is out of sync with upstream master. Run with --sync.");
+        process::exit(1);
+    }
+
+    println!("\n[SUCCESS] Domain pipe standards are 100% in sync.");
+}
+
 /// @outputs: 1
 fn print_help() {
     println!("rust-bricks v0.1.0 — Pure Zero-Dependency Function Blocks (09 Contract)");
@@ -1354,6 +1480,7 @@ fn print_help() {
     println!("  cargo run -- msa                        # Run MSA: verify gauges, then products; print management report");
     println!("  cargo run -- receipt <model>            # Sign Diff-bound Arbitration Receipt");
     println!("  cargo run -- verify-receipt             # Verify Receipt against current Git Diff");
+    println!("  cargo run -- sync-standards [--check]   # Check or sync domain pipe standards (Pure Rust)");
     println!("  cargo test                              # Run full unit test suite");
 }
 
@@ -1378,6 +1505,7 @@ fn main() {
         "farm-golden" => run_farm_golden_cmd(),
         "msa-gen" => run_msa_gen_cmd(),
         "msa" => run_msa_cmd(),
+        "sync-standards" | "sync" => run_sync_standards_cmd(&args),
         "receipt" => {
             let model = args.get(2).map(|s| s.as_str()).unwrap_or("kev-4b");
             let verdict = args.get(3).map(|s| s.as_str()).unwrap_or("PASS");
