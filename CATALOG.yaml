@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 890
+total_functions: 892
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -1585,7 +1585,7 @@ modules:
           gamma: "[0.0, 1.0]"
   - module: "decision_systemone"
     file: "src/decision_systemone.rs"
-    functions_count: 6
+    functions_count: 8
     architecture_map:
     functions:
       - name: "as_str"
@@ -1617,6 +1617,16 @@ modules:
           max_diff: "[0.0..10.0]"
       - name: "parse_modal_billing_summary"
         signature: "pub fn parse_modal_billing_summary(json_str: &str) -> (f64, f64, f64, bool)"
+        outputs: 4
+      - name: "recommend_hardware_mode"
+        signature: "pub fn recommend_hardware_mode("
+        outputs: 3
+        domains:
+          vram_mb: "[0..1000000]"
+          ram_gb: "[0.0..10000.0]"
+          ram_load_percent: "[0..100]"
+      - name: "parse_config_active_mode"
+        signature: "pub fn parse_config_active_mode(yaml_str: &str) -> &'static str"
         outputs: 4
   - module: "dlt_extended_header"
     file: "src/dlt_extended_header.rs"

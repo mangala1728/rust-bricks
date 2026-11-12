@@ -199,6 +199,54 @@ pub fn parse_modal_billing_summary(json_str: &str) -> (f64, f64, f64, bool) {
     (metered, credits, billed, is_alert)
 }
 
+/// Recommends deployment mode based on hardware VRAM, system RAM, and current memory load.
+/// @outputs: 3
+/// @domain: vram_mb [0..1000000]
+/// @domain: ram_gb [0.0..10000.0]
+/// @domain: ram_load_percent [0..100]
+pub fn recommend_hardware_mode(
+    vram_mb: u64,
+    ram_gb: f64,
+    ram_load_percent: u8,
+) -> (&'static str, &'static str) {
+    if vram_mb > 1_000_000 || ram_gb < 0.0 || ram_gb > 10_000.0 || ram_load_percent > 100 {
+        return ("OFF", "Domain violation in hardware probe inputs");
+    }
+
+    if vram_mb >= 24_000 || ram_gb >= 64.0 {
+        ("LOCAL_MAX", "High-capacity VRAM/RAM detected; LOCAL_MAX full model recommended")
+    } else if vram_mb >= 3500 {
+        if ram_load_percent > 80 {
+            ("LOCAL_EDGE", "Mid-range GPU with high RAM load; recommend quantized 0.8B/4B model")
+        } else {
+            ("LOCAL_EDGE", "Mid-range GPU (e.g. 4GB RTX 3050); LOCAL_EDGE recommended")
+        }
+    } else {
+        ("CLOUD_SPAN", "No high-capacity GPU VRAM detected; CLOUD_SPAN (Modal) recommended")
+    }
+}
+
+/// Fast bounded parser to extract active_mode from YAML configuration string.
+/// @outputs: 4
+pub fn parse_config_active_mode(yaml_str: &str) -> &'static str {
+    let limit = yaml_str.len().min(16384);
+    let slice = &yaml_str[..limit];
+
+    if let Some(pos) = slice.find("active_mode:") {
+        let after = &slice[pos + 12..];
+        let line = after.lines().next().unwrap_or("").trim();
+        let unquoted = line.trim_matches(|c: char| c == '"' || c == '\'');
+        match unquoted {
+            "CLOUD_SPAN" => "CLOUD_SPAN",
+            "LOCAL_EDGE" => "LOCAL_EDGE",
+            "LOCAL_MAX" => "LOCAL_MAX",
+            _ => "OFF",
+        }
+    } else {
+        "OFF"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -277,5 +325,31 @@ mod tests {
         assert_eq!(credits, -0.16);
         assert_eq!(billed, 0.0);
         assert_eq!(is_alert, false);
+    }
+
+    /// @outputs: 1
+    #[test]
+    fn test_recommend_hardware_mode() {
+        let (m1, _) = recommend_hardware_mode(24000, 32.0, 50);
+        assert_eq!(m1, "LOCAL_MAX");
+
+        let (m2, _) = recommend_hardware_mode(4000, 16.0, 50);
+        assert_eq!(m2, "LOCAL_EDGE");
+
+        let (m3, _) = recommend_hardware_mode(0, 8.0, 40);
+        assert_eq!(m3, "CLOUD_SPAN");
+    }
+
+    /// @outputs: 1
+    #[test]
+    fn test_parse_config_active_mode() {
+        let y1 = "version: 1.0\nactive_mode: \"CLOUD_SPAN\"\n";
+        assert_eq!(parse_config_active_mode(y1), "CLOUD_SPAN");
+
+        let y2 = "active_mode: LOCAL_EDGE\n";
+        assert_eq!(parse_config_active_mode(y2), "LOCAL_EDGE");
+
+        let y3 = "active_mode: 'OFF'\n";
+        assert_eq!(parse_config_active_mode(y3), "OFF");
     }
 }

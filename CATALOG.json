@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 890,
+  "total_functions": 892,
   "modules": [
     {
       "module": "agent_terminal",
@@ -1700,7 +1700,7 @@
     {
       "module": "decision_systemone",
       "file": "src/decision_systemone.rs",
-      "functions_count": 6,
+      "functions_count": 8,
       "functions": [
         {
           "name": "as_str",
@@ -1730,6 +1730,16 @@
         {
           "name": "parse_modal_billing_summary",
           "signature": "pub fn parse_modal_billing_summary(json_str: &str) -> (f64, f64, f64, bool)",
+          "outputs": 4
+        },
+        {
+          "name": "recommend_hardware_mode",
+          "signature": "pub fn recommend_hardware_mode(",
+          "outputs": 3
+        },
+        {
+          "name": "parse_config_active_mode",
+          "signature": "pub fn parse_config_active_mode(yaml_str: &str) -> &'static str",
           "outputs": 4
         }
       ]
