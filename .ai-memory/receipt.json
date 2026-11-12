@@ -1,6 +1,6 @@
 {
   "schema": "agy-arbitration-receipt-v1",
-  "model": "kev-4b",
+  "model": "cloud:openai/gpt-oss-120b",
   "verdict": "PASS",
-  "diff_sha256": "d073dfaa45aabe19c85f8bd0654ba1b2c321b7a29555d6b03cf4da5b02da7995"
+  "diff_sha256": "8584fb031c7d26f3ee6e0340b768d76ca19353b59e805d1d95acbc53779ad4ad"
 }

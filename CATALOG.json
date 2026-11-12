@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 884,
+  "total_functions": 885,
   "modules": [
     {
       "module": "agent_terminal",
@@ -448,6 +448,18 @@
           "name": "astro_solar_zenith_and_elevation",
           "signature": "pub fn astro_solar_zenith_and_elevation(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_tithi_special_detector",
+      "file": "src/astro_tithi_special_detector.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "astro_tithi_special_detector",
+          "signature": "pub fn astro_tithi_special_detector(",
+          "outputs": 1
         }
       ]
     },

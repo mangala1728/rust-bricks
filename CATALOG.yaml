@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 884
+total_functions: 885
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -432,6 +432,23 @@ modules:
           utc_hour: "[0.0..=24.0]"
           lat_deg: "[-90.0..=90.0]"
           lon_deg: "[-180.0..=180.0]"
+  - module: "astro_tithi_special_detector"
+    file: "src/astro_tithi_special_detector.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Detector"
+      - "Inputs: tithi_start_ts: u64, tithi_end_ts: u64, sunrise_curr_ts: u64, sunrise_next_ts: u64"
+      - "Outputs: Option<u8> (0=Normal, 1=Kshaya, 2=Vriddhi)"
+      - "Invariants: timestamps ∈ [0, 4_102_444_800], tithi_start_ts < tithi_end_ts, sunrise_curr_ts < sunrise_next_ts"
+    functions:
+      - name: "astro_tithi_special_detector"
+        signature: "pub fn astro_tithi_special_detector("
+        outputs: 1
+        domains:
+          tithi_start_ts: "[0..4102444800]"
+          tithi_end_ts: "[0..4102444800]"
+          sunrise_curr_ts: "[0..4102444800]"
+          sunrise_next_ts: "[0..4102444800]"
   - module: "astro_varga_cusp_analysis"
     file: "src/astro_varga_cusp_analysis.rs"
     functions_count: 3
