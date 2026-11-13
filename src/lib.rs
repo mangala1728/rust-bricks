@@ -128,6 +128,7 @@ pub mod iot_wire_protocol;
 pub mod iso7816_smartcard;
 pub mod j1939_pgn_parser;
 pub mod json_repair;
+pub mod lin_checksum_classic_enhanced;
 pub mod log_lifecycle_dag;
 pub mod math_chebyshev_poly;
 pub mod math_cubic_spline;

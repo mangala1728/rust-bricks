@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 892,
+  "total_functions": 893,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3427,6 +3427,18 @@
         {
           "name": "repair_json_stream",
           "signature": "pub fn repair_json_stream(raw: &str) -> String",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "lin_checksum_classic_enhanced",
+      "file": "src/lin_checksum_classic_enhanced.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "lin_compute_checksum",
+          "signature": "pub fn lin_compute_checksum(pid: u8, data: &[u8], enhanced: bool) -> Option<u8>",
           "outputs": 1
         }
       ]
