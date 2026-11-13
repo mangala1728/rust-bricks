@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 892,
+  "total_functions": 893,
   "modules": [
     {
       "module": "agent_terminal",
@@ -2963,6 +2963,18 @@
         {
           "name": "geo_destination_point",
           "signature": "pub fn geo_destination_point(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "geo_haversine_waypoint",
+      "file": "src/geo_haversine_waypoint.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "geo_haversine_distance_bearing",
+          "signature": "pub fn geo_haversine_distance_bearing(",
           "outputs": 2
         }
       ]

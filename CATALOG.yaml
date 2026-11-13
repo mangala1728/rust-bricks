@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 892
+total_functions: 893
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -2992,6 +2992,23 @@ modules:
           lon_deg: "[-180.0..=180.0]"
           bearing_deg: "[0.0..=360.0]"
           distance_m: "[0.0..=∞]"
+  - module: "geo_haversine_waypoint"
+    file: "src/geo_haversine_waypoint.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Haversine spherical distance and initial forward azimuth bearing"
+      - "Inputs: lat1_deg, lon1_deg, lat2_deg, lon2_deg: f64"
+      - "Outputs: Option<(f64, f64)> (distance_meters, initial_bearing_degrees)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "geo_haversine_distance_bearing"
+        signature: "pub fn geo_haversine_distance_bearing("
+        outputs: 2
+        domains:
+          lat1_deg: "[-90.0..=90.0]"
+          lon1_deg: "[-180.0..=180.0]"
+          lat2_deg: "[-90.0..=90.0]"
+          lon2_deg: "[-180.0..=180.0]"
   - module: "geo_point_in_polygon_ray"
     file: "src/geo_point_in_polygon_ray.rs"
     functions_count: 1

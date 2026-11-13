@@ -115,6 +115,7 @@ pub mod geo_convex_hull_2d;
 pub mod geo_ecef_to_lla;
 pub mod geo_geohash;
 pub mod geo_haversine_destination;
+pub mod geo_haversine_waypoint;
 pub mod geo_point_in_polygon_ray;
 pub mod geo_polygon_area_centroid;
 pub mod geo_spatial_projection;
