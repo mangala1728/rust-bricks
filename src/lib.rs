@@ -118,6 +118,7 @@ pub mod geo_haversine_destination;
 pub mod geo_point_in_polygon_ray;
 pub mod geo_polygon_area_centroid;
 pub mod geo_spatial_projection;
+pub mod geo_utm_projection;
 pub mod geo_vincenty_inverse;
 pub mod gnss_nmea_geodesy;
 pub mod guard;

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 892
+total_functions: 893
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3082,6 +3082,20 @@ modules:
       - name: "spherical_polygon_area_m2"
         signature: "pub fn spherical_polygon_area_m2(excess_steradians: f64) -> Option<f64>"
         outputs: 1
+  - module: "geo_utm_projection"
+    file: "src/geo_utm_projection.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: WGS-84 coordinates to UTM Zone, hemisphere, and central meridian calculator"
+      - "Inputs: lat_deg: f64, lon_deg: f64"
+      - "Outputs: Option<(u8, char, f64)> (zone, hemisphere, central_meridian_deg)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "geo_determine_utm_zone"
+        signature: "pub fn geo_determine_utm_zone("
+        outputs: 3
+        domains:
+          lat_deg in: "[-80.0..=84.0], lon_deg in [-180.0..=180.0]"
   - module: "geo_vincenty_inverse"
     file: "src/geo_vincenty_inverse.rs"
     functions_count: 1
