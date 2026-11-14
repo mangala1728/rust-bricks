@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 899,
+  "total_functions": 908,
   "modules": [
     {
       "module": "agent_terminal",
@@ -384,6 +384,58 @@
         {
           "name": "astro_validate_historical_dst",
           "signature": "pub fn astro_validate_historical_dst(",
+          "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "astro_kundali_chart",
+      "file": "src/astro_kundali_chart.rs",
+      "functions_count": 9,
+      "functions": [
+        {
+          "name": "graha_name_zh",
+          "signature": "pub fn graha_name_zh(graha_id: u8) -> &'static str",
+          "outputs": 1
+        },
+        {
+          "name": "rashi_name_zh",
+          "signature": "pub fn rashi_name_zh(sign_num: u8) -> &'static str",
+          "outputs": 1
+        },
+        {
+          "name": "calculate_house_sign",
+          "signature": "pub fn calculate_house_sign(ascendant_sign: u8, house_num: u8) -> Option<u8>",
+          "outputs": 2
+        },
+        {
+          "name": "south_indian_grid_coord",
+          "signature": "pub fn south_indian_grid_coord(sign_num: u8) -> Option<(usize, usize)>",
+          "outputs": 2
+        },
+        {
+          "name": "is_south_indian_center_cell",
+          "signature": "pub fn is_south_indian_center_cell(row: usize, col: usize) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "north_indian_house_center",
+          "signature": "pub fn north_indian_house_center(house_num: u8) -> Option<(f32, f32)>",
+          "outputs": 2
+        },
+        {
+          "name": "north_indian_sign_corner",
+          "signature": "pub fn north_indian_sign_corner(house_num: u8) -> Option<(f32, f32)>",
+          "outputs": 2
+        },
+        {
+          "name": "validate_banned_words_slice",
+          "signature": "pub fn validate_banned_words_slice(text: &str) -> Option<&'static str>",
+          "outputs": 1
+        },
+        {
+          "name": "generate_north_indian_svg_base",
+          "signature": "pub fn generate_north_indian_svg_base(size: u32) -> String",
           "outputs": 1
         }
       ]

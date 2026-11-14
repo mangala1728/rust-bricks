@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 899
+total_functions: 908
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -369,6 +369,62 @@ modules:
           month: "[1..=12]"
           day: "[1..=31]"
           claimed_dst_minutes: "[-120..=120]"
+  - module: "astro_kundali_chart"
+    file: "src/astro_kundali_chart.rs"
+    functions_count: 9
+    architecture_map:
+      - "Role: astro/astro_kundali_chart — 零依賴吠陀占星雙軌星盤（南印盤與北印盤）幾何佈局、ASCII 拓撲與 SVG 向量生成純函式積木。"
+      - "Inputs: 命宮上升星座 (1..12)、行星分佈陣列、畫布尺寸 (像素)、宮位索引。"
+      - "Outputs: 十二宮星座對應、南印盤座標映射、北印盤幾何頂點與 SVG 標籤字串、拓撲字元方塊。"
+      - "Invariants: 零全域狀態、禁止 unsafe 代碼、100% 遵守 09 號合約、無遞迴、邊界嚴格防禦。"
+    functions:
+      - name: "graha_name_zh"
+        signature: "pub fn graha_name_zh(graha_id: u8) -> &'static str"
+        outputs: 1
+        domains:
+          graha_id: "[0..9]"
+      - name: "rashi_name_zh"
+        signature: "pub fn rashi_name_zh(sign_num: u8) -> &'static str"
+        outputs: 1
+        domains:
+          sign_num: "[1..12]"
+      - name: "calculate_house_sign"
+        signature: "pub fn calculate_house_sign(ascendant_sign: u8, house_num: u8) -> Option<u8>"
+        outputs: 2
+        domains:
+          ascendant_sign: "[1..12]"
+          house_num: "[1..12]"
+      - name: "south_indian_grid_coord"
+        signature: "pub fn south_indian_grid_coord(sign_num: u8) -> Option<(usize, usize)>"
+        outputs: 2
+        domains:
+          sign_num: "[1..12]"
+      - name: "is_south_indian_center_cell"
+        signature: "pub fn is_south_indian_center_cell(row: usize, col: usize) -> bool"
+        outputs: 1
+        domains:
+          row: "[0..3]"
+          col: "[0..3]"
+      - name: "north_indian_house_center"
+        signature: "pub fn north_indian_house_center(house_num: u8) -> Option<(f32, f32)>"
+        outputs: 2
+        domains:
+          house_num: "[1..12]"
+      - name: "north_indian_sign_corner"
+        signature: "pub fn north_indian_sign_corner(house_num: u8) -> Option<(f32, f32)>"
+        outputs: 2
+        domains:
+          house_num: "[1..12]"
+      - name: "validate_banned_words_slice"
+        signature: "pub fn validate_banned_words_slice(text: &str) -> Option<&'static str>"
+        outputs: 1
+        domains:
+          text.len(): "[0..100000]"
+      - name: "generate_north_indian_svg_base"
+        signature: "pub fn generate_north_indian_svg_base(size: u32) -> String"
+        outputs: 1
+        domains:
+          size: "[100..2000]"
   - module: "astro_panchanga_nakshatra"
     file: "src/astro_panchanga_nakshatra.rs"
     functions_count: 1
