@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 892,
+  "total_functions": 899,
   "modules": [
     {
       "module": "agent_terminal",
@@ -403,7 +403,7 @@
     {
       "module": "astro_pipeline",
       "file": "src/astro_pipeline.rs",
-      "functions_count": 3,
+      "functions_count": 6,
       "functions": [
         {
           "name": "encode_vedic_event_packet_32",
@@ -419,6 +419,21 @@
           "name": "verify_signed_bitemporal",
           "signature": "pub fn verify_signed_bitemporal(event_ts: i64, public_ts: i64, sim_ts: i64) -> bool",
           "outputs": 1
+        },
+        {
+          "name": "encode_celestial_packet_32",
+          "signature": "pub fn encode_celestial_packet_32(pkt: &CelestialPacket32) -> [u8; 32]",
+          "outputs": 1
+        },
+        {
+          "name": "decode_celestial_packet_32",
+          "signature": "pub fn decode_celestial_packet_32(buf: &[u8; 32]) -> Option<CelestialPacket32>",
+          "outputs": 2
+        },
+        {
+          "name": "validate_units_precision_spec_json",
+          "signature": "pub fn validate_units_precision_spec_json(json_text: &str) -> bool",
+          "outputs": 2
         }
       ]
     },
@@ -1069,6 +1084,33 @@
           "name": "cnc_trapezoidal_velocity_profile_step",
           "signature": "pub fn cnc_trapezoidal_velocity_profile_step(",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "code_callgraph_audit",
+      "file": "src/code_callgraph_audit.rs",
+      "functions_count": 4,
+      "functions": [
+        {
+          "name": "is_reverse_layer_call",
+          "signature": "pub fn is_reverse_layer_call(from_rank: u8, to_rank: u8) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "enqueue_neighbors_or_hit_target",
+          "signature": "pub fn enqueue_neighbors_or_hit_target(",
+          "outputs": 2
+        },
+        {
+          "name": "has_cycle_from_node",
+          "signature": "pub fn has_cycle_from_node(start_id: usize, node_count: usize, edges: &[CallEdge]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "audit_callgraph",
+          "signature": "pub fn audit_callgraph(",
+          "outputs": 2
         }
       ]
     },

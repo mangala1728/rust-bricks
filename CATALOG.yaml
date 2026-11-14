@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 892
+total_functions: 899
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -381,7 +381,7 @@ modules:
           moon_milli_deg: "[0..360000]"
   - module: "astro_pipeline"
     file: "src/astro_pipeline.rs"
-    functions_count: 3
+    functions_count: 6
     architecture_map:
     functions:
       - name: "encode_vedic_event_packet_32"
@@ -397,6 +397,15 @@ modules:
           event_ts: "[-62135596800..=253402300799]"
           public_ts: "[-62135596800..=253402300799]"
           sim_ts: "[-62135596800..=253402300799]"
+      - name: "encode_celestial_packet_32"
+        signature: "pub fn encode_celestial_packet_32(pkt: &CelestialPacket32) -> [u8; 32]"
+        outputs: 1
+      - name: "decode_celestial_packet_32"
+        signature: "pub fn decode_celestial_packet_32(buf: &[u8; 32]) -> Option<CelestialPacket32>"
+        outputs: 2
+      - name: "validate_units_precision_spec_json"
+        signature: "pub fn validate_units_precision_spec_json(json_text: &str) -> bool"
+        outputs: 2
   - module: "astro_prenatal_dasha"
     file: "src/astro_prenatal_dasha.rs"
     functions_count: 2
@@ -1058,6 +1067,35 @@ modules:
           total_dist: "[0.001, 100000.0]"
           v_max: "[0.001, 10000.0]"
           a_max: "[0.001, 100000.0]"
+  - module: "code_callgraph_audit"
+    file: "src/code_callgraph_audit.rs"
+    functions_count: 4
+    architecture_map:
+    functions:
+      - name: "is_reverse_layer_call"
+        signature: "pub fn is_reverse_layer_call(from_rank: u8, to_rank: u8) -> bool"
+        outputs: 2
+        domains:
+          from_rank: "[0..9]"
+          to_rank: "[0..9]"
+      - name: "enqueue_neighbors_or_hit_target"
+        signature: "pub fn enqueue_neighbors_or_hit_target("
+        outputs: 2
+        domains:
+          curr_id: "[0..4096]"
+          target_id: "[0..4096]"
+          node_count: "[1..4096]"
+      - name: "has_cycle_from_node"
+        signature: "pub fn has_cycle_from_node(start_id: usize, node_count: usize, edges: &[CallEdge]) -> bool"
+        outputs: 2
+        domains:
+          start_id: "[0..4096]"
+          node_count: "[1..4096]"
+      - name: "audit_callgraph"
+        signature: "pub fn audit_callgraph("
+        outputs: 2
+        domains:
+          max_allowed_depth: "[1..16]"
   - module: "codec_binary_wire_schema"
     file: "src/codec_binary_wire_schema.rs"
     functions_count: 10
