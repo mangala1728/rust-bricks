@@ -100,6 +100,24 @@ pub fn south_indian_grid_coord(sign_num: u8) -> Option<(usize, usize)> {
     Some(coord)
 }
 
+/// 南印度盤標準正方形儲存格邊長（WordCraft 表格標準：2.70 公分 = 1530 dxa = 76.5 pt）
+pub const SOUTH_INDIAN_CELL_DXA: u32 = 1530;
+/// 南印度盤總寬度與總高度（4 格 x 2.70 公分 = 10.80 公分 = 6120 dxa）
+pub const SOUTH_INDIAN_TOTAL_DXA: u32 = 6120;
+/// 南印度盤中央合併區尺寸（2 格 x 2.70 公分 = 5.40 公分 = 3060 dxa）
+pub const SOUTH_INDIAN_CENTER_DXA: u32 = 3060;
+
+/// 公分轉 OpenXML dxa 單位（1 cm = 566.929 dxa ≈ 567 dxa）
+/// @outputs: 1
+/// @domain: cm [0.0..100.0]
+pub fn cm_to_dxa(cm: f32) -> u32 {
+    if cm <= 0.0 || cm > 100.0 {
+        return 0;
+    }
+    // 1 inch = 2.54 cm = 1440 dxa
+    ((cm / 2.54) * 1440.0).round() as u32
+}
+
 /// 判斷 4x4 儲存格是否為中央保留區 (1,1), (1,2), (2,1), (2,2)
 /// @outputs: 1
 /// @domain: row [0..3]
@@ -281,5 +299,17 @@ mod tests {
         assert!(svg.contains(r#"<svg"#));
         assert!(svg.contains(r#"<polygon"#));
         assert!(svg.contains(r#"width="400""#));
+    }
+
+    #[test]
+    fn test_south_indian_dimensions() {
+        assert_eq!(SOUTH_INDIAN_CELL_DXA, 1530);
+        assert_eq!(SOUTH_INDIAN_TOTAL_DXA, 6120);
+        assert_eq!(SOUTH_INDIAN_CENTER_DXA, 3060);
+        let dxa = cm_to_dxa(2.70);
+        assert!(dxa == 1530 || dxa == 1531);
+        assert_eq!(cm_to_dxa(0.0), 0);
+        assert_eq!(cm_to_dxa(-5.0), 0);
+        assert_eq!(cm_to_dxa(105.0), 0);
     }
 }
