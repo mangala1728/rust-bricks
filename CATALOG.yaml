@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 892
+total_functions: 893
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -3455,6 +3455,25 @@ modules:
           pivot_id: "[0..100000]"
           pivot_scope: "[0..65535]"
           already_superseded: "[0..1]"
+  - module: "math_brent_zero"
+    file: "src/math_brent_zero.rs"
+    functions_count: 1
+    architecture_map:
+      - "Role: Brent-Dekker numerical root-finder candidate step computation"
+      - "Inputs: a, b, c, fa, fb, fc: f64"
+      - "Outputs: Option<f64> (next_candidate_x)"
+      - "Invariants: 0 external dependencies, line 1 domain guard, functions <= 60 lines"
+    functions:
+      - name: "math_brent_candidate_step"
+        signature: "pub fn math_brent_candidate_step("
+        outputs: 1
+        domains:
+          a: "[-1e308..1e308]"
+          b: "[-1e308..1e308]"
+          c: "[-1e308..1e308]"
+          fa: "[-1e308..1e308]"
+          fb: "[-1e308..1e308]"
+          fc: "[-1e308..1e308]"
   - module: "math_chebyshev_poly"
     file: "src/math_chebyshev_poly.rs"
     functions_count: 2

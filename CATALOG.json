@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 892,
+  "total_functions": 893,
   "modules": [
     {
       "module": "agent_terminal",
@@ -3445,6 +3445,18 @@
           "name": "classify_epoch_pivot",
           "signature": "pub fn classify_epoch_pivot(",
           "outputs": 4
+        }
+      ]
+    },
+    {
+      "module": "math_brent_zero",
+      "file": "src/math_brent_zero.rs",
+      "functions_count": 1,
+      "functions": [
+        {
+          "name": "math_brent_candidate_step",
+          "signature": "pub fn math_brent_candidate_step(",
+          "outputs": 1
         }
       ]
     },

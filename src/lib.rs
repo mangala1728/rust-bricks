@@ -129,6 +129,7 @@ pub mod iso7816_smartcard;
 pub mod j1939_pgn_parser;
 pub mod json_repair;
 pub mod log_lifecycle_dag;
+pub mod math_brent_zero;
 pub mod math_chebyshev_poly;
 pub mod math_cubic_spline;
 pub mod math_golden_section;
