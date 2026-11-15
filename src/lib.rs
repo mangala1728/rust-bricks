@@ -204,3 +204,5 @@ pub mod vision_morphology_fast;
 pub mod vision_optical_flow_homography;
 pub mod vision_yuv;
 pub mod wish_board;
+pub mod vlm_classic_preprocessor;
+pub mod classic_sacred_builder;
