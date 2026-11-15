@@ -39,24 +39,47 @@ pub fn calc_percentile(hist: &[u32; 256], total_pixels: u32, percentile: u8) -> 
     255
 }
 
-/// 動態自適應門檻值計算：背景 85% 與前景 15% 權重融合 (45% 背景 + 55% 前景)
+/// 計算標準 Otsu 自適應二值化門檻值：最大化類間變異數 (Between-Class Variance)
 /// @outputs: 1
 /// @domain: total_pixels [1..134217728]
 pub fn calc_dynamic_otsu_threshold(hist: &[u32; 256], total_pixels: u32) -> u8 {
     if total_pixels == 0 {
         return 128;
     }
-    let bg_val = calc_percentile(hist, total_pixels, 85) as u32;
-    let fg_val = calc_percentile(hist, total_pixels, 15) as u32;
-
-    // (bg * 45 + fg * 55 + 50) / 100 帶四捨五入防溢位
-    let numerator = bg_val.saturating_mul(45).saturating_add(fg_val.saturating_mul(55)).saturating_add(50);
-    let threshold = numerator / 100;
-    if threshold > 255 {
-        255
-    } else {
-        threshold as u8
+    let total_f = total_pixels as f64;
+    let mut sum_total = 0.0f64;
+    for (i, &count) in hist.iter().enumerate() {
+        sum_total += (i as f64) * (count as f64);
     }
+
+    let mut weight_b = 0.0f64;
+    let mut sum_b = 0.0f64;
+    let mut max_variance = -1.0f64;
+    let mut optimal_threshold = 128u8;
+
+    for i in 0..256 {
+        let count_f = hist[i] as f64;
+        weight_b += count_f;
+        if weight_b == 0.0 {
+            continue;
+        }
+        let weight_f = total_f - weight_b;
+        if weight_f <= 0.0 {
+            break;
+        }
+        sum_b += (i as f64) * count_f;
+        let mean_b = sum_b / weight_b;
+        let mean_f = (sum_total - sum_b) / weight_f;
+        let diff = mean_b - mean_f;
+        let variance = weight_b * weight_f * diff * diff;
+
+        if variance > max_variance {
+            max_variance = variance;
+            optimal_threshold = i as u8;
+        }
+    }
+
+    optimal_threshold
 }
 
 /// 應用二值化門檻：小於門檻為墨跡黑 (0)，其餘為紙張白 (255)
@@ -74,8 +97,9 @@ pub fn apply_threshold(
         return false;
     }
 
+    let effective_threshold = threshold.max(1);
     for (p_in, p_out) in pixels.iter().zip(out_pixels.iter_mut()) {
-        if *p_in < threshold {
+        if *p_in < effective_threshold {
             *p_out = 0;
         } else {
             *p_out = 255;
@@ -214,6 +238,10 @@ pub fn find_gutter_slices(
         }
     }
 
+    if in_block && height.saturating_sub(start_y) >= min_block_height {
+        out_slices.push((start_y, height));
+    }
+
     out_slices.len()
 }
 
@@ -278,8 +306,15 @@ mod tests {
         assert_eq!(p85, 200);
 
         let threshold = calc_dynamic_otsu_threshold(&hist, 200);
-        // (200 * 45 + 10 * 55 + 50) / 100 = (9000 + 550 + 50) / 100 = 96
-        assert_eq!(threshold, 96);
+        assert_eq!(threshold, 10);
+
+        // 測試 5% 墨跡 + 95% 白紙高偏差善本情況：50 個 20 (墨跡), 950 個 240 (紙張)
+        let mut scan_pixels = Vec::with_capacity(1000);
+        scan_pixels.extend(std::iter::repeat(20).take(50));
+        scan_pixels.extend(std::iter::repeat(240).take(950));
+        let scan_hist = calc_histogram(&scan_pixels);
+        let scan_thresh = calc_dynamic_otsu_threshold(&scan_hist, 1000);
+        assert_eq!(scan_thresh, 20);
     }
 
     #[test]
