@@ -206,3 +206,4 @@ pub mod vision_yuv;
 pub mod wish_board;
 pub mod vlm_classic_preprocessor;
 pub mod classic_sacred_builder;
+pub mod classic_continuity;
