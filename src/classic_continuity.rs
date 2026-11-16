@@ -134,7 +134,7 @@ pub fn check_filename_bilingual(file_path: &str) -> Vec<String> {
 /// @outputs: 2
 fn is_chapter_header(line: &str) -> bool {
     let trimmed = line.trim();
-    if !trimmed.starts_with('#') {
+    if !trimmed.starts_with('#') || trimmed.starts_with("###") {
         return false;
     }
     let norm = normalize_indic_digits(trimmed);
@@ -187,10 +187,17 @@ fn is_colophon_header(line: &str) -> bool {
 fn is_colophon_line(line: &str) -> bool {
     let cleaned = line.trim_start_matches(&['>', '#', '*', ' ', '\t'][..]).trim();
     let lower = cleaned.to_lowercase();
-    cleaned.starts_with("इति")
-        || cleaned.starts_with("ইতি")
-        || lower.starts_with("iti ")
-        || lower.starts_with("iti-")
+    cleaned.starts_with("इति श्री")
+        || cleaned.starts_with("इति श्रीमद्")
+        || cleaned.starts_with("इति समाप्त")
+        || cleaned.starts_with("ইতি শ্রী")
+        || cleaned.starts_with("ইতি সমাপ্ত")
+        || lower.starts_with("iti śrī")
+        || lower.starts_with("iti sri")
+        || lower.starts_with("iti-śrī")
+        || lower.starts_with("iti-sri")
+        || lower.starts_with("iti samāptam")
+        || lower.starts_with("iti samaptam")
 }
 
 /// 從標題行抽取頌號（例如 Verse 27, Text 27, 第 27 頌）
@@ -210,9 +217,9 @@ fn extract_title_verse_num(norm_line: &str) -> Option<i32> {
         }
     }
 
-    // 格式 2: 第 N 頌 / 第 N 节 / 第 N 節
-    if trimmed.starts_with('第') {
-        let rest = &trimmed['第'.len_utf8()..].trim_start();
+    // 格式 2: 包含 第 N 頌 / 第 N 节 / 第 N 節
+    if let Some(pos) = trimmed.find('第') {
+        let rest = &trimmed[pos + '第'.len_utf8()..].trim_start();
         let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
         let after_digits = rest[digits.len()..].trim_start();
         let is_verse_unit = after_digits.starts_with('頌')
