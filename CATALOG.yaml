@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 921
+total_functions: 964
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -369,6 +369,67 @@ modules:
           month: "[1..=12]"
           day: "[1..=31]"
           claimed_dst_minutes: "[-120..=120]"
+  - module: "astro_kundali_chart"
+    file: "src/astro_kundali_chart.rs"
+    functions_count: 10
+    architecture_map:
+      - "Role: astro/astro_kundali_chart — 零依賴吠陀占星雙軌星盤（南印盤與北印盤）幾何佈局、ASCII 拓撲與 SVG 向量生成純函式積木。"
+      - "Inputs: 命宮上升星座 (1..12)、行星分佈陣列、畫布尺寸 (像素)、宮位索引。"
+      - "Outputs: 十二宮星座對應、南印盤座標映射、北印盤幾何頂點與 SVG 標籤字串、拓撲字元方塊。"
+      - "Invariants: 零全域狀態、禁止 unsafe 代碼、100% 遵守 09 號合約、無遞迴、邊界嚴格防禦。"
+    functions:
+      - name: "graha_name_zh"
+        signature: "pub fn graha_name_zh(graha_id: u8) -> &'static str"
+        outputs: 1
+        domains:
+          graha_id: "[0..9]"
+      - name: "rashi_name_zh"
+        signature: "pub fn rashi_name_zh(sign_num: u8) -> &'static str"
+        outputs: 1
+        domains:
+          sign_num: "[1..12]"
+      - name: "calculate_house_sign"
+        signature: "pub fn calculate_house_sign(ascendant_sign: u8, house_num: u8) -> Option<u8>"
+        outputs: 2
+        domains:
+          ascendant_sign: "[1..12]"
+          house_num: "[1..12]"
+      - name: "south_indian_grid_coord"
+        signature: "pub fn south_indian_grid_coord(sign_num: u8) -> Option<(usize, usize)>"
+        outputs: 2
+        domains:
+          sign_num: "[1..12]"
+      - name: "cm_to_dxa"
+        signature: "pub fn cm_to_dxa(cm: f32) -> u32"
+        outputs: 1
+        domains:
+          cm: "[0.0..100.0]"
+      - name: "is_south_indian_center_cell"
+        signature: "pub fn is_south_indian_center_cell(row: usize, col: usize) -> bool"
+        outputs: 1
+        domains:
+          row: "[0..3]"
+          col: "[0..3]"
+      - name: "north_indian_house_center"
+        signature: "pub fn north_indian_house_center(house_num: u8) -> Option<(f32, f32)>"
+        outputs: 2
+        domains:
+          house_num: "[1..12]"
+      - name: "north_indian_sign_corner"
+        signature: "pub fn north_indian_sign_corner(house_num: u8) -> Option<(f32, f32)>"
+        outputs: 2
+        domains:
+          house_num: "[1..12]"
+      - name: "validate_banned_words_slice"
+        signature: "pub fn validate_banned_words_slice(text: &str) -> Option<&'static str>"
+        outputs: 1
+        domains:
+          text.len(): "[0..100000]"
+      - name: "generate_north_indian_svg_base"
+        signature: "pub fn generate_north_indian_svg_base(size: u32) -> String"
+        outputs: 1
+        domains:
+          size: "[100..2000]"
   - module: "astro_panchanga_nakshatra"
     file: "src/astro_panchanga_nakshatra.rs"
     functions_count: 1
@@ -967,6 +1028,98 @@ modules:
         outputs: 2
         domains:
           dummy_level: "[0..10]"
+  - module: "classic_continuity"
+    file: "src/classic_continuity.rs"
+    functions_count: 17
+    architecture_map:
+      - "Role: core (聖典經文連續性、篇章全體性、標點閉合與剛性禁字純函式積木)"
+      - "Inputs: 經文 Markdown / 文本切片、篇章與頌數標準約束、檔案名稱。"
+      - "Outputs: 詩節標記清單、單調連續性錯誤、標點閉合錯誤、禁字違規清單、篇章全體性錯誤、品質門禁綜合裁決。"
+      - "Invariants: 零外部依賴、純 Rust 實現、禁止 unsafe 代碼、100% 遵守 09 號合約、無遞迴 (R09-7)、巢狀深度 <= 2 (R09-3)、單函式 <= 100 行。"
+    functions:
+      - name: "normalize_indic_digits"
+        signature: "pub fn normalize_indic_digits(text: &str) -> String"
+        outputs: 1
+      - name: "is_cjk_char"
+        signature: "pub fn is_cjk_char(c: char) -> bool"
+        outputs: 2
+      - name: "is_latin_iast_char"
+        signature: "pub fn is_latin_iast_char(c: char) -> bool"
+        outputs: 2
+      - name: "is_indic_script_char"
+        signature: "pub fn is_indic_script_char(c: char) -> bool"
+        outputs: 2
+      - name: "check_filename_bilingual"
+        signature: "pub fn check_filename_bilingual(file_path: &str) -> Vec<String>"
+        outputs: 2
+      - name: "extract_verse_numbers_from_text"
+        signature: "pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize)>"
+        outputs: 1
+      - name: "extract_expected_range_from_chap_name"
+        signature: "pub fn extract_expected_range_from_chap_name(chap_name: &str) -> (i32, Option<i32>)"
+        outputs: 1
+      - name: "check_verse_monotonicity"
+        signature: "pub fn check_verse_monotonicity(verses: &[(i32, String, usize)]) -> Vec<String>"
+        outputs: 2
+      - name: "check_danda_sentence_closure"
+        signature: "pub fn check_danda_sentence_closure(content: &str) -> Vec<String>"
+        outputs: 1
+      - name: "check_banned_words_and_leakage"
+        signature: "pub fn check_banned_words_and_leakage(content: &str) -> Vec<BannedViolation>"
+        outputs: 1
+      - name: "check_book_totality"
+        signature: "pub fn check_book_totality("
+        outputs: 2
+        domains:
+          expected_chapters: "[0..100]"
+          min_final_verse: "[0..10000]"
+          min_total_verses: "[0..100000]"
+      - name: "extract_page_index_from_filename"
+        signature: "pub fn extract_page_index_from_filename(filename: &str) -> Option<u32>"
+        outputs: 3
+        domains:
+          filename.len(): "[1..256]"
+      - name: "check_page_sequence_gaps"
+        signature: "pub fn check_page_sequence_gaps("
+        outputs: 4
+        domains:
+          max_allowed_index: "[1..65535]"
+      - name: "match_terminal_colophon_anchor"
+        signature: "pub fn match_terminal_colophon_anchor(text_tail: &str) -> ColophonMatch"
+        outputs: 2
+      - name: "check_book_totality_advanced"
+        signature: "pub fn check_book_totality_advanced("
+        outputs: 1
+      - name: "check_anvaya_integrity"
+        signature: "pub fn check_anvaya_integrity(content: &str) -> Vec<String>"
+        outputs: 1
+      - name: "inspect_markdown_content"
+        signature: "pub fn inspect_markdown_content("
+        outputs: 2
+  - module: "classic_sacred_builder"
+    file: "src/classic_sacred_builder.rs"
+    functions_count: 5
+    architecture_map:
+      - "Role: doc/classic_sacred_builder — 神聖啟示經典（Śruti/Smṛti）結構審計、禁字門禁、第一頁導讀與雙模態文檔生成純函式積木。"
+      - "Inputs: 標題、作者傳承、導讀段落集合、經文頌單元（標識、天城文行、繁中譯文、校注）。"
+      - "Outputs: 審計通過指標、Markdown 正文文本、篇章結構審計報告 Markdown、禁字命中結果、英文洩漏結果。"
+      - "Invariants: 零外部依賴、禁止 unsafe 代碼、100% 遵守 09 號合約、無遞迴 (R09-7)、巢狀深度 <= 2 (R09-3)、單函式長度 <= 100 行。"
+    functions:
+      - name: "validate_banned_words"
+        signature: "pub fn validate_banned_words(text: &str) -> Option<(&'static str, &'static str)>"
+        outputs: 1
+      - name: "validate_english_leakage"
+        signature: "pub fn validate_english_leakage(text: &str) -> Option<&'static str>"
+        outputs: 1
+      - name: "validate_first_page_preface"
+        signature: "pub fn validate_first_page_preface(preface_title: &str, sections: &[PrefaceSection]) -> bool"
+        outputs: 1
+      - name: "generate_classic_markdown<'a>"
+        signature: "pub fn generate_classic_markdown<'a>("
+        outputs: 1
+      - name: "generate_structural_audit_report<'a>"
+        signature: "pub fn generate_structural_audit_report<'a>("
+        outputs: 1
   - module: "clock_pll_rtc"
     file: "src/clock_pll_rtc.rs"
     functions_count: 5
@@ -5889,6 +6042,64 @@ modules:
       - name: "calculate_luminance_histogram"
         signature: "pub fn calculate_luminance_histogram(gray: &[u8]) -> [u32; 256]"
         outputs: 1
+  - module: "vlm_classic_preprocessor"
+    file: "src/vlm_classic_preprocessor.rs"
+    functions_count: 11
+    architecture_map:
+      - "Role: vision/vlm_classic_preprocessor — 古典善本圖像自適應去噪、二值化、裝訂槽投影切片與 VLM 提示詞生成純演算法積木。"
+      - "Inputs: 灰階像素切片、寬高維度、直方圖、百分位點、投影門檻、切片最小空隙。"
+      - "Outputs: 灰階直方圖、百分位灰度階、動態分割門檻值、二值化圖像、3x3 中值去噪、橫向投影黑像素計數、經文區塊切片邊界、VLM 防幻覺提示詞。"
+      - "Invariants: 零外部依賴、禁止 unsafe 代碼、100% 遵守 09 號合約、無遞迴 (R09-7)、巢狀深度 <= 2 (R09-3)、單函式長度 <= 100 行。"
+    functions:
+      - name: "calc_histogram"
+        signature: "pub fn calc_histogram(pixels: &[u8]) -> [u32; 256]"
+        outputs: 1
+        domains:
+          pixels.len(): "[0..134217728]"
+      - name: "calc_percentile"
+        signature: "pub fn calc_percentile(hist: &[u32; 256], total_pixels: u32, percentile: u8) -> u8"
+        outputs: 1
+        domains:
+          total_pixels: "[1..134217728], percentile [0..100]"
+      - name: "calc_dynamic_otsu_threshold"
+        signature: "pub fn calc_dynamic_otsu_threshold(hist: &[u32; 256], total_pixels: u32) -> u8"
+        outputs: 1
+        domains:
+          total_pixels: "[1..134217728]"
+      - name: "apply_threshold"
+        signature: "pub fn apply_threshold("
+        outputs: 1
+        domains:
+          width: "[1..16384], height [1..16384], threshold [0..255]"
+      - name: "apply_median_filter_3x3"
+        signature: "pub fn apply_median_filter_3x3("
+        outputs: 1
+        domains:
+          width: "[3..16384], height [3..16384]"
+      - name: "calc_horizontal_projection"
+        signature: "pub fn calc_horizontal_projection("
+        outputs: 1
+        domains:
+          width: "[1..16384], height [1..16384]"
+      - name: "find_gutter_slices"
+        signature: "pub fn find_gutter_slices("
+        outputs: 1
+        domains:
+          width: "[1..16384], min_gap_px [5..1000], min_block_height [10..1000]"
+      - name: "generate_vlm_verification_prompt"
+        signature: "pub fn generate_vlm_verification_prompt(context_hint: &str) -> String"
+        outputs: 1
+      - name: "compute_dhash_64"
+        signature: "pub fn compute_dhash_64(thumb_9x8: &[u8]) -> u64"
+        outputs: 1
+      - name: "hamming_distance_64"
+        signature: "pub fn hamming_distance_64(hash_a: u64, hash_b: u64) -> u32"
+        outputs: 1
+      - name: "is_duplicate_dhash_pair"
+        signature: "pub fn is_duplicate_dhash_pair(hash_a: u64, hash_b: u64, max_hamming: u32) -> bool"
+        outputs: 1
+        domains:
+          max_hamming: "[0..64]"
   - module: "wish_board"
     file: "src/wish_board.rs"
     functions_count: 2
