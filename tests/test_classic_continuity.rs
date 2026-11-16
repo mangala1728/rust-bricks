@@ -215,3 +215,89 @@ fn test_blind_camatkara_full_4_chapters_golden() {
     assert!(res.monotonicity_errors.is_empty());
     assert!(res.totality_errors.is_empty());
 }
+
+#[test]
+fn test_extract_page_index_from_filename() {
+    use rust_bricks::classic_continuity::extract_page_index_from_filename;
+    assert_eq!(extract_page_index_from_filename("page_001.png"), Some(1));
+    assert_eq!(extract_page_index_from_filename("Scan_042.jpg"), Some(42));
+    assert_eq!(extract_page_index_from_filename("chapter1_p150.tif"), Some(150));
+    assert_eq!(extract_page_index_from_filename("no_digits_here.png"), None);
+}
+
+#[test]
+fn test_check_page_sequence_gaps_clean_and_defects() {
+    use rust_bricks::classic_continuity::check_page_sequence_gaps;
+
+    // 1. 完全連續 (0 空洞)
+    let clean = vec![1, 2, 3, 4, 5];
+    let rep = check_page_sequence_gaps(&clean, 1000).expect("應成功");
+    assert_eq!(rep.total_files, 5);
+    assert_eq!(rep.min_index, 1);
+    assert_eq!(rep.max_index, 5);
+    assert!(rep.missing_indices.is_empty());
+    assert!(rep.duplicate_indices.is_empty());
+
+    // 2. 存在漏頁空洞 (例如缺 3 與 4)
+    let with_gaps = vec![1, 2, 5, 6];
+    let rep_gap = check_page_sequence_gaps(&with_gaps, 1000).expect("應成功");
+    assert_eq!(rep_gap.missing_indices, vec![3, 4]);
+
+    // 3. 存在重複頁
+    let with_dup = vec![1, 2, 2, 3];
+    let rep_dup = check_page_sequence_gaps(&with_dup, 1000).expect("應成功");
+    assert_eq!(rep_dup.duplicate_indices, vec![2]);
+}
+
+#[test]
+fn test_colophon_anchor_matcher() {
+    use rust_bricks::classic_continuity::match_terminal_colophon_anchor;
+
+    // 梵文天城文結尾題記
+    let s1 = "इति श्रीविश्वनाथचक्रवर्तिकृता चमत्कारचन्द्रिका सम्पूर्णा समाप्तम् ॥";
+    let m1 = match_terminal_colophon_anchor(s1);
+    assert!(m1.is_matched);
+    assert_eq!(m1.matched_signature, "समाप्तम्");
+
+    // 孟加拉文結尾題記
+    let s2 = "ইতি শ্রীচমৎকারচন্দ্রিকা সমাপ্ত ॥";
+    let m2 = match_terminal_colophon_anchor(s2);
+    assert!(m2.is_matched);
+    assert_eq!(m2.matched_signature, "সমাপ্ত");
+
+    // 中文全書終
+    let s3 = "此乃第四道月光最後一頌，全書終。願眾生吉祥！";
+    let m3 = match_terminal_colophon_anchor(s3);
+    assert!(m3.is_matched);
+    assert_eq!(m3.matched_signature, "全書終");
+
+    // 截斷無結尾
+    let s4 = "這是未完結的句子...";
+    let m4 = match_terminal_colophon_anchor(s4);
+    assert!(!m4.is_matched);
+}
+
+#[test]
+fn test_dynamic_zero_config_totality() {
+    use rust_bricks::classic_continuity::check_book_totality;
+
+    // 任何書籍：無章節配置時，自適應檢查首頌是否為 1
+    // 正常從 1 開始
+    let normal_tokens = vec![
+        (-1, "第 1 章".to_string(), 1),
+        (1, "Text 1".to_string(), 2),
+        (2, "Text 2".to_string(), 3),
+    ];
+    let errs1 = check_book_totality(&normal_tokens, None, None, None);
+    assert!(errs1.is_empty());
+
+    // 瑕疵：第 1 章從第 27 頌開始 (掐頭漏洞)
+    let truncated_tokens = vec![
+        (-1, "第 1 章".to_string(), 1),
+        (27, "Text 27".to_string(), 2),
+        (28, "Text 28".to_string(), 3),
+    ];
+    let errs2 = check_book_totality(&truncated_tokens, None, None, None);
+    assert_eq!(errs2.len(), 1);
+    assert!(errs2[0].contains("篇章首頌異常") && errs2[0].contains("非第 1 頌"));
+}

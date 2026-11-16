@@ -6,6 +6,24 @@
 
 #![forbid(unsafe_code)]
 
+/// 來源實體檔案序號空洞與重複報告
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PageGapReport {
+    pub total_files: usize,
+    pub min_index: u32,
+    pub max_index: u32,
+    pub missing_indices: Vec<u32>,
+    pub duplicate_indices: Vec<u32>,
+}
+
+/// 結尾題記 (Colophon / Puṣpikā / Iti Samāptam) 錨點比對結果
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ColophonMatch {
+    pub is_matched: bool,
+    pub matched_signature: String,
+    pub snippet: String,
+}
+
 /// 剛性禁字違規條目
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BannedViolation {
@@ -510,6 +528,26 @@ pub fn check_book_totality(
     let mut errors = Vec::new();
     let chapters = split_into_chapters(verse_tokens);
 
+    // 0. 若未指定明確篇章與頌數標準，執行文獻學自適應全體性檢驗 (Zero-Config Dynamic Totality)
+    if expected_chapters.is_none() && min_final_verse.is_none() && min_total_verses.is_none() {
+        if chapters.is_empty() {
+            errors.push("❌ 篇章全體性錯誤: 經文中未偵測到任何有效章節或頌節！".to_string());
+            return errors;
+        }
+        for (chap_name, verses) in &chapters {
+            if verses.is_empty() {
+                errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
+                continue;
+            }
+            let first_v = verses[0].0;
+            if first_v != 1 {
+                errors.push(format!(
+                    "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非第 1 頌（可能前面有缺頁/缺頌）！"
+                ));
+            }
+        }
+    }
+
     // 1. 檢驗篇章總數
     if let Some(exp_ch) = expected_chapters {
         if chapters.len() < exp_ch {
@@ -543,6 +581,165 @@ pub fn check_book_totality(
         }
     }
 
+    errors
+}
+
+/// 從檔案名稱中提取自然頁碼/序號 (例如 "page_042.png" -> Some(42))
+/// @outputs: 3
+/// @domain: filename.len() [1..256]
+pub fn extract_page_index_from_filename(filename: &str) -> Option<u32> {
+    if filename.is_empty() || filename.len() > 256 {
+        return None;
+    }
+    let stem = filename.split('/').last().unwrap_or(filename);
+    let stem_no_ext = stem.split('.').next().unwrap_or(stem);
+
+    let mut num_str = String::new();
+    let mut found_digit = false;
+    for c in stem_no_ext.chars().rev() {
+        if c.is_ascii_digit() {
+            num_str.push(c);
+            found_digit = true;
+        } else if found_digit {
+            break;
+        }
+    }
+    if num_str.is_empty() {
+        return None;
+    }
+    let reversed: String = num_str.chars().rev().collect();
+    reversed.parse::<u32>().ok()
+}
+
+/// 檢驗實體檔案序號清單是否有空洞 (Gap) 或重複 (Duplicate)
+/// @outputs: 4
+/// @domain: max_allowed_index [1..65535]
+pub fn check_page_sequence_gaps(
+    indices: &[u32],
+    max_allowed_index: u32,
+) -> Result<PageGapReport, &'static str> {
+    if indices.is_empty() {
+        return Err("序號清單不可為空");
+    }
+    if max_allowed_index == 0 || max_allowed_index > 65535 {
+        return Err("最大容許索引超出定義域 [1..65535]");
+    }
+    let mut sorted = indices.to_vec();
+    sorted.sort_unstable();
+
+    let min_index = sorted[0];
+    let max_index = sorted[sorted.len() - 1];
+
+    if max_index > max_allowed_index {
+        return Err("偵測到超出上限之序號");
+    }
+
+    let mut missing = Vec::new();
+    let mut duplicates = Vec::new();
+    let scan_len = sorted.len().min(4096);
+
+    for i in 0..scan_len.saturating_sub(1) {
+        let curr = sorted[i];
+        let next = sorted[i + 1];
+        if next == curr {
+            duplicates.push(curr);
+        } else if next > curr.saturating_add(1) {
+            let gap_start = curr.saturating_add(1);
+            let gap_end = next.saturating_sub(1);
+            for g in gap_start..=gap_end.min(gap_start.saturating_add(256)) {
+                missing.push(g);
+            }
+        }
+    }
+
+    Ok(PageGapReport {
+        total_files: sorted.len(),
+        min_index,
+        max_index,
+        missing_indices: missing,
+        duplicate_indices: duplicates,
+    })
+}
+
+/// 結尾題記 (Colophon / Puṣpikā / Iti Samāptam) 容錯比對
+/// @outputs: 2
+pub fn match_terminal_colophon_anchor(text_tail: &str) -> ColophonMatch {
+    if text_tail.is_empty() {
+        return ColophonMatch {
+            is_matched: false,
+            matched_signature: String::new(),
+            snippet: String::new(),
+        };
+    }
+
+    let signatures = [
+        "समाप्तम्",
+        "समाप्तः",
+        "समाप्ता",
+        "समाप्त",
+        "সমাপ্ত",
+        "সমাপ্তম্",
+        "iti samāptam",
+        "iti samaptam",
+        "iti samāptaḥ",
+        "iti samaptah",
+        "iti śrī",
+        "iti sri",
+        "śubham bhavatu",
+        "subham bhavatu",
+        "शुभं भवतु",
+        "हरिः ॐ तत् सत्",
+        "全書終",
+        "第.*章終",
+        "圓滿",
+    ];
+
+    let lower = text_tail.to_lowercase();
+    for &sig in &signatures {
+        if let Some(pos) = lower.find(sig) {
+            let mut start = pos.saturating_sub(30);
+            while start > 0 && !text_tail.is_char_boundary(start) {
+                start = start.saturating_sub(1);
+            }
+            let mut end = (pos.saturating_add(sig.len()).saturating_add(30)).min(text_tail.len());
+            while end < text_tail.len() && !text_tail.is_char_boundary(end) {
+                end = end.saturating_add(1);
+            }
+            let snippet = text_tail[start..end].replace('\n', " ");
+            return ColophonMatch {
+                is_matched: true,
+                matched_signature: sig.to_string(),
+                snippet,
+            };
+        }
+    }
+
+    ColophonMatch {
+        is_matched: false,
+        matched_signature: String::new(),
+        snippet: String::new(),
+    }
+}
+
+/// 支援結尾題記驗證的進階全體性門禁組合子
+/// @outputs: 1
+pub fn check_book_totality_advanced(
+    verse_tokens: &[(i32, String, usize)],
+    content: &str,
+    expected_chapters: Option<usize>,
+    min_final_verse: Option<i32>,
+    min_total_verses: Option<usize>,
+    require_colophon: bool,
+) -> Vec<String> {
+    let mut errors = check_book_totality(verse_tokens, expected_chapters, min_final_verse, min_total_verses);
+    if require_colophon {
+        let tail_len = 2000.min(content.len());
+        let tail_slice = &content[content.len().saturating_sub(tail_len)..];
+        let colophon = match_terminal_colophon_anchor(tail_slice);
+        if !colophon.is_matched {
+            errors.push("❌ 結尾題記缺失 (Terminal Colophon Missing): 經文末尾未偵測到印度古典閉合標誌（如 इति समाप्तम् / সমাপ্ত / 全書終），書籍可能在末端被截斷！".to_string());
+        }
+    }
     errors
 }
 
