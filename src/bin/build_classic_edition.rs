@@ -413,7 +413,7 @@ fn render_md_single_verse(v: &JsonValue, idx: usize, md: &mut Vec<String>) {
     let default_id = format!("Text {idx}");
     let vid = v.get("id").and_then(|s| s.as_str()).unwrap_or(&default_id);
     let title = v.get("title").and_then(|s| s.as_str()).unwrap_or("");
-    let coord = if vid.contains("[全書第") {
+    let coord = if vid.contains('[') {
         vid.to_string()
     } else {
         format!("{vid} [全書第 {idx} 頌]")
@@ -659,7 +659,7 @@ fn render_docx_single_verse(v: &JsonValue, idx: usize, cs_font: &str, doc_xml: &
     let default_id = format!("Text {idx}");
     let vid = v.get("id").and_then(|s| s.as_str()).unwrap_or(&default_id);
     let title = v.get("title").and_then(|s| s.as_str()).unwrap_or("");
-    let coord = if vid.contains("[全書第") {
+    let coord = if vid.contains('[') {
         vid.to_string()
     } else {
         format!("{vid} [全書第 {idx} 頌]")

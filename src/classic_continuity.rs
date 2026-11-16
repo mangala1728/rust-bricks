@@ -153,6 +153,33 @@ fn is_chapter_header(line: &str) -> bool {
         || clean.contains("তরঙ্গ")
 }
 
+/// 檢查是否為結尾題記或跋語標題（Puṣpikā / Colophon）
+/// @outputs: 2
+fn is_colophon_header(line: &str) -> bool {
+    let trimmed = line.trim();
+    if !trimmed.starts_with('#') {
+        return false;
+    }
+    let clean = trimmed.trim_start_matches('#').trim();
+    let lower = clean.to_lowercase();
+    clean.contains("題記")
+        || clean.contains("跋語")
+        || lower.contains("puṣpikā")
+        || lower.contains("puspika")
+        || lower.contains("colophon")
+}
+
+/// 檢查是否為結尾題記梵文行（例如 इति श्री... 或 iti śrī...）
+/// @outputs: 2
+fn is_colophon_line(line: &str) -> bool {
+    let cleaned = line.trim_start_matches(&['>', '#', '*', ' ', '\t'][..]).trim();
+    let lower = cleaned.to_lowercase();
+    cleaned.starts_with("इति")
+        || cleaned.starts_with("ইতি")
+        || lower.starts_with("iti ")
+        || lower.starts_with("iti-")
+}
+
 /// 從標題行抽取頌號（例如 Verse 27, Text 27, 第 27 頌）
 /// @outputs: 3
 fn extract_title_verse_num(norm_line: &str) -> Option<i32> {
@@ -215,6 +242,7 @@ fn extract_danda_verse_num(norm_line: &str) -> Option<i32> {
 /// @outputs: 1
 pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize)> {
     let mut raw_tokens = Vec::new();
+    let mut in_colophon_block = false;
 
     for (idx_0, line) in content.lines().enumerate() {
         let line_idx = idx_0.saturating_add(1);
@@ -224,8 +252,18 @@ pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize
             continue;
         }
 
+        if is_colophon_header(trimmed) {
+            in_colophon_block = true;
+            continue;
+        }
+
         if is_chapter_header(trimmed) {
+            in_colophon_block = false;
             raw_tokens.push((-1, trimmed.to_string(), line_idx));
+            continue;
+        }
+
+        if in_colophon_block || is_colophon_line(trimmed) {
             continue;
         }
 
@@ -817,5 +855,13 @@ mod tests {
         let text = "我們應當皈依至尊主，登上靈性平台，達到證悟境界，跟隨哈里達斯學習以太。";
         let violations = check_banned_words_and_leakage(text);
         assert_eq!(violations.len(), 5);
+    }
+
+    #[test]
+    fn test_colophon_puspika_ignored_in_verse_numbers() {
+        let md = "### Verse 45\n> verse 45 content || 45 ||\n### Verse 46\n> verse 46 content || 46 ||\n\n## 【東方第一浪圓滿題記（Puṣpikā）】\n> ### इति श्री-भक्ति-रसामृत-सिन्धौ पूर्व-विभागे सामान्य-भक्ति-निरूपणं नाम प्रथमा लहरी ॥ १ ॥\n*iti śrī-bhakti-rasāmṛta-sindhau pūrva-vibhāge sāmānya-bhakti-nirūpaṇaṁ nāma prathamā laharī || 1 ||*";
+        let tokens = extract_verse_numbers_from_text(md);
+        let verse_nums: Vec<i32> = tokens.into_iter().filter(|v| v.0 != -1).map(|v| v.0).collect();
+        assert_eq!(verse_nums, vec![45, 46]);
     }
 }
