@@ -206,6 +206,18 @@ fn extract_title_verse_num(norm_line: &str) -> Option<i32> {
     let trimmed = norm_line.trim_start_matches('#').trim();
     let lower = trimmed.to_lowercase();
 
+    // 守衛：非標題行（例如微言大義校注、譯文或引用段落）嚴禁抽取
+    if !norm_line.starts_with('#')
+        && !lower.starts_with("text")
+        && !lower.starts_with("verse")
+        && !lower.starts_with("sutra")
+        && !lower.starts_with("sūtra")
+        && !trimmed.starts_with('第')
+        && !trimmed.starts_with("**")
+    {
+        return None;
+    }
+
     // 格式 1: Verse N, Text N, Sutra N
     for prefix in &["text", "verse", "sutra", "sūtra"] {
         if lower.starts_with(prefix) {
@@ -889,6 +901,43 @@ pub fn check_book_totality_advanced(
     errors
 }
 
+/// 檢查散文句法與逐字解 (Anvaya & Padaccheda) 的完整性
+/// @outputs: 1
+pub fn check_anvaya_integrity(content: &str) -> Vec<String> {
+    let mut errors = Vec::new();
+    let mut in_anvaya_table = false;
+    let mut line_no = 0;
+
+    for line in content.lines() {
+        line_no += 1;
+        let trimmed = line.trim();
+        if trimmed.contains("【散文句法與逐字解") || trimmed.contains("Anvaya & Padaccheda") {
+            in_anvaya_table = true;
+            continue;
+        }
+
+        if !in_anvaya_table {
+            continue;
+        }
+
+        if trimmed.starts_with('#') || trimmed.starts_with("譯文") {
+            in_anvaya_table = false;
+            continue;
+        }
+
+        if trimmed.starts_with('|') && !trimmed.starts_with("| :---") && !trimmed.contains("梵文單詞") {
+            let parts: Vec<&str> = trimmed.split('|').map(|s| s.trim()).collect();
+            if parts.len() >= 5 && parts[parts.len() - 2].is_empty() {
+                let word_col = parts[1];
+                errors.push(format!("第 {line_no} 行: 逐字解表格中單詞 '{word_col}' 之繁體中文逐字義為空！"));
+            }
+        } else if trimmed.starts_with("- ") && (trimmed.contains("[] ➔") || trimmed.contains("[] ->") || trimmed.ends_with("➔") || trimmed.ends_with("->")) {
+            errors.push(format!("第 {line_no} 行: 逐字解包含空中括號或未填入中文逐字義: '{trimmed}'"));
+        }
+    }
+    errors
+}
+
 /// 執行完整五道剛性門禁審查（含篇章全體性與末章閉合）
 /// @outputs: 2
 pub fn inspect_markdown_content(
@@ -902,12 +951,14 @@ pub fn inspect_markdown_content(
     let monotonicity_errors = check_verse_monotonicity(&verse_tokens);
     let closure_errors = check_danda_sentence_closure(content);
     let banned_violations = check_banned_words_and_leakage(content);
-    let totality_errors = check_book_totality(
+    let mut totality_errors = check_book_totality(
         &verse_tokens,
         expected_chapters,
         min_final_verse,
         min_total_verses,
     );
+    let anvaya_errors = check_anvaya_integrity(content);
+    totality_errors.extend(anvaya_errors);
     let filename_errors = check_filename_bilingual(file_path);
 
     let all_passed = filename_errors.is_empty()
@@ -1005,5 +1056,21 @@ mod tests {
         let md_missing_end = "# 東方第二浪中編（1.2.31~1.2.33）\n### Verse 31\n> content || 31 ||\n### Verse 32\n> content || 32 ||\n";
         let report_bad_end = inspect_markdown_content(md_missing_end, "Bhakti-rasāmṛta-sindhu_奉愛甘露之洋_繁體中文全譯本.md", None, None, None);
         assert!(!report_bad_end.totality_errors.is_empty());
+    }
+
+    #[test]
+    fn test_anvaya_integrity_check() {
+        let good_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n| 梵文單詞 | 切分 | 格位 | 逐字義 |\n| :--- | :--- | :--- | :--- |\n| yaḥ | yaḥ | nom. sg. m. | 彼（聖王） |\n";
+        assert!(check_anvaya_integrity(good_md).is_empty());
+
+        let bad_table_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n| 梵文單詞 | 切分 | 格位 | 逐字義 |\n| :--- | :--- | :--- | :--- |\n| yaḥ | yaḥ |  |  |\n";
+        let errs = check_anvaya_integrity(bad_table_md);
+        assert_eq!(errs.len(), 1);
+        assert!(errs[0].contains("逐字義為空"));
+
+        let bad_list_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n- yaḥ (yaḥ) [] ➔ \n";
+        let list_errs = check_anvaya_integrity(bad_list_md);
+        assert_eq!(list_errs.len(), 1);
+        assert!(list_errs[0].contains("空中括號"));
     }
 }
