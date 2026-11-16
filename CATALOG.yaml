@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 937
+total_functions: 940
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -5941,7 +5941,7 @@ modules:
         outputs: 1
   - module: "vlm_classic_preprocessor"
     file: "src/vlm_classic_preprocessor.rs"
-    functions_count: 8
+    functions_count: 11
     architecture_map:
       - "Role: vision/vlm_classic_preprocessor — 古典善本圖像自適應去噪、二值化、裝訂槽投影切片與 VLM 提示詞生成純演算法積木。"
       - "Inputs: 灰階像素切片、寬高維度、直方圖、百分位點、投影門檻、切片最小空隙。"
@@ -5986,6 +5986,17 @@ modules:
       - name: "generate_vlm_verification_prompt"
         signature: "pub fn generate_vlm_verification_prompt(context_hint: &str) -> String"
         outputs: 1
+      - name: "compute_dhash_64"
+        signature: "pub fn compute_dhash_64(thumb_9x8: &[u8]) -> u64"
+        outputs: 1
+      - name: "hamming_distance_64"
+        signature: "pub fn hamming_distance_64(hash_a: u64, hash_b: u64) -> u32"
+        outputs: 1
+      - name: "is_duplicate_dhash_pair"
+        signature: "pub fn is_duplicate_dhash_pair(hash_a: u64, hash_b: u64, max_hamming: u32) -> bool"
+        outputs: 1
+        domains:
+          max_hamming: "[0..64]"
   - module: "wish_board"
     file: "src/wish_board.rs"
     functions_count: 2

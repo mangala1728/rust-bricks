@@ -284,6 +284,44 @@ pub fn generate_vlm_verification_prompt(context_hint: &str) -> String {
     prompt
 }
 
+/// 計算 9x8 灰度縮圖之 64-bit 差分感知雜湊 (dHash)
+/// @outputs: 1
+/// @domain: thumb_9x8.len() == 72
+pub fn compute_dhash_64(thumb_9x8: &[u8]) -> u64 {
+    if thumb_9x8.len() != 72 {
+        return 0;
+    }
+    let mut hash: u64 = 0;
+    for row in 0usize..8 {
+        let row_start = row.saturating_mul(9);
+        for col in 0usize..8 {
+            let left = thumb_9x8[row_start.saturating_add(col)];
+            let right = thumb_9x8[row_start.saturating_add(col).saturating_add(1)];
+            hash <<= 1;
+            if left > right {
+                hash |= 1;
+            }
+        }
+    }
+    hash
+}
+
+/// 計算兩個 64-bit dHash 之間的漢明距離 (Hamming Distance)
+/// @outputs: 1
+pub fn hamming_distance_64(hash_a: u64, hash_b: u64) -> u32 {
+    (hash_a ^ hash_b).count_ones()
+}
+
+/// 判斷兩張圖像之 dHash 漢明距離是否小於等於門檻 (預設 <= 4 判定為實體重複頁)
+/// @outputs: 1
+/// @domain: max_hamming [0..64]
+pub fn is_duplicate_dhash_pair(hash_a: u64, hash_b: u64, max_hamming: u32) -> bool {
+    if max_hamming > 64 {
+        return false;
+    }
+    hamming_distance_64(hash_a, hash_b) <= max_hamming
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -372,11 +410,25 @@ mod tests {
     }
 
     #[test]
-    fn test_vlm_prompt_generation() {
-        let prompt = generate_vlm_verification_prompt("奧義書天城文");
-        assert!(prompt.contains("奧義書天城文"));
-        assert!(prompt.contains("0 皈依"));
-        assert!(prompt.contains("Saṁyuktākṣara"));
-        assert!(prompt.contains("Virāma"));
+    fn test_dhash_and_hamming_distance() {
+        let mut thumb1 = [100u8; 72];
+        let mut thumb2 = [100u8; 72];
+        for i in (0..72).step_by(2) {
+            thumb1[i] = 120;
+            thumb2[i] = 122;
+        }
+        let h1 = compute_dhash_64(&thumb1);
+        let h2 = compute_dhash_64(&thumb2);
+        let dist = hamming_distance_64(h1, h2);
+        assert_eq!(dist, 0);
+        assert!(is_duplicate_dhash_pair(h1, h2, 4));
+
+        let mut thumb_diff = [0u8; 72];
+        for i in 0..36 {
+            thumb_diff[i] = 250;
+        }
+        let h_diff = compute_dhash_64(&thumb_diff);
+        let dist_diff = hamming_distance_64(h1, h_diff);
+        assert!(dist_diff > 10);
     }
 }

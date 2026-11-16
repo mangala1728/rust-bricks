@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 937,
+  "total_functions": 940,
   "modules": [
     {
       "module": "agent_terminal",
@@ -6001,7 +6001,7 @@
     {
       "module": "vlm_classic_preprocessor",
       "file": "src/vlm_classic_preprocessor.rs",
-      "functions_count": 8,
+      "functions_count": 11,
       "functions": [
         {
           "name": "calc_histogram",
@@ -6041,6 +6041,21 @@
         {
           "name": "generate_vlm_verification_prompt",
           "signature": "pub fn generate_vlm_verification_prompt(context_hint: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "compute_dhash_64",
+          "signature": "pub fn compute_dhash_64(thumb_9x8: &[u8]) -> u64",
+          "outputs": 1
+        },
+        {
+          "name": "hamming_distance_64",
+          "signature": "pub fn hamming_distance_64(hash_a: u64, hash_b: u64) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "is_duplicate_dhash_pair",
+          "signature": "pub fn is_duplicate_dhash_pair(hash_a: u64, hash_b: u64, max_hamming: u32) -> bool",
           "outputs": 1
         }
       ]
