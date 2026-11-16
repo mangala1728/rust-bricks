@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod agent_quota_fallback;
 pub mod agent_terminal;
 pub mod ai_autograd_train;
 pub mod ai_rl_policy_gradient;
@@ -37,6 +38,8 @@ pub mod canfd_crc;
 pub mod canopen_sdo_handler;
 pub mod catalog;
 pub mod chaos_audit;
+pub mod classic_continuity;
+pub mod classic_sacred_builder;
 pub mod clock_pll_rtc;
 pub mod cloud_farmer;
 pub mod cnc_gcode_toolpath;
@@ -54,6 +57,7 @@ pub mod crypto_kdf;
 pub mod crypto_modern_wire;
 pub mod crypto_vault;
 pub mod curve_fit_trend;
+pub mod decision_local_edge;
 pub mod decision_mcts;
 pub mod decision_minimax_alphabeta;
 pub mod decision_systemone;
@@ -207,7 +211,5 @@ pub mod vision_feature;
 pub mod vision_morphology_fast;
 pub mod vision_optical_flow_homography;
 pub mod vision_yuv;
-pub mod wish_board;
 pub mod vlm_classic_preprocessor;
-pub mod classic_sacred_builder;
-pub mod classic_continuity;
+pub mod wish_board;

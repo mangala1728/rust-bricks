@@ -80,6 +80,48 @@ pub fn validate_first_page_preface(preface_title: &str, sections: &[PrefaceSecti
     !sections.is_empty()
 }
 
+/// 追加第一頁導讀段落至 Markdown。
+/// @outputs: 1
+fn append_preface_markdown<'a>(md: &mut String, preface_title: &str, preface_subtitle: &str, sections: &[PrefaceSection<'a>]) {
+    if sections.is_empty() {
+        return;
+    }
+    md.push_str(&format!("## {}\n\n", preface_title));
+    if !preface_subtitle.is_empty() {
+        md.push_str(&format!("> {}\n\n", preface_subtitle));
+    }
+    for sec in sections {
+        md.push_str(&format!("### {}\n\n", sec.heading));
+        for para in sec.paragraphs {
+            md.push_str(&format!("{}\n\n", para));
+        }
+    }
+    md.push_str("---\n\n");
+}
+
+/// 追加單頌經文至 Markdown。
+/// @outputs: 1
+fn append_verse_markdown<'a>(md: &mut String, v: &VerseUnitData<'a>) {
+    md.push_str("### ");
+    md.push_str(v.unit_id);
+    if !v.title.is_empty() {
+        md.push_str(" ． ");
+        md.push_str(v.title);
+    }
+    md.push_str("\n\n");
+    for line in v.devanagari_lines {
+        if !line.trim().is_empty() {
+            md.push_str(&format!("> {}\n", line));
+        }
+    }
+    let trans = v.translation_zh.trim();
+    let actual = trans.trim_start_matches("譯文:").trim_start_matches("譯文：").trim();
+    md.push_str(&format!("\n**譯文**：{}\n\n", actual));
+    if !v.notes.trim().is_empty() {
+        md.push_str(&format!("*{}*\n\n", v.notes.trim()));
+    }
+}
+
 /// 生成結構化 Markdown 完整正文
 /// @outputs: 1
 pub fn generate_classic_markdown<'a>(
@@ -91,80 +133,15 @@ pub fn generate_classic_markdown<'a>(
     verses: &[VerseUnitData<'a>],
 ) -> String {
     let mut md = String::with_capacity(8192);
-
-    // 1. 書名與作者
-    md.push_str("# ");
-    md.push_str(book_title);
-    md.push_str("\n\n");
+    md.push_str(&format!("# {}\n\n", book_title));
     if !author_info.is_empty() {
-        md.push_str("**原著/備註**：\n");
-        md.push_str(author_info);
-        md.push_str("\n\n---\n\n");
+        md.push_str(&format!("**原著/備註**：\n{}\n\n---\n\n", author_info));
     }
-
-    // 2. 第一頁導讀
-    if !preface_sections.is_empty() {
-        md.push_str("## ");
-        md.push_str(preface_title);
-        md.push_str("\n\n");
-        if !preface_subtitle.is_empty() {
-            md.push_str("> ");
-            md.push_str(preface_subtitle);
-            md.push_str("\n\n");
-        }
-        for sec in preface_sections {
-            md.push_str("### ");
-            md.push_str(sec.heading);
-            md.push_str("\n\n");
-            for para in sec.paragraphs {
-                md.push_str(para);
-                md.push_str("\n\n");
-            }
-        }
-        md.push_str("---\n\n");
-    }
-
-    // 3. 經文正文
-    let verse_chapter_heading = format!("經文正文全錄（全 {} 頌逐頌對照全譯）", verses.len());
-    md.push_str("## ");
-    md.push_str(&verse_chapter_heading);
-    md.push_str("\n\n> 天城文經文、標準繁體中文逐字譯文與微言大義校注\n\n");
-
+    append_preface_markdown(&mut md, preface_title, preface_subtitle, preface_sections);
+    md.push_str(&format!("## 經文正文全錄（全 {} 頌逐頌對照全譯）\n\n> 天城文經文、標準繁體中文逐字譯文與微言大義校注\n\n", verses.len()));
     for v in verses {
-        md.push_str("### ");
-        md.push_str(v.unit_id);
-        if !v.title.is_empty() {
-            md.push_str(" ． ");
-            md.push_str(v.title);
-        }
-        md.push_str("\n\n");
-
-        for line in v.devanagari_lines {
-            if !line.trim().is_empty() {
-                md.push_str("> ");
-                md.push_str(line);
-                md.push_str("\n");
-            }
-        }
-        md.push_str("\n");
-
-        md.push_str("**譯文**：");
-        let trans = v.translation_zh.trim();
-        if trans.starts_with("譯文:") || trans.starts_with("譯文：") {
-            let actual = trans.trim_start_matches("譯文:").trim_start_matches("譯文：").trim();
-            md.push_str(actual);
-        } else {
-            md.push_str(trans);
-        }
-        md.push_str("\n\n");
-
-        if !v.notes.trim().is_empty() {
-            md.push_str("*");
-            md.push_str(v.notes.trim());
-            md.push_str("*\n\n");
-        }
+        append_verse_markdown(&mut md, v);
     }
-
     md
 }
 

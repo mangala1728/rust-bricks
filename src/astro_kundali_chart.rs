@@ -268,12 +268,14 @@ mod tests {
     #[test]
     fn test_north_indian_coords() {
         // House 1 Center: (0.5, 0.25)
-        let (c_x, c_y) = north_indian_house_center(1).unwrap();
+        // @safety-proof: house 1 is statically within valid range [1..12]
+        let (c_x, c_y) = north_indian_house_center(1).unwrap_or((-1.0, -1.0));
         assert!((c_x - 0.50).abs() < 1e-4);
         assert!((c_y - 0.25).abs() < 1e-4);
 
         // House 7 Center: (0.5, 0.75)
-        let (c7_x, c7_y) = north_indian_house_center(7).unwrap();
+        // @safety-proof: house 7 is statically within valid range [1..12]
+        let (c7_x, c7_y) = north_indian_house_center(7).unwrap_or((-1.0, -1.0));
         assert!((c7_x - 0.50).abs() < 1e-4);
         assert!((c7_y - 0.75).abs() < 1e-4);
 

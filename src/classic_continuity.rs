@@ -548,61 +548,15 @@ pub fn check_danda_sentence_closure(content: &str) -> Vec<String> {
     errors
 }
 
-/// 掃描單行文字中的禁字與標點違規
+/// 檢查非以「太陽」為前綴的「以太」誤用。
 /// @outputs: 1
-fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolation> {
-    let mut violations = Vec::new();
-    let trimmed = line.trim();
-
-    if line.contains("皈依") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "皈依".to_string(),
-            reason: "嚴禁使用「皈依」，一律改用通俗字「歸依」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("平台") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "平台".to_string(),
-            reason: "嚴禁使用「平台」，靈性境界與階梯一律改用「層級」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("證悟") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "證悟".to_string(),
-            reason: "作形容詞或動詞時避用「證悟」，改為「覺悟自我的／感悟／親證」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("達斯") && !line.contains("達斯亞") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "達斯".to_string(),
-            reason: "dāsa 結尾 a 音不可省略，一律作「達薩」，嚴禁「達斯」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("主因鐸") || line.contains("主因陀羅") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "主因鐸/主因陀羅".to_string(),
-            reason: "半神人不可稱「主」，Lord Indra 必須翻譯為「天帝因鐸」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-
-    // 以太檢查 (排除 以太陽...)
+fn check_ether_typo(line_idx: usize, line: &str, trimmed: &str, out: &mut Vec<BannedViolation>) {
     let mut search_from = 0;
     while let Some(pos) = line[search_from..].find("以太") {
         let abs_pos = search_from.saturating_add(pos);
         let after_idx = abs_pos.saturating_add("以太".len());
-        let after_sun = line[after_idx..].starts_with('陽');
-        if !after_sun {
-            violations.push(BannedViolation {
+        if !line[after_idx..].starts_with('陽') {
+            out.push(BannedViolation {
                 line: line_idx,
                 matched: "以太".to_string(),
                 reason: "五大元素之 ether 一律作「乙太」，嚴禁「以太」".to_string(),
@@ -612,25 +566,37 @@ fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolatio
         }
         search_from = after_idx;
     }
+}
 
+/// 掃描單行文字中的禁字與標點違規
+/// @outputs: 1
+fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolation> {
+    let mut violations = Vec::new();
+    let trimmed = line.trim();
+    let snippet: String = trimmed.chars().take(60).collect();
+    let rules = [
+        ("皈依", "嚴禁使用「皈依」，一律改用通俗字「歸依」"),
+        ("平台", "嚴禁使用「平台」，靈性境界與階梯一律改用「層級」"),
+        ("證悟", "作形容詞或動詞時避用「證悟」，改為「覺悟自我的／感悟／親證」"),
+    ];
+    for (kw, msg) in rules {
+        if line.contains(kw) {
+            violations.push(BannedViolation { line: line_idx, matched: kw.to_string(), reason: msg.to_string(), snippet: snippet.clone() });
+        }
+    }
+    if line.contains("達斯") && !line.contains("達斯亞") {
+        violations.push(BannedViolation { line: line_idx, matched: "達斯".to_string(), reason: "dāsa 結尾 a 音不可省略，一律作「達薩」，嚴禁「達斯」".to_string(), snippet: snippet.clone() });
+    }
+    if line.contains("主因鐸") || line.contains("主因陀羅") {
+        violations.push(BannedViolation { line: line_idx, matched: "主因鐸/主因陀羅".to_string(), reason: "半神人不可稱「主」，Lord Indra 必須翻譯為「天帝因鐸」".to_string(), snippet: snippet.clone() });
+    }
+    check_ether_typo(line_idx, line, trimmed, &mut violations);
     if line.contains('·') || line.contains('•') || line.contains('\u{02D9}') || line.contains('\u{2027}') {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "·".to_string(),
-            reason: "專名連接號嚴禁半形或間隔號，一律統一為全形句點「．」(U+FF0E)".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
+        violations.push(BannedViolation { line: line_idx, matched: "·".to_string(), reason: "專名連接號嚴禁半形或間隔號，一律統一為全形句點「．」(U+FF0E)".to_string(), snippet: snippet.clone() });
     }
-
     if trimmed == "譯文:" || trimmed == "譯文：" {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: trimmed.to_string(),
-            reason: "存在空白未填之「譯文:」單元，繁體中文譯文不可缺失！".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
+        violations.push(BannedViolation { line: line_idx, matched: trimmed.to_string(), reason: "存在空白未填之「譯文:」單元，繁體中文譯文不可缺失！".to_string(), snippet });
     }
-
     violations
 }
 
@@ -646,6 +612,32 @@ pub fn check_banned_words_and_leakage(content: &str) -> Vec<BannedViolation> {
     violations
 }
 
+/// 執行無參數動態篇章範圍全體性檢查（防篇章首尾缺頌）。
+/// @outputs: 1
+fn check_dynamic_chapter_ranges(chapters: &[(String, Vec<(i32, String, usize)>)], errors: &mut Vec<String>) {
+    for (chap_name, verses) in chapters {
+        if verses.is_empty() {
+            errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
+            continue;
+        }
+        let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
+        let first_v = verses[0].0;
+        if first_v != expected_start {
+            errors.push(format!(
+                "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非第 {expected_start} 頌（可能前面有缺頁/缺頌）！"
+            ));
+        }
+        if let Some(expected_end) = expected_end_opt {
+            let last_v = verses[verses.len() - 1].0;
+            if last_v < expected_end {
+                errors.push(format!(
+                    "❌ 篇章末頌異常: 篇章【{chap_name}】結束於第 {last_v} 頌，未達預期終結第 {expected_end} 頌！"
+                ));
+            }
+        }
+    }
+}
+
 /// 檢驗篇章全體性、末章末頌閉合與全書預期頌數（防篇章截斷與 50+ 頌缺失）
 /// @outputs: 2
 /// @domain: expected_chapters [0..100]
@@ -657,88 +649,45 @@ pub fn check_book_totality(
     min_final_verse: Option<i32>,
     min_total_verses: Option<usize>,
 ) -> Vec<String> {
-    // 執行期守衛 (R09-4 Anti-Fake Compliance)
-    if let Some(ch) = expected_chapters {
-        if ch > 100 {
-            return vec!["預期篇章數超出定義域 [0..100]".to_string()];
-        }
+    if expected_chapters.map(|c| c > 100).unwrap_or(false) {
+        return vec!["預期篇章數超出定義域 [0..100]".to_string()];
     }
-    if let Some(fv) = min_final_verse {
-        if fv < 0 || fv > 10000 {
-            return vec!["末章頌數超出定義域 [0..10000]".to_string()];
-        }
+    if min_final_verse.map(|v| v < 0 || v > 10000).unwrap_or(false) {
+        return vec!["末章頌數超出定義域 [0..10000]".to_string()];
     }
-    if let Some(tv) = min_total_verses {
-        if tv > 100000 {
-            return vec!["總頌數超出定義域 [0..100000]".to_string()];
-        }
+    if min_total_verses.map(|t| t > 100000).unwrap_or(false) {
+        return vec!["總頌數超出定義域 [0..100000]".to_string()];
     }
 
     let mut errors = Vec::new();
     let chapters = split_into_chapters(verse_tokens);
-
-    // 0. 若未指定明確篇章與頌數標準，執行文獻學自適應全體性檢驗 (Zero-Config Dynamic Totality)
     if expected_chapters.is_none() && min_final_verse.is_none() && min_total_verses.is_none() {
         if chapters.is_empty() {
             errors.push("❌ 篇章全體性錯誤: 經文中未偵測到任何有效章節或頌節！".to_string());
             return errors;
         }
-        for (chap_name, verses) in &chapters {
-            if verses.is_empty() {
-                errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
-                continue;
-            }
-            let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
-            let first_v = verses[0].0;
-            if first_v != expected_start {
-                errors.push(format!(
-                    "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非預期起始第 {expected_start} 頌（可能前面有缺頁/缺頌）！"
-                ));
-            }
-            if let Some(expected_end) = expected_end_opt {
-                let last_v = verses[verses.len() - 1].0;
-                if last_v < expected_end {
-                    errors.push(format!(
-                        "❌ 篇章末頌異常: 篇章【{chap_name}】結束於第 {last_v} 頌，未達預期終結第 {expected_end} 頌！"
-                    ));
-                }
-            }
-        }
+        check_dynamic_chapter_ranges(&chapters, &mut errors);
     }
-
-    // 1. 檢驗篇章總數
     if let Some(exp_ch) = expected_chapters {
         if chapters.len() < exp_ch {
             let chap_names: Vec<&str> = chapters.iter().map(|c| c.0.as_str()).collect();
-            errors.push(format!(
-                "❌ 篇章全體性缺失 (Incomplete Chapters): 預期全書應收錄 {exp_ch} 個篇章，實際僅偵測到 {} 個篇章（已收錄：{chap_names:?}），嚴重缺失後續篇章！",
-                chapters.len()
-            ));
+            errors.push(format!("❌ 篇章全體性缺失 (Incomplete Chapters): 預期全書應收錄 {exp_ch} 個篇章，實際僅偵測到 {} 個篇章（已收錄：{chap_names:?}），嚴重缺失後續篇章！", chapters.len()));
         }
     }
-
-    // 2. 檢驗末章最高頌號
     if let Some(min_fv) = min_final_verse {
         if let Some((final_chap_name, final_verses)) = chapters.last() {
             let max_v = final_verses.iter().map(|v| v.0).max().unwrap_or(0);
             if max_v < min_fv {
-                errors.push(format!(
-                    "❌ 末章經文截斷 (Truncated Final Chapter): 【{final_chap_name}】最高僅收錄至第 {max_v} 頌，未達到原著全本預期之第 {min_fv} 頌（缺失 50+ 頌）！"
-                ));
+                errors.push(format!("❌ 末章經文截斷 (Truncated Final Chapter): 【{final_chap_name}】最高僅收錄至第 {max_v} 頌，未達到原著全本預期之第 {min_fv} 頌（缺失 50+ 頌）！"));
             }
         }
     }
-
-    // 3. 檢驗全書總頌數
     let total_verses = verse_tokens.iter().filter(|v| v.0 != -1).count();
     if let Some(min_tv) = min_total_verses {
         if total_verses < min_tv {
-            errors.push(format!(
-                "❌ 全書經文量不足 (Insufficient Verses): 全書實際收錄 {total_verses} 頌，低於全本門檻下限 {min_tv} 頌！"
-            ));
+            errors.push(format!("❌ 全書經文量不足 (Insufficient Verses): 全書實際收錄 {total_verses} 頌，低於全本門檻下限 {min_tv} 頌！"));
         }
     }
-
     errors
 }
 
