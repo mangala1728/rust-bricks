@@ -145,9 +145,22 @@ fn is_chapter_header(line: &str) -> bool {
     let lower = clean.to_lowercase();
     lower.starts_with("chapter")
         || lower.starts_with("candrikā")
+        || lower.starts_with("candrika")
         || lower.starts_with("adhyāya")
+        || lower.starts_with("adhyaya")
         || lower.starts_with("kautūhala")
-        || (clean.starts_with('第') && (clean.contains("章") || clean.contains("道月光") || clean.contains("篇") || clean.contains("卷") || clean.contains("品")))
+        || lower.contains("laharī")
+        || lower.contains("lahari")
+        || lower.contains("vibhāga")
+        || lower.contains("vibhaga")
+        || clean.contains("章")
+        || clean.contains("道月光")
+        || clean.contains("篇")
+        || clean.contains("卷")
+        || clean.contains("品")
+        || clean.contains("浪")
+        || clean.contains("編")
+        || clean.contains("分")
         || clean.contains("কুতূহল")
         || clean.contains("অধ্যায়")
         || clean.contains("তরঙ্গ")
@@ -324,6 +337,68 @@ fn split_into_chapters(verses: &[(i32, String, usize)]) -> Vec<(String, Vec<(i32
     chapters
 }
 
+/// 自篇章標題字串提取預期經文範圍 (起始頌, 終止頌)
+/// 支援如 "1.2.31~1.2.71", "31~71", "31..71", "第 31~71 頌", "1.2.31-1.2.71"
+/// 若未標注特定區間，預設回傳 (1, None)
+/// @outputs: 1
+pub fn extract_expected_range_from_chap_name(chap_name: &str) -> (i32, Option<i32>) {
+    let normalized = normalize_indic_digits(chap_name);
+    let sep_opt = if let Some(idx) = normalized.find('~') {
+        Some((idx, 1))
+    } else if let Some(idx) = normalized.find("..") {
+        Some((idx, 2))
+    } else {
+        None
+    };
+
+    if let Some((sep_idx, sep_len)) = sep_opt {
+        let left_part = &normalized[..sep_idx];
+        let right_part = &normalized[sep_idx + sep_len..];
+
+        let parse_tail_num = |s: &str| -> Option<i32> {
+            let mut digits = String::new();
+            for c in s.chars().rev() {
+                if c.is_ascii_digit() {
+                    digits.push(c);
+                } else if !digits.is_empty() {
+                    break;
+                }
+            }
+            if digits.is_empty() {
+                None
+            } else {
+                let s_rev: String = digits.chars().rev().collect();
+                s_rev.parse::<i32>().ok()
+            }
+        };
+
+        let parse_head_num = |s: &str| -> Option<i32> {
+            let trimmed = s.trim_start_matches(|c: char| c.is_whitespace() || c == '(' || c == '（' || c == '[');
+            let mut token = String::new();
+            for c in trimmed.chars() {
+                if c.is_ascii_digit() || c == '.' {
+                    token.push(c);
+                } else if !token.is_empty() {
+                    break;
+                }
+            }
+            if let Some(pos) = token.rfind('.') {
+                token[pos + 1..].parse::<i32>().ok()
+            } else {
+                token.parse::<i32>().ok()
+            }
+        };
+
+        if let (Some(start), Some(end)) = (parse_tail_num(left_part), parse_head_num(right_part)) {
+            if start > 0 && end >= start {
+                return (start, Some(end));
+            }
+        }
+    }
+
+    (1, None)
+}
+
 /// 檢驗單一章節內的經文單調連續性
 /// @outputs: 1
 fn check_chapter_verses_monotonicity(chap_name: &str, chap_verses: &[(i32, String, usize)]) -> Vec<String> {
@@ -332,12 +407,19 @@ fn check_chapter_verses_monotonicity(chap_name: &str, chap_verses: &[(i32, Strin
         return errors;
     }
 
+    let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
+
     // 1. 起始完整度檢查
     let (first_v, _, first_line) = chap_verses[0];
-    if first_v > 1 {
+    if first_v > expected_start {
         errors.push(format!(
-            "❌ 完整度缺失 (Initial Verse Missing): 【{chap_name}】起始頌號為第 {first_v} 頌 (行 {first_line})，缺失前導經文 [第 1..{} 頌]，非完整全本！",
+            "❌ 完整度缺失 (Initial Verse Missing): 【{chap_name}】起始頌號為第 {first_v} 頌 (行 {first_line})，缺失前導經文 [第 {}..{} 頌]，非完整全本！",
+            expected_start,
             first_v.saturating_sub(1)
+        ));
+    } else if first_v < expected_start {
+        errors.push(format!(
+            "❌ 起始頌號異常 (Unexpected Start Verse): 【{chap_name}】起始頌號為第 {first_v} 頌 (行 {first_line})，早於篇章預期之第 {expected_start} 頌！"
         ));
     }
 
@@ -363,6 +445,16 @@ fn check_chapter_verses_monotonicity(chap_name: &str, chap_verses: &[(i32, Strin
         } else if next_v < curr_v {
             errors.push(format!(
                 "❌ 序號倒流 (Reverse Order): 【{chap_name}】第 {curr_v} 頌 (行 {curr_line}) 後面緊接著第 {next_v} 頌 (行 {next_line})"
+            ));
+        }
+    }
+
+    // 3. 終止完整度檢查（若章節名稱標記有結束界限）
+    if let Some(expected_end) = expected_end_opt {
+        let (last_v, _, last_line) = chap_verses[chap_verses.len() - 1];
+        if last_v < expected_end {
+            errors.push(format!(
+                "❌ 篇章末頌缺失 (Final Verse Missing): 【{chap_name}】結束於第 {last_v} 頌 (行 {last_line})，未達篇章預期之第 {expected_end} 頌！"
             ));
         }
     }
@@ -577,11 +669,20 @@ pub fn check_book_totality(
                 errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
                 continue;
             }
+            let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
             let first_v = verses[0].0;
-            if first_v != 1 {
+            if first_v != expected_start {
                 errors.push(format!(
-                    "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非第 1 頌（可能前面有缺頁/缺頌）！"
+                    "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非預期起始第 {expected_start} 頌（可能前面有缺頁/缺頌）！"
                 ));
+            }
+            if let Some(expected_end) = expected_end_opt {
+                let last_v = verses[verses.len() - 1].0;
+                if last_v < expected_end {
+                    errors.push(format!(
+                        "❌ 篇章末頌異常: 篇章【{chap_name}】結束於第 {last_v} 頌，未達預期終結第 {expected_end} 頌！"
+                    ));
+                }
             }
         }
     }
@@ -863,5 +964,39 @@ mod tests {
         let tokens = extract_verse_numbers_from_text(md);
         let verse_nums: Vec<i32> = tokens.into_iter().filter(|v| v.0 != -1).map(|v| v.0).collect();
         assert_eq!(verse_nums, vec![45, 46]);
+    }
+
+    #[test]
+    fn test_extract_expected_range_from_chap_name() {
+        let range1 = extract_expected_range_from_chap_name("東方第二浪中編：解脫超越辨析與奉愛無上獨立自足論（1.2.31~1.2.71）");
+        assert_eq!(range1, (31, Some(71)));
+
+        let range2 = extract_expected_range_from_chap_name("東方第二浪前編：修行奉愛界定與三品信德資格論（1.2.1~1.2.30）");
+        assert_eq!(range2, (1, Some(30)));
+
+        let range3 = extract_expected_range_from_chap_name("第 31~71 頌");
+        assert_eq!(range3, (31, Some(71)));
+
+        let range4 = extract_expected_range_from_chap_name("第一章：春季篇 [1..50]");
+        assert_eq!(range4, (1, Some(50)));
+
+        let range5 = extract_expected_range_from_chap_name("第二章：無範圍標注篇");
+        assert_eq!(range5, (1, None));
+    }
+
+    #[test]
+    fn test_subinstallment_continuity_validation() {
+        let md_valid = "# 東方第二浪中編（1.2.31~1.2.33）\n### Verse 31\n> content || 31 ||\n### Verse 32\n> content || 32 ||\n### Verse 33\n> content || 33 ||\n";
+        let report = inspect_markdown_content(md_valid, "Bhakti-rasāmṛta-sindhu_奉愛甘露之洋_繁體中文全譯本.md", None, None, None);
+        assert_eq!(report.monotonicity_errors, Vec::<String>::new());
+        assert_eq!(report.totality_errors, Vec::<String>::new());
+
+        let md_missing_start = "# 東方第二浪中編（1.2.31~1.2.33）\n### Verse 32\n> content || 32 ||\n### Verse 33\n> content || 33 ||\n";
+        let report_bad_start = inspect_markdown_content(md_missing_start, "Bhakti-rasāmṛta-sindhu_奉愛甘露之洋_繁體中文全譯本.md", None, None, None);
+        assert!(!report_bad_start.monotonicity_errors.is_empty());
+
+        let md_missing_end = "# 東方第二浪中編（1.2.31~1.2.33）\n### Verse 31\n> content || 31 ||\n### Verse 32\n> content || 32 ||\n";
+        let report_bad_end = inspect_markdown_content(md_missing_end, "Bhakti-rasāmṛta-sindhu_奉愛甘露之洋_繁體中文全譯本.md", None, None, None);
+        assert!(!report_bad_end.totality_errors.is_empty());
     }
 }
