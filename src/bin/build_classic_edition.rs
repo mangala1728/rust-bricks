@@ -370,14 +370,62 @@ fn render_md_preface(data: &JsonValue, md: &mut Vec<String>) {
     }
 }
 
+/// 渲染 Markdown 終卷大圓滿題記 (Puṣpikā)
+/// @outputs: 1
+fn render_md_colophon(data: &JsonValue, md: &mut Vec<String>) {
+    if let Some(col) = data.get("colophon") {
+        let title = col.get("title").and_then(|s| s.as_str()).unwrap_or("終卷大圓滿題記（Puṣpikā）");
+        md.push("\n---\n".to_string());
+        md.push(format!("## 【{title}】\n"));
+
+        if let Some(dev) = col.get("devanagari").and_then(|s| s.as_str()) {
+            if !dev.trim().is_empty() {
+                md.push(format!("> ### {dev}\n"));
+            }
+        }
+        if let Some(beng) = col.get("bengali").and_then(|s| s.as_str()) {
+            if !beng.trim().is_empty() {
+                md.push(format!("> ### {beng}\n"));
+            }
+        }
+        if let Some(iast) = col.get("iast").and_then(|s| s.as_str()) {
+            if !iast.trim().is_empty() {
+                md.push(format!("*{iast}*\n"));
+            }
+        }
+        if let Some(trans) = col.get("translation_zh").and_then(|s| s.as_str()) {
+            if !trans.trim().is_empty() {
+                md.push(format!("**【題記真義定本】**: {trans}\n"));
+            }
+        }
+        if let Some(sig) = col.get("significance").and_then(|s| s.as_str()) {
+            if !sig.trim().is_empty() {
+                md.push(format!("*{sig}*\n"));
+            }
+        }
+        md.push("\n---\n".to_string());
+    }
+}
+
 /// 渲染 Markdown 單頌內容
 /// @outputs: 1
 fn render_md_single_verse(v: &JsonValue, idx: usize, md: &mut Vec<String>) {
     let default_id = format!("Text {idx}");
     let vid = v.get("id").and_then(|s| s.as_str()).unwrap_or(&default_id);
     let title = v.get("title").and_then(|s| s.as_str()).unwrap_or("");
-    let title_line = if title.is_empty() { vid.to_string() } else { format!("{vid} ．{title}") };
+    let coord = if vid.contains("[全書第") {
+        vid.to_string()
+    } else {
+        format!("{vid} [全書第 {idx} 頌]")
+    };
+    let title_line = if title.is_empty() { coord } else { format!("{coord} ．{title}") };
     md.push(format!("### {title_line}\n"));
+
+    if let Some(meter) = v.get("meter").and_then(|s| s.as_str()) {
+        if !meter.trim().is_empty() {
+            md.push(format!("> **【詩體格律（Chhandas）】**：*{meter}*\n"));
+        }
+    }
 
     if let Some(lines) = v.get("devanagari").and_then(|l| l.as_array()) {
         for l in lines {
@@ -401,6 +449,22 @@ fn render_md_single_verse(v: &JsonValue, idx: usize, md: &mut Vec<String>) {
     if let Some(beng) = v.get("bengali_commentary").and_then(|s| s.as_str()) {
         if !beng.trim().is_empty() {
             md.push(format!("> **【孟加拉文古註（অনুবাদ ও তাৎপর্য）】**：{beng}\n"));
+        }
+    }
+
+    if let Some(anvaya_items) = v.get("anvaya").and_then(|a| a.as_array()) {
+        if !anvaya_items.is_empty() {
+            md.push("> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n".to_string());
+            md.push("| 梵文單詞 / 複合詞 | 連聲切分 (Padaccheda) | 語法格位分析 | 繁體中文逐字義 |".to_string());
+            md.push("| :--- | :--- | :--- | :--- |".to_string());
+            for item in anvaya_items {
+                let w = item.get("word").and_then(|s| s.as_str()).unwrap_or("");
+                let p = item.get("padaccheda").and_then(|s| s.as_str()).unwrap_or(w);
+                let g = item.get("grammar").and_then(|s| s.as_str()).unwrap_or("");
+                let m = item.get("meaning_zh").and_then(|s| s.as_str()).unwrap_or("");
+                md.push(format!("| {w} | {p} | {g} | {m} |"));
+            }
+            md.push(String::new());
         }
     }
 
@@ -454,6 +518,7 @@ fn build_markdown_file(data: &JsonValue, md_path: &Path) -> Result<(), String> {
 
     render_md_preface(data, &mut md);
     render_md_verses(data, &mut md);
+    render_md_colophon(data, &mut md);
 
     let full_text = md.join("\n");
     fs::write(md_path, full_text).map_err(|e| format!("無法寫入 Markdown: {e}"))?;
@@ -534,18 +599,87 @@ fn render_docx_audit_table(data: &JsonValue, cs_font: &str, doc_xml: &mut String
     }
 }
 
+/// 渲染 Word 終卷大圓滿題記 (Puṣpikā)
+/// @outputs: 1
+fn render_docx_colophon(data: &JsonValue, cs_font: &str, doc_xml: &mut String) {
+    if let Some(col) = data.get("colophon") {
+        let title = col.get("title").and_then(|s| s.as_str()).unwrap_or("終卷大圓滿題記（Puṣpikā）");
+        doc_xml.push_str(r#"<w:p><w:r><w:br w:type="page"/></w:r></w:p>"#);
+        doc_xml.push_str(&format!(
+            r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="600" w:after="240"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="32"/><w:szCs w:val="32"/><w:color w:val="7C2D12"/></w:rPr><w:t>【{}】</w:t></w:r></w:p>"#,
+            escape_xml(title)
+        ));
+
+        if let Some(dev) = col.get("devanagari").and_then(|s| s.as_str()) {
+            if !dev.trim().is_empty() {
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="26"/><w:szCs w:val="26"/><w:color w:val="0F172A"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(dev)
+                ));
+            }
+        }
+        if let Some(beng) = col.get("bengali").and_then(|s| s.as_str()) {
+            if !beng.trim().is_empty() {
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="Vrinda"/><w:b/><w:sz w:val="26"/><w:szCs w:val="26"/><w:color w:val="0F172A"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(beng)
+                ));
+            }
+        }
+        if let Some(iast) = col.get("iast").and_then(|s| s.as_str()) {
+            if !iast.trim().is_empty() {
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="200"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:i/><w:sz w:val="22"/><w:szCs w:val="22"/><w:color w:val="475569"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(iast)
+                ));
+            }
+        }
+        if let Some(trans) = col.get("translation_zh").and_then(|s| s.as_str()) {
+            if !trans.trim().is_empty() {
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/><w:lineSpacing w:val="320" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="0F172A"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(trans)
+                ));
+            }
+        }
+        if let Some(sig) = col.get("significance").and_then(|s| s.as_str()) {
+            if !sig.trim().is_empty() {
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="200"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:i/><w:sz w:val="20"/><w:szCs w:val="20"/><w:color w:val="64748B"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(sig)
+                ));
+            }
+        }
+    }
+}
+
 /// 渲染 Word 單頌段落
 /// @outputs: 1
 fn render_docx_single_verse(v: &JsonValue, idx: usize, cs_font: &str, doc_xml: &mut String) {
     let default_id = format!("Text {idx}");
     let vid = v.get("id").and_then(|s| s.as_str()).unwrap_or(&default_id);
     let title = v.get("title").and_then(|s| s.as_str()).unwrap_or("");
-    let title_line = if title.is_empty() { vid.to_string() } else { format!("{vid} ．{title}") };
+    let coord = if vid.contains("[全書第") {
+        vid.to_string()
+    } else {
+        format!("{vid} [全書第 {idx} 頌]")
+    };
+    let title_line = if title.is_empty() { coord } else { format!("{coord} ．{title}") };
 
+    let bm_name = format!("urn_classic_verse_{idx}");
     doc_xml.push_str(&format!(
-        r#"<w:p><w:pPr><w:spacing w:before="280" w:after="60"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="23"/><w:szCs w:val="23"/><w:color w:val="1E3A8A"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+        r#"<w:p><w:pPr><w:spacing w:before="280" w:after="60"/></w:pPr><w:bookmarkStart w:id="{idx}" w:name="{bm_name}"/><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="23"/><w:szCs w:val="23"/><w:color w:val="1E3A8A"/></w:rPr><w:t>{}</w:t></w:r><w:bookmarkEnd w:id="{idx}"/></w:p>"#,
         escape_xml(&title_line)
     ));
+
+    if let Some(meter) = v.get("meter").and_then(|s| s.as_str()) {
+        if !meter.trim().is_empty() {
+            doc_xml.push_str(&format!(
+                r#"<w:p><w:pPr><w:ind w:left="288"/><w:spacing w:after="40"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:i/><w:sz w:val="18"/><w:szCs w:val="18"/><w:color w:val="475569"/></w:rPr><w:t>【格律（Chhandas）】：{}</w:t></w:r></w:p>"#,
+                escape_xml(meter)
+            ));
+        }
+    }
 
     if let Some(lines) = v.get("devanagari").and_then(|l| l.as_array()) {
         for l in lines {
@@ -582,6 +716,25 @@ fn render_docx_single_verse(v: &JsonValue, idx: usize, cs_font: &str, doc_xml: &
                 r#"<w:p><w:pPr><w:ind w:left="288"/><w:spacing w:after="80"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="Vrinda"/><w:b/><w:sz w:val="19"/><w:szCs w:val="19"/><w:color w:val="7C2D12"/></w:rPr><w:t>【孟加拉文古註（অনুবাদ ও তাৎপর্য）】：</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="Vrinda"/><w:sz w:val="19"/><w:szCs w:val="19"/><w:color w:val="431407"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
                 escape_xml(beng)
             ));
+        }
+    }
+
+    if let Some(anvaya_items) = v.get("anvaya").and_then(|a| a.as_array()) {
+        if !anvaya_items.is_empty() {
+            doc_xml.push_str(&format!(
+                r#"<w:p><w:pPr><w:ind w:left="288"/><w:spacing w:before="60" w:after="40"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/><w:color w:val="0369A1"/></w:rPr><w:t>【散文句法與逐字解（Anvaya &amp; Padaccheda）】：</w:t></w:r></w:p>"#
+            ));
+            for item in anvaya_items {
+                let w = item.get("word").and_then(|s| s.as_str()).unwrap_or("");
+                let p = item.get("padaccheda").and_then(|s| s.as_str()).unwrap_or(w);
+                let g = item.get("grammar").and_then(|s| s.as_str()).unwrap_or("");
+                let m = item.get("meaning_zh").and_then(|s| s.as_str()).unwrap_or("");
+                let line = format!("- {w} ({p}) [{g}] ➔ {m}");
+                doc_xml.push_str(&format!(
+                    r#"<w:p><w:pPr><w:ind w:left="432"/><w:spacing w:after="20"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:sz w:val="17"/><w:szCs w:val="17"/><w:color w:val="334155"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
+                    escape_xml(&line)
+                ));
+            }
         }
     }
 
@@ -648,12 +801,18 @@ fn build_docx_package(data: &JsonValue, docx_path: &Path) -> Result<(), String> 
     render_docx_audit_table(data, cs_font, &mut doc_xml);
     doc_xml.push_str(r#"<w:p><w:r><w:br w:type="page"/></w:r></w:p>"#);
     render_docx_verses(data, cs_font, &mut doc_xml);
+    render_docx_colophon(data, cs_font, &mut doc_xml);
 
     doc_xml.push_str(r#"<w:sectPr><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>"#);
     fs::write(tmp_dir.join("word").join("document.xml"), doc_xml).map_err(|e| e.to_string())?;
 
     // @safety-proof: docx_path is derived from validated base_name and out_dir
-    let docx_target_str = docx_path.to_string_lossy();
+    let abs_docx_path = if docx_path.is_absolute() {
+        docx_path.to_path_buf()
+    } else {
+        env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).join(docx_path)
+    };
+    let docx_target_str = abs_docx_path.to_string_lossy();
     let status = Command::new("zip")
         .args(["-q", "-r", &docx_target_str, "[Content_Types].xml", "_rels", "word"])
         .current_dir(&tmp_dir)
