@@ -911,7 +911,8 @@ pub fn check_anvaya_integrity(content: &str) -> Vec<String> {
     for line in content.lines() {
         line_no += 1;
         let trimmed = line.trim();
-        if trimmed.contains("【散文句法與逐字解") || trimmed.contains("Anvaya & Padaccheda") {
+        let clean = trimmed.trim_start_matches('>').trim();
+        if clean.contains("【散文句法與逐字解") || clean.contains("Anvaya & Padaccheda") {
             in_anvaya_table = true;
             continue;
         }
@@ -920,19 +921,19 @@ pub fn check_anvaya_integrity(content: &str) -> Vec<String> {
             continue;
         }
 
-        if trimmed.starts_with('#') || trimmed.starts_with("譯文") {
+        if clean.starts_with('#') || clean.starts_with("譯文") {
             in_anvaya_table = false;
             continue;
         }
 
-        if trimmed.starts_with('|') && !trimmed.starts_with("| :---") && !trimmed.contains("梵文單詞") {
-            let parts: Vec<&str> = trimmed.split('|').map(|s| s.trim()).collect();
+        if clean.starts_with('|') && !clean.starts_with("| :---") && !clean.contains("梵文單詞") {
+            let parts: Vec<&str> = clean.split('|').map(|s| s.trim()).collect();
             if parts.len() >= 5 && parts[parts.len() - 2].is_empty() {
                 let word_col = parts[1];
                 errors.push(format!("第 {line_no} 行: 逐字解表格中單詞 '{word_col}' 之繁體中文逐字義為空！"));
             }
-        } else if trimmed.starts_with("- ") && (trimmed.contains("[] ➔") || trimmed.contains("[] ->") || trimmed.ends_with("➔") || trimmed.ends_with("->")) {
-            errors.push(format!("第 {line_no} 行: 逐字解包含空中括號或未填入中文逐字義: '{trimmed}'"));
+        } else if clean.starts_with("- ") && (clean.contains("[] ➔") || clean.contains("[] ->") || clean.ends_with("➔") || clean.ends_with("->")) {
+            errors.push(format!("第 {line_no} 行: 逐字解包含空中括號或未填入中文逐字義: '{clean}'"));
         }
     }
     errors
@@ -947,15 +948,24 @@ pub fn inspect_markdown_content(
     min_final_verse: Option<i32>,
     min_total_verses: Option<usize>,
 ) -> QualityReport {
+    let lower = file_path.to_lowercase();
+    let (exp_ch, exp_fv, exp_tv) = if expected_chapters.is_some() || min_final_verse.is_some() || min_total_verses.is_some() {
+        (expected_chapters, min_final_verse, min_total_verses)
+    } else if lower.contains("camatkara") || lower.contains("camatkāra") || lower.contains("奇妙月光") {
+        (Some(4), Some(55), Some(200))
+    } else {
+        (None, None, None)
+    };
+
     let verse_tokens = extract_verse_numbers_from_text(content);
     let monotonicity_errors = check_verse_monotonicity(&verse_tokens);
     let closure_errors = check_danda_sentence_closure(content);
     let banned_violations = check_banned_words_and_leakage(content);
     let mut totality_errors = check_book_totality(
         &verse_tokens,
-        expected_chapters,
-        min_final_verse,
-        min_total_verses,
+        exp_ch,
+        exp_fv,
+        exp_tv,
     );
     let anvaya_errors = check_anvaya_integrity(content);
     totality_errors.extend(anvaya_errors);

@@ -121,6 +121,14 @@ fn check_docx_integrity(docx_path: &str) -> (bool, usize, usize, Vec<String>) {
         if is_empty_trans {
             errors.push(format!("段落 {idx}: 存在空白未填之「譯文:」單元"));
         }
+        let is_defective_anvaya = trimmed.starts_with("- ")
+            && (trimmed.contains("[] ➔")
+                || trimmed.contains("[] ->")
+                || trimmed.ends_with("➔")
+                || trimmed.ends_with("->"));
+        if is_defective_anvaya {
+            errors.push(format!("段落 {idx}: 逐字解包含空中括號或未填入中文逐字義: '{trimmed}'"));
+        }
     }
 
     let all_doc_text = paragraphs.join("\n");
