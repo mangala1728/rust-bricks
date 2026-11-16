@@ -459,9 +459,16 @@ fn render_md_single_verse(v: &JsonValue, idx: usize, md: &mut Vec<String>) {
             md.push("| :--- | :--- | :--- | :--- |".to_string());
             for item in anvaya_items {
                 let w = item.get("word").and_then(|s| s.as_str()).unwrap_or("");
-                let p = item.get("padaccheda").and_then(|s| s.as_str()).unwrap_or(w);
+                let p = item.get("padaccheda")
+                    .or_else(|| item.get("translit"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or(w);
                 let g = item.get("grammar").and_then(|s| s.as_str()).unwrap_or("");
-                let m = item.get("meaning_zh").and_then(|s| s.as_str()).unwrap_or("");
+                let m = item.get("meaning_zh")
+                    .or_else(|| item.get("gloss"))
+                    .or_else(|| item.get("meaning"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("");
                 md.push(format!("| {w} | {p} | {g} | {m} |"));
             }
             md.push(String::new());
@@ -726,10 +733,29 @@ fn render_docx_single_verse(v: &JsonValue, idx: usize, cs_font: &str, doc_xml: &
             ));
             for item in anvaya_items {
                 let w = item.get("word").and_then(|s| s.as_str()).unwrap_or("");
-                let p = item.get("padaccheda").and_then(|s| s.as_str()).unwrap_or(w);
+                let p = item.get("padaccheda")
+                    .or_else(|| item.get("translit"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or(w);
                 let g = item.get("grammar").and_then(|s| s.as_str()).unwrap_or("");
-                let m = item.get("meaning_zh").and_then(|s| s.as_str()).unwrap_or("");
-                let line = format!("- {w} ({p}) [{g}] ➔ {m}");
+                let m = item.get("meaning_zh")
+                    .or_else(|| item.get("gloss"))
+                    .or_else(|| item.get("meaning"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("");
+                let line = if g.trim().is_empty() {
+                    if m.trim().is_empty() {
+                        format!("- {w} ({p})")
+                    } else {
+                        format!("- {w} ({p}) ➔ {m}")
+                    }
+                } else {
+                    if m.trim().is_empty() {
+                        format!("- {w} ({p}) [{g}]")
+                    } else {
+                        format!("- {w} ({p}) [{g}] ➔ {m}")
+                    }
+                };
                 doc_xml.push_str(&format!(
                     r#"<w:p><w:pPr><w:ind w:left="432"/><w:spacing w:after="20"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="教育部標準楷書" w:cs="{cs_font}"/><w:sz w:val="17"/><w:szCs w:val="17"/><w:color w:val="334155"/></w:rPr><w:t>{}</w:t></w:r></w:p>"#,
                     escape_xml(&line)
