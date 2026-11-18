@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod agent_quota_fallback;
 pub mod agent_terminal;
 pub mod ai_autograd_train;
 pub mod ai_rl_policy_gradient;
@@ -57,6 +58,7 @@ pub mod crypto_kdf;
 pub mod crypto_modern_wire;
 pub mod crypto_vault;
 pub mod curve_fit_trend;
+pub mod decision_local_edge;
 pub mod decision_mcts;
 pub mod decision_minimax_alphabeta;
 pub mod decision_systemone;
@@ -115,6 +117,10 @@ pub mod fin_ruin_probability;
 pub mod fin_sharpe_ratio;
 pub mod fin_sortino_ratio;
 pub mod fin_var_historical;
+pub mod gate_acceptance;
+pub mod gate_anti_hardcode;
+pub mod gate_log_lifecycle;
+pub mod gate_msa_verdict;
 pub mod geo_collision;
 pub mod geo_convex_hull_2d;
 pub mod geo_ecef_to_lla;

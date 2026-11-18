@@ -6,8 +6,37 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 960
+total_functions: 997
 modules:
+  - module: "agent_quota_fallback"
+    file: "src/agent_quota_fallback.rs"
+    functions_count: 4
+    architecture_map:
+      - "Role: core/agent_quota_fallback — 前沿模型額度枯竭處置 (R13-6) 與雙軌退路純演算法微積木。"
+      - "Inputs: 懸案檔名清單、懸案元資料 (ID, title, gate, reason, sha, date, repro)、功能與負責角色。"
+      - "Outputs: 最高懸案編號、合規 C-NNNN.md 案卷文字、技術債務 JSON 字串、額度耗盡特徵判定。"
+      - "Invariants: 零外部依賴、無遞迴、零全域可變狀態、顯式有界迴圈、控制流巢狀深度 <= 2。"
+    functions:
+      - name: "parse_highest_case_id"
+        signature: "pub fn parse_highest_case_id(filenames: &[&str]) -> usize"
+        outputs: 1
+        domains:
+          count: "[0..10000]"
+      - name: "format_case_markdown"
+        signature: "pub fn format_case_markdown("
+        outputs: 1
+        domains:
+          case_id_num: "[1..9999]"
+      - name: "build_provisional_debt_json"
+        signature: "pub fn build_provisional_debt_json(feature: &str, reason: &str, owner: &str) -> String"
+        outputs: 1
+        domains:
+          feat_len: "[1..256]"
+      - name: "is_frontier_quota_error"
+        signature: "pub fn is_frontier_quota_error(err_msg: &str) -> bool"
+        outputs: 2
+        domains:
+          msg_len: "[0..4096]"
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
     functions_count: 3
@@ -1724,6 +1753,57 @@ modules:
       - name: "curve_silu_activation"
         signature: "pub fn curve_silu_activation(x: f32) -> f32"
         outputs: 1
+  - module: "decision_local_edge"
+    file: "src/decision_local_edge.rs"
+    functions_count: 11
+    architecture_map:
+    functions:
+      - name: "profile_id"
+        signature: "pub fn profile_id(&self) -> &'static str"
+        outputs: 4
+      - name: "get_model_benchmark_spec"
+        signature: "pub fn get_model_benchmark_spec(model: LocalEdgeModelId) -> HardwareProfileSpec"
+        outputs: 4
+      - name: "select_local_edge_profile"
+        signature: "pub fn select_local_edge_profile("
+        outputs: 4
+        domains:
+          free_vram_mb: "[0..131072]"
+          avail_ram_mb: "[0..524288]"
+      - name: "compute_llamacpp_ubatch"
+        signature: "pub fn compute_llamacpp_ubatch(prompt_tokens: usize, ctx_limit: usize) -> Option<(usize, usize)>"
+        outputs: 2
+        domains:
+          prompt_tokens: "[1..65536]"
+          ctx_limit: "[512..65536]"
+      - name: "sanitize_kev_delimiters"
+        signature: "pub fn sanitize_kev_delimiters(text: &str, max_bytes: usize) -> String"
+        outputs: 2
+        domains:
+          max_bytes: "[16..65536]"
+      - name: "pointer_head_softmax_calibrated"
+        signature: "pub fn pointer_head_softmax_calibrated("
+        outputs: 2
+        domains:
+          temperature: "[0.1..10.0]"
+      - name: "apply_low_conf_allow_escalation"
+        signature: "pub fn apply_low_conf_allow_escalation("
+        outputs: 2
+        domains:
+          confidence: "[0.0..1.0]"
+          min_conf: "[0.1..1.0]"
+      - name: "resolve_dual_track_route_order"
+        signature: "pub fn resolve_dual_track_route_order(mode: &str) -> &'static [&'static str]"
+        outputs: 4
+      - name: "normalize_repo_rel_path"
+        signature: "pub fn normalize_repo_rel_path(raw_path: &str, repo_root: &str) -> String"
+        outputs: 3
+      - name: "classify_track1_command"
+        signature: "pub fn classify_track1_command(cmd: &str) -> (&'static str, bool)"
+        outputs: 3
+      - name: "classify_track1_edit"
+        signature: "pub fn classify_track1_edit(rel_path: &str, snippet: &str) -> (&'static str, bool)"
+        outputs: 4
   - module: "decision_mcts"
     file: "src/decision_mcts.rs"
     functions_count: 4
@@ -3112,6 +3192,103 @@ modules:
       - name: "fin_cvar_historical"
         signature: "pub fn fin_cvar_historical(returns: &[f64], confidence: f64) -> Option<f64>"
         outputs: 1
+  - module: "gate_acceptance"
+    file: "src/gate_acceptance.rs"
+    functions_count: 4
+    architecture_map:
+    functions:
+      - name: "parse_matrix_tsv"
+        signature: "pub fn parse_matrix_tsv(tsv_content: &str, max_lines: usize) -> Result<Vec<MatrixRow>, Vec<String>>"
+        outputs: 6
+        domains:
+          max_lines: "[10..10000]"
+      - name: "verify_req_sample_coverage"
+        signature: "pub fn verify_req_sample_coverage(rows: &[MatrixRow]) -> Result<usize, Vec<String>>"
+        outputs: 6
+      - name: "verify_spec_case_links_pairs"
+        signature: "pub fn verify_spec_case_links_pairs("
+        outputs: 2
+      - name: "run_acceptance_mutation_selftest"
+        signature: "pub fn run_acceptance_mutation_selftest("
+        outputs: 2
+  - module: "gate_anti_hardcode"
+    file: "src/gate_anti_hardcode.rs"
+    functions_count: 3
+    architecture_map:
+    functions:
+      - name: "scan_html_anti_hardcode"
+        signature: "pub fn scan_html_anti_hardcode(html_text: &str) -> Vec<AntiHardcodeFinding>"
+        outputs: 2
+      - name: "scan_rust_anti_hardcode"
+        signature: "pub fn scan_rust_anti_hardcode(rel_path: &str, rust_text: &str) -> Vec<AntiHardcodeFinding>"
+        outputs: 2
+      - name: "run_anti_hardcode_calibration"
+        signature: "pub fn run_anti_hardcode_calibration() -> (bool, usize, usize, usize, usize)"
+        outputs: 2
+  - module: "gate_log_lifecycle"
+    file: "src/gate_log_lifecycle.rs"
+    functions_count: 6
+    architecture_map:
+    functions:
+      - name: "is_d_id_at"
+        signature: "pub fn is_d_id_at(s: &str) -> bool"
+        outputs: 2
+      - name: "extract_decision_targets"
+        signature: "pub fn extract_decision_targets(rest: &str) -> Vec<(String, String)>"
+        outputs: 1
+      - name: "extract_known_decisions"
+        signature: "pub fn extract_known_decisions(decisions_md: &str) -> BTreeSet<String>"
+        outputs: 1
+      - name: "parse_decision_relations"
+        signature: "pub fn parse_decision_relations(decisions_md: &str) -> Result<Vec<DecisionRelation>, Vec<String>>"
+        outputs: 2
+      - name: "render_decisions_status_md"
+        signature: "pub fn render_decisions_status_md(rels: &[DecisionRelation]) -> String"
+        outputs: 1
+      - name: "parse_lessons_rows"
+        signature: "pub fn parse_lessons_rows(lessons_md: &str, known_decisions: &BTreeSet<String>) -> Result<Vec<LessonRow>, Vec<String>>"
+        outputs: 2
+  - module: "gate_msa_verdict"
+    file: "src/gate_msa_verdict.rs"
+    functions_count: 9
+    architecture_map:
+    functions:
+      - name: "get_tier_thresholds_x10"
+        signature: "pub fn get_tier_thresholds_x10(tier: &str) -> TierThreshold"
+        outputs: 4
+      - name: "get_tier_label"
+        signature: "pub fn get_tier_label(tier: &str) -> &'static str"
+        outputs: 5
+      - name: "evaluate_gauge_verdict_x10"
+        signature: "pub fn evaluate_gauge_verdict_x10("
+        outputs: 4
+        domains:
+          std_total: "[0..100000]"
+          std_fails: "[0..100000]"
+          chal_total: "[0..100000]"
+          chal_killed: "[0..100000]"
+          tol_pct_x10: "[0..10000]"
+      - name: "evaluate_product_verdict"
+        signature: "pub fn evaluate_product_verdict(gauge_verdict: &str, product_fails: u32, blind_mismatches: u32) -> &'static str"
+        outputs: 3
+        domains:
+          product_fails: "[0..1000000]"
+          blind_mismatches: "[0..1000000]"
+      - name: "lint_rust_snippet_in_memory"
+        signature: "pub fn lint_rust_snippet_in_memory(code: &str) -> Vec<&'static str>"
+        outputs: 2
+      - name: "eval_security_hook_standard_cmd"
+        signature: "pub fn eval_security_hook_standard_cmd(command: &str, expected_blocked: bool) -> bool"
+        outputs: 2
+      - name: "classify_protected_path_tier"
+        signature: "pub fn classify_protected_path_tier(rel_path: &str) -> u8"
+        outputs: 3
+      - name: "render_msa_markdown_rows"
+        signature: "pub fn render_msa_markdown_rows(results: &[MsaModuleRow]) -> String"
+        outputs: 1
+      - name: "run_msa_mutation_selftest"
+        signature: "pub fn run_msa_mutation_selftest() -> bool"
+        outputs: 2
   - module: "geo_collision"
     file: "src/geo_collision.rs"
     functions_count: 3
