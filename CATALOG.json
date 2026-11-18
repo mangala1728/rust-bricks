@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 940,
+  "total_functions": 960,
   "modules": [
     {
       "module": "agent_terminal",
@@ -520,6 +520,48 @@
           "name": "astro_solar_zenith_and_elevation",
           "signature": "pub fn astro_solar_zenith_and_elevation(",
           "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "astro_translation_audit",
+      "file": "src/astro_translation_audit.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "detect_astro_book_type",
+          "signature": "pub fn detect_astro_book_type(content: &str, file_path: &str) -> AstroBookType",
+          "outputs": 2
+        },
+        {
+          "name": "count_distinct_astro_verses",
+          "signature": "pub fn count_distinct_astro_verses(content: &str) -> usize",
+          "outputs": 1
+        },
+        {
+          "name": "analyze_astro_markdown",
+          "signature": "pub fn analyze_astro_markdown(content: &str, file_path: &str) -> AstroCompletenessReport",
+          "outputs": 1
+        },
+        {
+          "name": "check_astro_banned_words",
+          "signature": "pub fn check_astro_banned_words(text: &str) -> Vec<AstroBannedError>",
+          "outputs": 1
+        },
+        {
+          "name": "check_astro_english_leakage",
+          "signature": "pub fn check_astro_english_leakage(text: &str) -> Vec<String>",
+          "outputs": 1
+        },
+        {
+          "name": "check_astro_empty_translations",
+          "signature": "pub fn check_astro_empty_translations(paragraphs: &[String]) -> Vec<String>",
+          "outputs": 1
+        },
+        {
+          "name": "extract_docx_paragraphs_from_xml",
+          "signature": "pub fn extract_docx_paragraphs_from_xml(xml: &str) -> Vec<String>",
+          "outputs": 1
         }
       ]
     },
@@ -1058,7 +1100,7 @@
     {
       "module": "classic_continuity",
       "file": "src/classic_continuity.rs",
-      "functions_count": 15,
+      "functions_count": 19,
       "functions": [
         {
           "name": "normalize_indic_digits",
@@ -1088,6 +1130,11 @@
         {
           "name": "extract_verse_numbers_from_text",
           "signature": "pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize)>",
+          "outputs": 1
+        },
+        {
+          "name": "extract_expected_range_from_chap_name",
+          "signature": "pub fn extract_expected_range_from_chap_name(chap_name: &str) -> (i32, Option<i32>)",
           "outputs": 1
         },
         {
@@ -1128,6 +1175,21 @@
         {
           "name": "check_book_totality_advanced",
           "signature": "pub fn check_book_totality_advanced(",
+          "outputs": 1
+        },
+        {
+          "name": "is_defective_anvaya_bullet",
+          "signature": "pub fn is_defective_anvaya_bullet(clean: &str) -> bool",
+          "outputs": 1
+        },
+        {
+          "name": "check_anvaya_integrity",
+          "signature": "pub fn check_anvaya_integrity(content: &str) -> Vec<String>",
+          "outputs": 1
+        },
+        {
+          "name": "parse_registry_expectations",
+          "signature": "pub fn parse_registry_expectations(",
           "outputs": 1
         },
         {
@@ -5649,6 +5711,58 @@
         {
           "name": "subtitle_vad_drift_ok",
           "signature": "pub fn subtitle_vad_drift_ok(",
+          "outputs": 2
+        }
+      ]
+    },
+    {
+      "module": "subtitle_qa_audit",
+      "file": "src/subtitle_qa_audit.rs",
+      "functions_count": 9,
+      "functions": [
+        {
+          "name": "parse_srt_timestamp_ms",
+          "signature": "pub fn parse_srt_timestamp_ms(ts: &str) -> Option<u32>",
+          "outputs": 2
+        },
+        {
+          "name": "format_srt_timestamp_ms",
+          "signature": "pub fn format_srt_timestamp_ms(total_ms: u32) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "count_readable_subtitle_chars",
+          "signature": "pub fn count_readable_subtitle_chars(text: &str) -> u32",
+          "outputs": 1
+        },
+        {
+          "name": "parse_srt_content",
+          "signature": "pub fn parse_srt_content(content: &str) -> Vec<SrtEntry>",
+          "outputs": 1
+        },
+        {
+          "name": "audit_srt_cps",
+          "signature": "pub fn audit_srt_cps(",
+          "outputs": 2
+        },
+        {
+          "name": "find_residual_english_lines",
+          "signature": "pub fn find_residual_english_lines(",
+          "outputs": 1
+        },
+        {
+          "name": "parse_speech_boundaries_json",
+          "signature": "pub fn parse_speech_boundaries_json(json_str: &str) -> Vec<SpeechSentenceBoundary>",
+          "outputs": 1
+        },
+        {
+          "name": "evaluate_vad_boundaries",
+          "signature": "pub fn evaluate_vad_boundaries(",
+          "outputs": 2
+        },
+        {
+          "name": "snap_subtitles_to_vad_boundaries",
+          "signature": "pub fn snap_subtitles_to_vad_boundaries(",
           "outputs": 2
         }
       ]

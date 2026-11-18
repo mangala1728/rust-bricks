@@ -228,6 +228,7 @@ pub fn generate_north_indian_svg_base(size: u32) -> String {
 mod tests {
     use super::*;
 
+    /// @outputs: 1
     #[test]
     fn test_calculate_house_sign_golden() {
         // 白羊座上升 (1) -> 命宮是白羊 (1)，第 7 宮是天秤 (7)
@@ -249,6 +250,7 @@ mod tests {
         assert_eq!(calculate_house_sign(1, 13), None);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_south_indian_grid_coords() {
         assert_eq!(south_indian_grid_coord(12), Some((0, 0))); // 雙魚
@@ -265,22 +267,30 @@ mod tests {
         assert!(!is_south_indian_center_cell(3, 3));
     }
 
+    /// @outputs: 1
     #[test]
     fn test_north_indian_coords() {
         // House 1 Center: (0.5, 0.25)
-        let (c_x, c_y) = north_indian_house_center(1).unwrap();
-        assert!((c_x - 0.50).abs() < 1e-4);
-        assert!((c_y - 0.25).abs() < 1e-4);
+        let h1 = north_indian_house_center(1);
+        assert!(h1.is_some());
+        if let Some((c_x, c_y)) = h1 {
+            assert!((c_x - 0.50).abs() < 1e-4);
+            assert!((c_y - 0.25).abs() < 1e-4);
+        }
 
         // House 7 Center: (0.5, 0.75)
-        let (c7_x, c7_y) = north_indian_house_center(7).unwrap();
-        assert!((c7_x - 0.50).abs() < 1e-4);
-        assert!((c7_y - 0.75).abs() < 1e-4);
+        let h7 = north_indian_house_center(7);
+        assert!(h7.is_some());
+        if let Some((c7_x, c7_y)) = h7 {
+            assert!((c7_x - 0.50).abs() < 1e-4);
+            assert!((c7_y - 0.75).abs() < 1e-4);
+        }
 
         assert_eq!(north_indian_house_center(0), None);
         assert_eq!(north_indian_house_center(13), None);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_validate_banned_words() {
         assert!(validate_banned_words_slice("我們要皈依主").is_some());
@@ -293,6 +303,7 @@ mod tests {
         assert!(validate_banned_words_slice("我們要歸依首神").is_none());
     }
 
+    /// @outputs: 1
     #[test]
     fn test_generate_svg_base() {
         let svg = generate_north_indian_svg_base(400);
@@ -301,6 +312,7 @@ mod tests {
         assert!(svg.contains(r#"width="400""#));
     }
 
+    /// @outputs: 1
     #[test]
     fn test_south_indian_dimensions() {
         assert_eq!(SOUTH_INDIAN_CELL_DXA, 1530);

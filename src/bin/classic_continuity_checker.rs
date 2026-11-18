@@ -9,7 +9,9 @@
 use std::env;
 use std::fs;
 use std::process;
-use rust_bricks::classic_continuity::{inspect_markdown_content, QualityReport};
+use rust_bricks::classic_continuity::{
+    inspect_markdown_content, parse_registry_expectations, QualityReport,
+};
 
 /// 列印使用說明
 /// @outputs: 1
@@ -25,6 +27,7 @@ classic_continuity_checker — 古典聖典經文連續性、漏頁、漏句與�
   --expected-chapters <N>    預期全書應收錄之篇章總數 (例如 4)
   --min-final-verse <N>      末章最高頌號下限 (例如 55，防 5x 頌缺失)
   --min-total-verses <N>     全書經文總頌數下限 (例如 200)
+  --registry <path>          指定 classics_title_registry.json 路徑
   -h, --help                 顯示此說明訊息
 "#);
 }
@@ -35,6 +38,7 @@ struct CliOptions {
     expected_chapters: Option<usize>,
     min_final_verse: Option<i32>,
     min_total_verses: Option<usize>,
+    registry_path: Option<String>,
 }
 
 /// 解析命令列參數
@@ -49,6 +53,7 @@ fn parse_cli_args(args: &[String]) -> Result<CliOptions, String> {
     let mut expected_chapters = None;
     let mut min_final_verse = None;
     let mut min_total_verses = None;
+    let mut registry_path = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -68,6 +73,9 @@ fn parse_cli_args(args: &[String]) -> Result<CliOptions, String> {
         } else if arg == "--min-total-verses" && i + 1 < args.len() {
             min_total_verses = args[i + 1].parse().ok();
             i += 2;
+        } else if arg == "--registry" && i + 1 < args.len() {
+            registry_path = Some(args[i + 1].clone());
+            i += 2;
         } else if !arg.starts_with('-') && target_file.is_none() {
             target_file = Some(arg.clone());
             i += 1;
@@ -83,9 +91,33 @@ fn parse_cli_args(args: &[String]) -> Result<CliOptions, String> {
             expected_chapters,
             min_final_verse,
             min_total_verses,
+            registry_path,
         }),
         None => Err("未提供目標 Markdown 檔案路徑".to_string()),
     }
+}
+
+/// 自動搜尋並讀取 classics_title_registry.json
+/// @outputs: 2
+fn resolve_registry_expectations(
+    registry_opt: Option<&str>,
+    target_file: &str,
+) -> (Option<usize>, Option<i32>, Option<usize>) {
+    let mut candidates = Vec::new();
+    if let Some(p) = registry_opt {
+        candidates.push(p.to_string());
+    }
+    candidates.push("reference_rules/classics_title_registry.json".to_string());
+    candidates.push("../agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("/home/antigravity/mangala1728/agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+
+    for cand in candidates {
+        if let Ok(reg_text) = fs::read_to_string(&cand) {
+            return parse_registry_expectations(&reg_text, target_file);
+        }
+    }
+    (None, None, None)
 }
 
 /// 渲染終端或 JSON 報告
@@ -174,11 +206,15 @@ fn main() {
         }
     };
 
+    let (reg_ch, reg_fv, reg_tv) = resolve_registry_expectations(
+        opts.registry_path.as_deref(),
+        &opts.target_file,
+    );
     let lower_name = opts.target_file.to_lowercase();
     let is_camatkara = lower_name.contains("camatk") || opts.target_file.contains("奇妙月光");
-    let exp_ch = opts.expected_chapters.or(if is_camatkara { Some(4) } else { None });
-    let min_fv = opts.min_final_verse.or(if is_camatkara { Some(55) } else { None });
-    let min_tv = opts.min_total_verses.or(if is_camatkara { Some(200) } else { None });
+    let exp_ch = opts.expected_chapters.or(reg_ch).or(if is_camatkara { Some(4) } else { None });
+    let min_fv = opts.min_final_verse.or(reg_fv).or(if is_camatkara { Some(55) } else { None });
+    let min_tv = opts.min_total_verses.or(reg_tv).or(if is_camatkara { Some(200) } else { None });
 
     let report = inspect_markdown_content(&content, &opts.target_file, exp_ch, min_fv, min_tv);
     render_report(&report, opts.as_json);

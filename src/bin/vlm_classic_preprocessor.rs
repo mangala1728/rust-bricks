@@ -17,6 +17,7 @@ use rust_bricks::vlm_classic_preprocessor::{
     calc_horizontal_projection, find_gutter_slices, generate_vlm_verification_prompt,
 };
 
+/// @outputs: 1
 fn print_usage() {
     eprintln!(r#"
 vlm_classic_preprocessor — 古典啟示經典圖像預處理與 VLM 比對原生工具 (Rust 版)
@@ -34,6 +35,7 @@ vlm_classic_preprocessor — 古典啟示經典圖像預處理與 VLM 比對原�
 }
 
 /// 讀取 P5 格式之 PGM 二進位灰度檔
+/// @outputs: 2
 fn read_pgm_p5(path: &Path) -> Result<(usize, usize, Vec<u8>), String> {
     let mut file = File::open(path).map_err(|e| format!("無法開啟 PGM 檔: {e}"))?;
     let mut data = Vec::new();
@@ -97,6 +99,7 @@ fn read_pgm_p5(path: &Path) -> Result<(usize, usize, Vec<u8>), String> {
 }
 
 /// 寫入 P5 格式之 PGM 二進位灰度檔
+/// @outputs: 2
 fn write_pgm_p5(path: &Path, width: usize, height: usize, pixels: &[u8]) -> Result<(), String> {
     let mut file = File::create(path).map_err(|e| format!("無法建立 PGM 檔: {e}"))?;
     let header = format!("P5\n{width} {height}\n255\n");
@@ -105,6 +108,7 @@ fn write_pgm_p5(path: &Path, width: usize, height: usize, pixels: &[u8]) -> Resu
     Ok(())
 }
 
+/// @outputs: 2
 fn handle_extract(args: &[String]) {
     if args.len() < 4 {
         eprintln!("錯誤: extract 指令需要 <pdf> 與 <out_dir>");
@@ -158,6 +162,7 @@ fn handle_extract(args: &[String]) {
     }
 }
 
+/// @outputs: 2
 fn handle_denoise(args: &[String]) {
     if args.len() < 4 {
         eprintln!("錯誤: denoise 指令需要 <image_in> 與 <image_out>");
@@ -188,9 +193,12 @@ fn handle_denoise(args: &[String]) {
         .arg(&tmp_pgm_in)
         .status();
 
-    if status.is_err() || !status.unwrap().success() {
-        eprintln!("❌ 無法調用 convert 將圖像轉為灰階 PGM");
-        process::exit(1);
+    match status {
+        Ok(s) if s.success() => {}
+        _ => {
+            eprintln!("❌ 無法調用 convert 將圖像轉為灰階 PGM");
+            process::exit(1);
+        }
     }
 
     // 2. 讀取 PGM 像素
@@ -230,14 +238,18 @@ fn handle_denoise(args: &[String]) {
     let _ = fs::remove_file(&tmp_pgm_in);
     let _ = fs::remove_file(&tmp_pgm_out);
 
-    if status2.is_ok() && status2.unwrap().success() {
-        println!("✨ [RUST] 圖像自適應去噪與二值化已完成 -> {image_out} (門檻值: {threshold})");
-    } else {
-        eprintln!("❌ 轉檔至 {image_out} 失敗");
-        process::exit(1);
+    match status2 {
+        Ok(s) if s.success() => {
+            println!("✨ [RUST] 圖像自適應去噪與二值化已完成 -> {image_out} (門檻值: {threshold})");
+        }
+        _ => {
+            eprintln!("❌ 轉檔至 {image_out} 失敗");
+            process::exit(1);
+        }
     }
 }
 
+/// @outputs: 2
 fn handle_slice(args: &[String]) {
     if args.len() < 4 {
         eprintln!("錯誤: slice 指令需要 <image_in> 與 <out_dir>");
@@ -268,9 +280,12 @@ fn handle_slice(args: &[String]) {
         .arg(&tmp_pgm)
         .status();
 
-    if status.is_err() || !status.unwrap().success() {
-        eprintln!("❌ 調用 convert 轉檔失敗");
-        process::exit(1);
+    match status {
+        Ok(s) if s.success() => {}
+        _ => {
+            eprintln!("❌ 調用 convert 轉檔失敗");
+            process::exit(1);
+        }
     }
 
     let (width, height, raw_pixels) = match read_pgm_p5(&tmp_pgm) {
@@ -323,6 +338,7 @@ fn handle_slice(args: &[String]) {
     println!("✅ 切片完成，已存放至目錄: {out_dir}");
 }
 
+/// @outputs: 1
 fn handle_vlm_prompt(args: &[String]) {
     if args.len() < 3 {
         eprintln!("錯誤: vlm-prompt 指令需要 <image_path>");
@@ -347,6 +363,7 @@ fn handle_vlm_prompt(args: &[String]) {
     println!("{}\n", "=".repeat(60));
 }
 
+/// @outputs: 2
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {

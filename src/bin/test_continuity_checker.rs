@@ -270,6 +270,23 @@ Text 1 ．第一頌
     runner.record("test_anvaya_defective_bracket_and_empty_meaning", table_ok && list_ok, "未抓出逐字解空括號或逐字義空白");
 }
 
+/// 測試 11: 檔尾無譯文行之未閉合雙豎線 (EOF BUG 檢驗) 與注釋區箭號免誤報
+/// @outputs: 1
+fn test_eof_unclosed_and_commentary_arrow(runner: &mut TestRunner) {
+    let eof_md = "# Sample-Classic_示範經典_繁體中文全譯本\n\n## 第一章（1.1-1.1）\nText 1 ．第一頌\nयावत् किम् एतद् इति ता अहाहेति नोचुर्";
+    let res_eof = inspect_markdown_content(eof_md, "Sample-Classic_示範經典_繁體中文全譯本.md", Some(1), Some(1), Some(1));
+    let eof_ok = res_eof.verdict == "FAIL"
+        && res_eof.closure_errors.iter().any(|e| e.contains("缺乏雙豎線"));
+
+    let commentary_ok_md = "# Sample-Classic_示範經典_繁體中文全譯本\n\n## 第一章（1.1-1.1）\nText 1 ．第一頌\n॥ १ ॥\n> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n- yaḥ (yaḥ) [主格] ➔ 彼\n**譯文**：測試。\n> **【微言大義】**：\n- 注疏結構 A -> B\n";
+    let res_comm = inspect_markdown_content(commentary_ok_md, "Sample-Classic_示範經典_繁體中文全譯本.md", Some(1), Some(1), Some(1));
+    let comm_ok = res_comm.verdict == "PASS" && res_comm.totality_errors.is_empty();
+
+    runner.record("test_eof_unclosed_and_commentary_arrow", eof_ok && comm_ok, "EOF 斷句檢驗或注釋箭號免誤報異常");
+}
+
+/// 主入口點
+/// @outputs: 1
 fn main() {
     println!("======================================================================");
     println!("🧪 經文連續性、標點閉合、禁字與逐字解門禁單元測試: Rust 原生版");
@@ -287,6 +304,7 @@ fn main() {
     test_chapter4_truncated_below_55_defect(&mut runner);
     test_camatkara_full_4_chapters_golden(&mut runner);
     test_anvaya_defective_bracket_and_empty_meaning(&mut runner);
+    test_eof_unclosed_and_commentary_arrow(&mut runner);
 
     println!("----------------------------------------------------------------------");
     println!("測試統計: 總計 {} 項測試 | 通過 {} 項 | 失敗 {} 項",

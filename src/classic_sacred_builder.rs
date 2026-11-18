@@ -80,6 +80,66 @@ pub fn validate_first_page_preface(preface_title: &str, sections: &[PrefaceSecti
     !sections.is_empty()
 }
 
+/// 附加第一頁譯者導讀 Markdown 區塊
+/// @outputs: 1
+fn append_preface_markdown<'a>(
+    md: &mut String,
+    preface_title: &'a str,
+    preface_subtitle: &'a str,
+    preface_sections: &[PrefaceSection<'a>],
+) {
+    if preface_sections.is_empty() {
+        return;
+    }
+    md.push_str("## ");
+    md.push_str(preface_title);
+    md.push_str("\n\n");
+    if !preface_subtitle.is_empty() {
+        md.push_str("> ");
+        md.push_str(preface_subtitle);
+        md.push_str("\n\n");
+    }
+    for sec in preface_sections {
+        md.push_str("### ");
+        md.push_str(sec.heading);
+        md.push_str("\n\n");
+        for para in sec.paragraphs {
+            md.push_str(para);
+            md.push_str("\n\n");
+        }
+    }
+    md.push_str("---\n\n");
+}
+
+/// 附加單一頌詩之天城文、譯文與校注 Markdown 區塊
+/// @outputs: 1
+fn append_verse_markdown<'a>(md: &mut String, v: &VerseUnitData<'a>) {
+    md.push_str("### ");
+    md.push_str(v.unit_id);
+    if !v.title.is_empty() {
+        md.push_str(" ． ");
+        md.push_str(v.title);
+    }
+    md.push_str("\n\n");
+    for line in v.devanagari_lines {
+        if !line.trim().is_empty() {
+            md.push_str("> ");
+            md.push_str(line);
+            md.push('\n');
+        }
+    }
+    md.push_str("\n**譯文**：");
+    let trans = v.translation_zh.trim();
+    let clean = trans.trim_start_matches("譯文:").trim_start_matches("譯文：").trim();
+    md.push_str(clean);
+    md.push_str("\n\n");
+    if !v.notes.trim().is_empty() {
+        md.push('*');
+        md.push_str(v.notes.trim());
+        md.push_str("*\n\n");
+    }
+}
+
 /// 生成結構化 Markdown 完整正文
 /// @outputs: 1
 pub fn generate_classic_markdown<'a>(
@@ -91,8 +151,6 @@ pub fn generate_classic_markdown<'a>(
     verses: &[VerseUnitData<'a>],
 ) -> String {
     let mut md = String::with_capacity(8192);
-
-    // 1. 書名與作者
     md.push_str("# ");
     md.push_str(book_title);
     md.push_str("\n\n");
@@ -101,70 +159,14 @@ pub fn generate_classic_markdown<'a>(
         md.push_str(author_info);
         md.push_str("\n\n---\n\n");
     }
-
-    // 2. 第一頁導讀
-    if !preface_sections.is_empty() {
-        md.push_str("## ");
-        md.push_str(preface_title);
-        md.push_str("\n\n");
-        if !preface_subtitle.is_empty() {
-            md.push_str("> ");
-            md.push_str(preface_subtitle);
-            md.push_str("\n\n");
-        }
-        for sec in preface_sections {
-            md.push_str("### ");
-            md.push_str(sec.heading);
-            md.push_str("\n\n");
-            for para in sec.paragraphs {
-                md.push_str(para);
-                md.push_str("\n\n");
-            }
-        }
-        md.push_str("---\n\n");
-    }
-
-    // 3. 經文正文
+    append_preface_markdown(&mut md, preface_title, preface_subtitle, preface_sections);
     let verse_chapter_heading = format!("經文正文全錄（全 {} 頌逐頌對照全譯）", verses.len());
     md.push_str("## ");
     md.push_str(&verse_chapter_heading);
     md.push_str("\n\n> 天城文經文、標準繁體中文逐字譯文與微言大義校注\n\n");
-
     for v in verses {
-        md.push_str("### ");
-        md.push_str(v.unit_id);
-        if !v.title.is_empty() {
-            md.push_str(" ． ");
-            md.push_str(v.title);
-        }
-        md.push_str("\n\n");
-
-        for line in v.devanagari_lines {
-            if !line.trim().is_empty() {
-                md.push_str("> ");
-                md.push_str(line);
-                md.push_str("\n");
-            }
-        }
-        md.push_str("\n");
-
-        md.push_str("**譯文**：");
-        let trans = v.translation_zh.trim();
-        if trans.starts_with("譯文:") || trans.starts_with("譯文：") {
-            let actual = trans.trim_start_matches("譯文:").trim_start_matches("譯文：").trim();
-            md.push_str(actual);
-        } else {
-            md.push_str(trans);
-        }
-        md.push_str("\n\n");
-
-        if !v.notes.trim().is_empty() {
-            md.push_str("*");
-            md.push_str(v.notes.trim());
-            md.push_str("*\n\n");
-        }
+        append_verse_markdown(&mut md, v);
     }
-
     md
 }
 
@@ -202,6 +204,7 @@ pub fn generate_structural_audit_report<'a>(
 mod tests {
     use super::*;
 
+    /// @outputs: 1
     #[test]
     fn test_banned_words_validator() {
         assert!(validate_banned_words("向主歸依").is_none());
@@ -217,12 +220,14 @@ mod tests {
         assert!(validate_banned_words("以太陽的光輝").is_none()); // 排除以太陽
     }
 
+    /// @outputs: 1
     #[test]
     fn test_english_leakage_validator() {
         assert!(validate_english_leakage("譯文: 萬物皆為真我所棲居").is_none());
         assert!(validate_english_leakage("Translation: Everything is pervaded by God").is_some());
     }
 
+    /// @outputs: 1
     #[test]
     fn test_first_page_preface_validator() {
         let sec = PrefaceSection {
@@ -233,6 +238,7 @@ mod tests {
         assert!(!validate_first_page_preface("一般序言", &[]));
     }
 
+    /// @outputs: 1
     #[test]
     fn test_markdown_and_audit_generation() {
         let sec = PrefaceSection {

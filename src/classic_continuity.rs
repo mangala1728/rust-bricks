@@ -356,19 +356,35 @@ fn split_into_chapters(verses: &[(i32, String, usize)]) -> Vec<(String, Vec<(i32
     chapters
 }
 
+/// 尋找篇章標題中的數字範圍分隔符 (~ / .. / 數字夾心 -)
+/// @outputs: 2
+fn find_range_separator(s: &str) -> Option<(usize, usize)> {
+    if let Some(idx) = s.find('~') {
+        return Some((idx, 1));
+    }
+    if let Some(idx) = s.find("..") {
+        return Some((idx, 2));
+    }
+    for (idx, ch) in s.char_indices() {
+        if ch != '-' {
+            continue;
+        }
+        let prev = s[..idx].chars().rev().find(|c| !c.is_whitespace());
+        let next = s[idx + 1..].chars().find(|c| !c.is_whitespace());
+        if matches!((prev, next), (Some(p), Some(n)) if p.is_ascii_digit() && n.is_ascii_digit()) {
+            return Some((idx, 1));
+        }
+    }
+    None
+}
+
 /// 自篇章標題字串提取預期經文範圍 (起始頌, 終止頌)
 /// 支援如 "1.2.31~1.2.71", "31~71", "31..71", "第 31~71 頌", "1.2.31-1.2.71"
 /// 若未標注特定區間，預設回傳 (1, None)
 /// @outputs: 1
 pub fn extract_expected_range_from_chap_name(chap_name: &str) -> (i32, Option<i32>) {
     let normalized = normalize_indic_digits(chap_name);
-    let sep_opt = if let Some(idx) = normalized.find('~') {
-        Some((idx, 1))
-    } else if let Some(idx) = normalized.find("..") {
-        Some((idx, 2))
-    } else {
-        None
-    };
+    let sep_opt = find_range_separator(&normalized);
 
     if let Some((sep_idx, sep_len)) = sep_opt {
         let left_part = &normalized[..sep_idx];
@@ -499,16 +515,45 @@ pub fn check_verse_monotonicity(verses: &[(i32, String, usize)]) -> Vec<String> 
     errors
 }
 
+/// 驗證單一結束的梵文/孟加拉文原典區塊是否具備雙豎線閉合
+/// @outputs: 1
+fn validate_closed_sanskrit_block(
+    block_start_line: usize,
+    block_end_line: usize,
+    last_indic_line: &str,
+    errors: &mut Vec<String>,
+) {
+    let trimmed_last = last_indic_line.trim_end();
+    let ends_with_double = trimmed_last.ends_with("॥")
+        || trimmed_last.ends_with("||")
+        || trimmed_last.ends_with("॥ ")
+        || trimmed_last.ends_with("|| ");
+
+    if ends_with_double {
+        return;
+    }
+
+    let err_msg = if trimmed_last.ends_with('।') || trimmed_last.ends_with('|') {
+        format!("行 {block_start_line}-{block_end_line}: 原文區塊僅以單豎線「।」結尾，疑似缺失下半頌！")
+    } else {
+        let snippet: String = trimmed_last.chars().take(40).collect();
+        format!("行 {block_start_line}-{block_end_line}: 原文區塊末尾缺乏雙豎線「॥」閉合標點，疑似遭跨頁截斷 (Truncated)！末句: '{snippet}'")
+    };
+    errors.push(err_msg);
+}
+
 /// 檢驗經文原文段落的標點閉合（雙豎線 ॥ / ||），防範未完結之斷句
 /// @outputs: 1
 pub fn check_danda_sentence_closure(content: &str) -> Vec<String> {
     let mut errors = Vec::new();
     let mut in_sanskrit_block = false;
     let mut block_start_line = 0;
+    let mut last_line_idx = 0;
     let mut last_indic_line = String::new();
 
     for (idx_0, line) in content.lines().enumerate() {
         let line_idx = idx_0.saturating_add(1);
+        last_line_idx = line_idx;
         let stripped = line.trim();
 
         let is_prose = stripped.chars().any(is_cjk_char)
@@ -525,83 +570,42 @@ pub fn check_danda_sentence_closure(content: &str) -> Vec<String> {
             }
             last_indic_line = stripped.to_string();
         } else if in_sanskrit_block {
-            let trimmed_last = last_indic_line.trim_end();
-            let ends_with_double = trimmed_last.ends_with("॥")
-                || trimmed_last.ends_with("||")
-                || trimmed_last.ends_with("॥ ")
-                || trimmed_last.ends_with("|| ");
-
-            if !ends_with_double {
-                let err_msg = if trimmed_last.ends_with('।') || trimmed_last.ends_with('|') {
-                    format!("行 {block_start_line}-{}: 原文區塊僅以單豎線「।」結尾，疑似缺失下半頌！", line_idx.saturating_sub(1))
-                } else {
-                    let snippet: String = trimmed_last.chars().take(40).collect();
-                    format!("行 {block_start_line}-{}: 原文區塊末尾缺乏雙豎線「॥」閉合標點，疑似遭跨頁截斷 (Truncated)！末句: '{snippet}'", line_idx.saturating_sub(1))
-                };
-                errors.push(err_msg);
-            }
+            validate_closed_sanskrit_block(
+                block_start_line,
+                line_idx.saturating_sub(1),
+                &last_indic_line,
+                &mut errors,
+            );
             in_sanskrit_block = false;
             last_indic_line.clear();
         }
     }
 
+    if in_sanskrit_block {
+        validate_closed_sanskrit_block(
+            block_start_line,
+            last_line_idx,
+            &last_indic_line,
+            &mut errors,
+        );
+    }
+
     errors
 }
 
-/// 掃描單行文字中的禁字與標點違規
+/// 掃描單行之「以太」、半形間隔號與空白「譯文:」違規
 /// @outputs: 1
-fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolation> {
-    let mut violations = Vec::new();
-    let trimmed = line.trim();
-
-    if line.contains("皈依") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "皈依".to_string(),
-            reason: "嚴禁使用「皈依」，一律改用通俗字「歸依」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("平台") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "平台".to_string(),
-            reason: "嚴禁使用「平台」，靈性境界與階梯一律改用「層級」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("證悟") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "證悟".to_string(),
-            reason: "作形容詞或動詞時避用「證悟」，改為「覺悟自我的／感悟／親證」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("達斯") && !line.contains("達斯亞") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "達斯".to_string(),
-            reason: "dāsa 結尾 a 音不可省略，一律作「達薩」，嚴禁「達斯」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-    if line.contains("主因鐸") || line.contains("主因陀羅") {
-        violations.push(BannedViolation {
-            line: line_idx,
-            matched: "主因鐸/主因陀羅".to_string(),
-            reason: "半神人不可稱「主」，Lord Indra 必須翻譯為「天帝因鐸」".to_string(),
-            snippet: trimmed.chars().take(60).collect(),
-        });
-    }
-
-    // 以太檢查 (排除 以太陽...)
+fn scan_ether_and_dots_and_empty(
+    line_idx: usize,
+    line: &str,
+    trimmed: &str,
+    violations: &mut Vec<BannedViolation>,
+) {
     let mut search_from = 0;
     while let Some(pos) = line[search_from..].find("以太") {
         let abs_pos = search_from.saturating_add(pos);
         let after_idx = abs_pos.saturating_add("以太".len());
-        let after_sun = line[after_idx..].starts_with('陽');
-        if !after_sun {
+        if !line[after_idx..].starts_with('陽') {
             violations.push(BannedViolation {
                 line: line_idx,
                 matched: "以太".to_string(),
@@ -612,7 +616,6 @@ fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolatio
         }
         search_from = after_idx;
     }
-
     if line.contains('·') || line.contains('•') || line.contains('\u{02D9}') || line.contains('\u{2027}') {
         violations.push(BannedViolation {
             line: line_idx,
@@ -621,7 +624,6 @@ fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolatio
             snippet: trimmed.chars().take(60).collect(),
         });
     }
-
     if trimmed == "譯文:" || trimmed == "譯文：" {
         violations.push(BannedViolation {
             line: line_idx,
@@ -630,7 +632,56 @@ fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolatio
             snippet: trimmed.chars().take(60).collect(),
         });
     }
+}
 
+/// 掃描單行文字中的禁字與標點違規
+/// @outputs: 1
+fn scan_line_for_banned_words(line_idx: usize, line: &str) -> Vec<BannedViolation> {
+    let mut violations = Vec::new();
+    let trimmed = line.trim();
+    let snippet: String = trimmed.chars().take(60).collect();
+
+    if line.contains("皈依") {
+        violations.push(BannedViolation {
+            line: line_idx,
+            matched: "皈依".to_string(),
+            reason: "嚴禁使用「皈依」，一律改用通俗字「歸依」".to_string(),
+            snippet: snippet.clone(),
+        });
+    }
+    if line.contains("平台") {
+        violations.push(BannedViolation {
+            line: line_idx,
+            matched: "平台".to_string(),
+            reason: "嚴禁使用「平台」，靈性境界與階梯一律改用「層級」".to_string(),
+            snippet: snippet.clone(),
+        });
+    }
+    if line.contains("證悟") {
+        violations.push(BannedViolation {
+            line: line_idx,
+            matched: "證悟".to_string(),
+            reason: "作形容詞或動詞時避用「證悟」，改為「覺悟自我的／感悟／親證」".to_string(),
+            snippet: snippet.clone(),
+        });
+    }
+    if line.contains("達斯") && !line.contains("達斯亞") {
+        violations.push(BannedViolation {
+            line: line_idx,
+            matched: "達斯".to_string(),
+            reason: "dāsa 結尾 a 音不可省略，一律作「達薩」，嚴禁「達斯」".to_string(),
+            snippet: snippet.clone(),
+        });
+    }
+    if line.contains("主因鐸") || line.contains("主因陀羅") {
+        violations.push(BannedViolation {
+            line: line_idx,
+            matched: "主因鐸/主因陀羅".to_string(),
+            reason: "半神人不可稱「主」，Lord Indra 必須翻譯為「天帝因鐸」".to_string(),
+            snippet,
+        });
+    }
+    scan_ether_and_dots_and_empty(line_idx, line, trimmed, &mut violations);
     violations
 }
 
@@ -646,6 +697,36 @@ pub fn check_banned_words_and_leakage(content: &str) -> Vec<BannedViolation> {
     violations
 }
 
+/// 執行零配置文獻學自適應篇章範圍檢驗
+/// @outputs: 1
+fn check_dynamic_chapter_ranges(chapters: &[(String, Vec<(i32, String, usize)>)], errors: &mut Vec<String>) {
+    if chapters.is_empty() {
+        errors.push("❌ 篇章全體性錯誤: 經文中未偵測到任何有效章節或頌節！".to_string());
+        return;
+    }
+    for (chap_name, verses) in chapters {
+        if verses.is_empty() {
+            errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
+            continue;
+        }
+        let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
+        let first_v = verses[0].0;
+        if first_v != expected_start {
+            errors.push(format!(
+                "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非第 {expected_start} 頌（可能前面有缺頁/缺頌）！"
+            ));
+        }
+        if let Some(expected_end) = expected_end_opt {
+            let last_v = verses[verses.len() - 1].0;
+            if last_v < expected_end {
+                errors.push(format!(
+                    "❌ 篇章末頌異常: 篇章【{chap_name}】結束於第 {last_v} 頌，未達預期終結第 {expected_end} 頌！"
+                ));
+            }
+        }
+    }
+}
+
 /// 檢驗篇章全體性、末章末頌閉合與全書預期頌數（防篇章截斷與 50+ 頌缺失）
 /// @outputs: 2
 /// @domain: expected_chapters [0..100]
@@ -657,56 +738,22 @@ pub fn check_book_totality(
     min_final_verse: Option<i32>,
     min_total_verses: Option<usize>,
 ) -> Vec<String> {
-    // 執行期守衛 (R09-4 Anti-Fake Compliance)
-    if let Some(ch) = expected_chapters {
-        if ch > 100 {
-            return vec!["預期篇章數超出定義域 [0..100]".to_string()];
-        }
+    if expected_chapters.is_some_and(|ch| ch > 100) {
+        return vec!["預期篇章數超出定義域 [0..100]".to_string()];
     }
-    if let Some(fv) = min_final_verse {
-        if fv < 0 || fv > 10000 {
-            return vec!["末章頌數超出定義域 [0..10000]".to_string()];
-        }
+    if min_final_verse.is_some_and(|fv| !(0..=10000).contains(&fv)) {
+        return vec!["末章頌數超出定義域 [0..10000]".to_string()];
     }
-    if let Some(tv) = min_total_verses {
-        if tv > 100000 {
-            return vec!["總頌數超出定義域 [0..100000]".to_string()];
-        }
+    if min_total_verses.is_some_and(|tv| tv > 100000) {
+        return vec!["總頌數超出定義域 [0..100000]".to_string()];
     }
 
     let mut errors = Vec::new();
     let chapters = split_into_chapters(verse_tokens);
-
-    // 0. 若未指定明確篇章與頌數標準，執行文獻學自適應全體性檢驗 (Zero-Config Dynamic Totality)
     if expected_chapters.is_none() && min_final_verse.is_none() && min_total_verses.is_none() {
-        if chapters.is_empty() {
-            errors.push("❌ 篇章全體性錯誤: 經文中未偵測到任何有效章節或頌節！".to_string());
-            return errors;
-        }
-        for (chap_name, verses) in &chapters {
-            if verses.is_empty() {
-                errors.push(format!("❌ 篇章經文缺失: 篇章【{chap_name}】未包含任何詩節！"));
-                continue;
-            }
-            let (expected_start, expected_end_opt) = extract_expected_range_from_chap_name(chap_name);
-            let first_v = verses[0].0;
-            if first_v != expected_start {
-                errors.push(format!(
-                    "❌ 篇章首頌異常: 篇章【{chap_name}】起始頌為第 {first_v} 頌，非預期起始第 {expected_start} 頌（可能前面有缺頁/缺頌）！"
-                ));
-            }
-            if let Some(expected_end) = expected_end_opt {
-                let last_v = verses[verses.len() - 1].0;
-                if last_v < expected_end {
-                    errors.push(format!(
-                        "❌ 篇章末頌異常: 篇章【{chap_name}】結束於第 {last_v} 頌，未達預期終結第 {expected_end} 頌！"
-                    ));
-                }
-            }
-        }
+        check_dynamic_chapter_ranges(&chapters, &mut errors);
     }
 
-    // 1. 檢驗篇章總數
     if let Some(exp_ch) = expected_chapters {
         if chapters.len() < exp_ch {
             let chap_names: Vec<&str> = chapters.iter().map(|c| c.0.as_str()).collect();
@@ -716,8 +763,6 @@ pub fn check_book_totality(
             ));
         }
     }
-
-    // 2. 檢驗末章最高頌號
     if let Some(min_fv) = min_final_verse {
         if let Some((final_chap_name, final_verses)) = chapters.last() {
             let max_v = final_verses.iter().map(|v| v.0).max().unwrap_or(0);
@@ -728,8 +773,6 @@ pub fn check_book_totality(
             }
         }
     }
-
-    // 3. 檢驗全書總頌數
     let total_verses = verse_tokens.iter().filter(|v| v.0 != -1).count();
     if let Some(min_tv) = min_total_verses {
         if total_verses < min_tv {
@@ -738,7 +781,6 @@ pub fn check_book_totality(
             ));
         }
     }
-
     errors
 }
 
@@ -901,6 +943,42 @@ pub fn check_book_totality_advanced(
     errors
 }
 
+/// 判斷該行是否標誌著逐字解區塊結束（進入譯文、微言大義、分隔線或下一頌）
+/// @outputs: 1
+fn is_anvaya_section_exit(clean: &str) -> bool {
+    clean.starts_with('#')
+        || clean.starts_with("譯文")
+        || clean.starts_with("**譯文")
+        || clean.starts_with("*【")
+        || clean.starts_with("【微言大義")
+        || clean.starts_with("【核心義理")
+        || clean.starts_with("【白話直譯")
+        || clean.starts_with("【注疏")
+        || clean.starts_with("【原著")
+        || clean.starts_with("---")
+        || clean.starts_with("Text ")
+        || clean.starts_with("Verse ")
+        || clean.starts_with("BRS ")
+        || clean.starts_with("VJ ")
+        || clean.starts_with("GS ")
+}
+
+/// 判斷逐字解條列項目是否包含空中括號或空譯釋
+/// @outputs: 1
+pub fn is_defective_anvaya_bullet(clean: &str) -> bool {
+    let is_bullet = clean.starts_with("- ") || clean.starts_with("• ");
+    if !is_bullet {
+        return false;
+    }
+    let trimmed_end = clean.trim_end();
+    clean.contains("[]")
+        || clean.contains("[ ]")
+        || clean.contains("[　]")
+        || trimmed_end.ends_with("➔")
+        || trimmed_end.ends_with("->")
+        || trimmed_end.ends_with("→")
+}
+
 /// 檢查散文句法與逐字解 (Anvaya & Padaccheda) 的完整性
 /// @outputs: 1
 pub fn check_anvaya_integrity(content: &str) -> Vec<String> {
@@ -921,22 +999,150 @@ pub fn check_anvaya_integrity(content: &str) -> Vec<String> {
             continue;
         }
 
-        if clean.starts_with('#') || clean.starts_with("譯文") {
+        if is_anvaya_section_exit(clean) {
             in_anvaya_table = false;
             continue;
         }
 
         if clean.starts_with('|') && !clean.starts_with("| :---") && !clean.contains("梵文單詞") {
             let parts: Vec<&str> = clean.split('|').map(|s| s.trim()).collect();
-            if parts.len() >= 5 && parts[parts.len() - 2].is_empty() {
-                let word_col = parts[1];
-                errors.push(format!("第 {line_no} 行: 逐字解表格中單詞 '{word_col}' 之繁體中文逐字義為空！"));
+            if parts.len() >= 5 {
+                let meaning = parts[parts.len() - 2];
+                if meaning.is_empty() || meaning == "[]" || meaning == "[ ]" || meaning == "[　]" {
+                    let word_col = parts[1];
+                    errors.push(format!("第 {line_no} 行: 逐字解表格中單詞 '{word_col}' 之繁體中文逐字義為空！"));
+                }
             }
-        } else if clean.starts_with("- ") && (clean.contains("[] ➔") || clean.contains("[] ->") || clean.ends_with("➔") || clean.ends_with("->")) {
+        } else if is_defective_anvaya_bullet(clean) {
             errors.push(format!("第 {line_no} 行: 逐字解包含空中括號或未填入中文逐字義: '{clean}'"));
         }
     }
     errors
+}
+
+/// 從 JSON 物件片段抽取字串欄位值（純 Rust 零依賴）
+/// @outputs: 2
+fn extract_json_str_field(obj: &str, key: &str) -> Option<String> {
+    let pat = format!("\"{key}\"");
+    let k_pos = obj.find(&pat)?;
+    let after_key = &obj[k_pos + pat.len()..];
+    let colon = after_key.find(':')?;
+    let rest = after_key[colon + 1..].trim_start();
+    if !rest.starts_with('"') {
+        return None;
+    }
+    let inner = &rest[1..];
+    let end_q = inner.find('"')?;
+    Some(inner[..end_q].to_string())
+}
+
+/// 從 JSON 物件片段抽取整數欄位值（純 Rust 零依賴）
+/// @outputs: 2
+fn extract_json_int_field(obj: &str, key: &str) -> Option<i32> {
+    let pat = format!("\"{key}\"");
+    let k_pos = obj.find(&pat)?;
+    let after_key = &obj[k_pos + pat.len()..];
+    let colon = after_key.find(':')?;
+    let rest = after_key[colon + 1..].trim_start();
+    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    if digits.is_empty() {
+        None
+    } else {
+        digits.parse::<i32>().ok()
+    }
+}
+
+/// 從 classics_title_registry.json 提取書籍物件切片（控制流深度 <= 2）
+/// @outputs: 1
+fn split_registry_book_objects(registry_json: &str) -> Vec<&str> {
+    let mut objs = Vec::new();
+    let Some(books_pos) = registry_json.find("\"books\"") else {
+        return objs;
+    };
+    let Some(arr_rel) = registry_json[books_pos..].find('[') else {
+        return objs;
+    };
+    let mut depth = 0usize;
+    let mut in_str = false;
+    let mut escape = false;
+    let mut obj_start = 0usize;
+    for (rel_idx, ch) in registry_json[books_pos + arr_rel..].char_indices() {
+        let abs_idx = books_pos + arr_rel + rel_idx;
+        if escape {
+            escape = false;
+            continue;
+        }
+        if ch == '\\' && in_str {
+            escape = true;
+            continue;
+        }
+        if ch == '"' {
+            in_str = !in_str;
+            continue;
+        }
+        if in_str {
+            continue;
+        }
+        if ch == '{' && depth == 0 {
+            obj_start = abs_idx;
+            depth = 1;
+        } else if ch == '{' {
+            depth += 1;
+        } else if ch == '}' && depth == 1 {
+            depth = 0;
+            objs.push(&registry_json[obj_start..=abs_idx]);
+        } else if ch == '}' {
+            depth = depth.saturating_sub(1);
+        } else if ch == ']' && depth == 0 {
+            break;
+        }
+    }
+    objs
+}
+
+/// 計算指定書籍物件與檔名最長鍵匹配長度
+/// @outputs: 1
+fn match_book_key_len(obj: &str, lower_file: &str) -> usize {
+    let cand_keys = [
+        extract_json_str_field(obj, "filename_base"),
+        extract_json_str_field(obj, "original_title_ascii"),
+        extract_json_str_field(obj, "id"),
+    ];
+    let mut best = 0usize;
+    for key in cand_keys.into_iter().flatten() {
+        let kl = key.to_lowercase();
+        if kl.len() > best && lower_file.contains(&kl) {
+            best = kl.len();
+        }
+    }
+    best
+}
+
+/// 依 classics_title_registry.json 推導指定檔名之預期篇章、末章頌數與總頌數
+/// @outputs: 1
+pub fn parse_registry_expectations(
+    registry_json: &str,
+    file_path: &str,
+) -> (Option<usize>, Option<i32>, Option<usize>) {
+    let lower_file = file_path.to_lowercase();
+    let mut best_len = 0usize;
+    let mut best_match: Option<&str> = None;
+
+    for obj in split_registry_book_objects(registry_json) {
+        let matched_len = match_book_key_len(obj, &lower_file);
+        if matched_len > best_len {
+            best_len = matched_len;
+            best_match = Some(obj);
+        }
+    }
+
+    let Some(matched_obj) = best_match else {
+        return (None, None, None);
+    };
+    let exp_ch = extract_json_int_field(matched_obj, "expected_chapters").map(|v| v.max(0) as usize);
+    let min_fv = extract_json_int_field(matched_obj, "expected_final_chapter_min_verses");
+    let min_tv = extract_json_int_field(matched_obj, "expected_total_min_verses").map(|v| v.max(0) as usize);
+    (exp_ch, min_fv, min_tv)
 }
 
 /// 執行完整五道剛性門禁審查（含篇章全體性與末章閉合）
@@ -1001,6 +1207,7 @@ pub fn inspect_markdown_content(
 mod tests {
     use super::*;
 
+    /// @outputs: 1
     #[test]
     fn test_normalize_indic_digits_devanagari_and_bengali() {
         let input = "Dev: १२३४५६७८९० | Beng: ১২৩৪৫৬৭৮৯০";
@@ -1008,6 +1215,7 @@ mod tests {
         assert_eq!(norm, "Dev: 1234567890 | Beng: 1234567890");
     }
 
+    /// @outputs: 1
     #[test]
     fn test_check_filename_bilingual_valid_and_invalid() {
         let good = "Camatkāra-candrikā_奇妙月光_繁體中文全譯本.md";
@@ -1019,6 +1227,7 @@ mod tests {
         assert!(errs[0].contains("缺乏原典羅馬拼音"));
     }
 
+    /// @outputs: 1
     #[test]
     fn test_banned_words_detector() {
         let text = "我們應當皈依至尊主，登上靈性平台，達到證悟境界，跟隨哈里達斯學習以太。";
@@ -1026,6 +1235,7 @@ mod tests {
         assert_eq!(violations.len(), 5);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_colophon_puspika_ignored_in_verse_numbers() {
         let md = "### Verse 45\n> verse 45 content || 45 ||\n### Verse 46\n> verse 46 content || 46 ||\n\n## 【東方第一浪圓滿題記（Puṣpikā）】\n> ### इति श्री-भक्ति-रसामृत-सिन्धौ पूर्व-विभागे सामान्य-भक्ति-निरूपणं नाम प्रथमा लहरी ॥ १ ॥\n*iti śrī-bhakti-rasāmṛta-sindhau pūrva-vibhāge sāmānya-bhakti-nirūpaṇaṁ nāma prathamā laharī || 1 ||*";
@@ -1034,6 +1244,7 @@ mod tests {
         assert_eq!(verse_nums, vec![45, 46]);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_extract_expected_range_from_chap_name() {
         let range1 = extract_expected_range_from_chap_name("東方第二浪中編：解脫超越辨析與奉愛無上獨立自足論（1.2.31~1.2.71）");
@@ -1050,8 +1261,15 @@ mod tests {
 
         let range5 = extract_expected_range_from_chap_name("第二章：無範圍標注篇");
         assert_eq!(range5, (1, None));
+
+        let range6 = extract_expected_range_from_chap_name("東方第二浪中編（1.2.31-1.2.71）Sādhana-bhakti");
+        assert_eq!(range6, (31, Some(71)));
+
+        let range7 = extract_expected_range_from_chap_name("修行奉愛論（Sādhana-bhakti）");
+        assert_eq!(range7, (1, None));
     }
 
+    /// @outputs: 1
     #[test]
     fn test_subinstallment_continuity_validation() {
         let md_valid = "# 東方第二浪中編（1.2.31~1.2.33）\n### Verse 31\n> content || 31 ||\n### Verse 32\n> content || 32 ||\n### Verse 33\n> content || 33 ||\n";
@@ -1068,9 +1286,10 @@ mod tests {
         assert!(!report_bad_end.totality_errors.is_empty());
     }
 
+    /// @outputs: 1
     #[test]
-    fn test_anvaya_integrity_check() {
-        let good_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n| 梵文單詞 | 切分 | 格位 | 逐字義 |\n| :--- | :--- | :--- | :--- |\n| yaḥ | yaḥ | nom. sg. m. | 彼（聖王） |\n";
+    fn test_anvaya_integrity_and_eof_closure() {
+        let good_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n| 梵文單詞 | 切分 | 格位 | 逐字義 |\n| :--- | :--- | :--- | :--- |\n| yaḥ | yaḥ | nom. sg. m. | 彼（聖王） |\n**譯文**：測試結束。\n> **【微言大義與雙大師注疏】**：\n- 注疏演繹 A -> B\n";
         assert!(check_anvaya_integrity(good_md).is_empty());
 
         let bad_table_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n| 梵文單詞 | 切分 | 格位 | 逐字義 |\n| :--- | :--- | :--- | :--- |\n| yaḥ | yaḥ |  |  |\n";
@@ -1078,9 +1297,24 @@ mod tests {
         assert_eq!(errs.len(), 1);
         assert!(errs[0].contains("逐字義為空"));
 
-        let bad_list_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n- yaḥ (yaḥ) [] ➔ \n";
+        let bad_list_md = "> **【散文句法與逐字解（Anvaya & Padaccheda）】**：\n- yaḥ (yaḥ) [ ] → 彼\n";
         let list_errs = check_anvaya_integrity(bad_list_md);
         assert_eq!(list_errs.len(), 1);
         assert!(list_errs[0].contains("空中括號"));
+
+        let eof_unclosed = "Text 1\nयावत् किम् एतद् इति ता अहाहेति नोचुर्";
+        let closure_errs = check_danda_sentence_closure(eof_unclosed);
+        assert_eq!(closure_errs.len(), 1);
+        assert!(closure_errs[0].contains("缺乏雙豎線"));
+    }
+
+    /// @outputs: 1
+    #[test]
+    fn test_parse_registry_expectations_golden() {
+        let reg = r#"{"books": [{"id": "camatkara-candrika", "filename_base": "Camatkāra-candrikā_奇妙月光_繁體中文全譯本", "expected_chapters": 4, "expected_final_chapter_min_verses": 55, "expected_total_min_verses": 220}]}"#;
+        let res = parse_registry_expectations(reg, "out/Camatkāra-candrikā_奇妙月光_繁體中文全譯本.md");
+        assert_eq!(res, (Some(4), Some(55), Some(220)));
+        let none_res = parse_registry_expectations(reg, "out/Unknown-Book_未知_繁體中文全譯本.md");
+        assert_eq!(none_res, (None, None, None));
     }
 }

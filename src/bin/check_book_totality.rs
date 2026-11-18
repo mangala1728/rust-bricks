@@ -12,6 +12,7 @@ use std::process;
 use rust_bricks::classic_continuity::{
     check_book_totality_advanced, check_page_sequence_gaps,
     extract_page_index_from_filename, extract_verse_numbers_from_text,
+    parse_registry_expectations,
 };
 
 /// 列印使用說明
@@ -26,9 +27,10 @@ check_book_totality — 古典聖典篇章全體性與末章閉合門禁 (Rust �
 選項:
   --source-dir <dir>   來源圖檔目錄 (自動檢驗實體檔案序號空洞與漏頁)
   --colophon           強制要求經文末尾必須命中印度古典結尾題記 (Iti Samāptam)
-  --chapters <N>       預期全書應收錄之篇章總數 (選填，無配置時採文獻自適應推導)
+  --chapters <N>       預期全書應收錄之篇章總數 (選填，無配置時採註冊表/文獻推導)
   --final-verse <N>    末章最高頌號下限 (選填)
   --min-verses <N>     全書經文總頌數下限 (選填)
+  --registry <path>    指定 classics_title_registry.json 路徑
   -h, --help           顯示此說明訊息
 "#);
 }
@@ -40,6 +42,7 @@ struct TotalityOptions {
     expected_chapters: Option<usize>,
     min_final_verse: Option<i32>,
     min_total_verses: Option<usize>,
+    registry_path: Option<String>,
 }
 
 /// 解析命令列參數
@@ -55,6 +58,7 @@ fn parse_cli_args(args: &[String]) -> Result<TotalityOptions, String> {
     let mut expected_chapters = None;
     let mut min_final_verse = None;
     let mut min_total_verses = None;
+    let mut registry_path = None;
 
     let mut i = 1;
     while i < args.len() {
@@ -77,6 +81,9 @@ fn parse_cli_args(args: &[String]) -> Result<TotalityOptions, String> {
         } else if arg == "--min-verses" && i + 1 < args.len() {
             min_total_verses = args[i + 1].parse().ok();
             i += 2;
+        } else if arg == "--registry" && i + 1 < args.len() {
+            registry_path = Some(args[i + 1].clone());
+            i += 2;
         } else if !arg.starts_with('-') && target_file.is_none() {
             target_file = Some(arg.clone());
             i += 1;
@@ -93,9 +100,33 @@ fn parse_cli_args(args: &[String]) -> Result<TotalityOptions, String> {
             expected_chapters,
             min_final_verse,
             min_total_verses,
+            registry_path,
         }),
         None => Err("未提供目標 Markdown 檔案路徑".to_string()),
     }
+}
+
+/// 自動搜尋並讀取 classics_title_registry.json
+/// @outputs: 2
+fn resolve_registry_expectations(
+    registry_opt: Option<&str>,
+    target_file: &str,
+) -> (Option<usize>, Option<i32>, Option<usize>) {
+    let mut candidates = Vec::new();
+    if let Some(p) = registry_opt {
+        candidates.push(p.to_string());
+    }
+    candidates.push("reference_rules/classics_title_registry.json".to_string());
+    candidates.push("../agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("/home/antigravity/mangala1728/agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+
+    for cand in candidates {
+        if let Ok(reg_text) = fs::read_to_string(&cand) {
+            return parse_registry_expectations(&reg_text, target_file);
+        }
+    }
+    (None, None, None)
 }
 
 /// 掃描實體來源圖檔目錄並檢驗序號空洞
@@ -186,12 +217,20 @@ fn main() {
     let total_verses = verse_tokens.iter().filter(|v| v.0 != -1).count();
     println!("📊 實際偵測經文總頌數: {total_verses} 頌");
 
+    let (reg_ch, reg_fv, reg_tv) = resolve_registry_expectations(
+        opts.registry_path.as_deref(),
+        &opts.target_file,
+    );
+    let exp_ch = opts.expected_chapters.or(reg_ch);
+    let min_fv = opts.min_final_verse.or(reg_fv);
+    let min_tv = opts.min_total_verses.or(reg_tv);
+
     let errors = check_book_totality_advanced(
         &verse_tokens,
         &content,
-        opts.expected_chapters,
-        opts.min_final_verse,
-        opts.min_total_verses,
+        exp_ch,
+        min_fv,
+        min_tv,
         opts.require_colophon,
     );
 

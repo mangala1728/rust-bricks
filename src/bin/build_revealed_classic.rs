@@ -16,6 +16,7 @@ use rust_bricks::classic_sacred_builder::{
     validate_english_leakage, validate_first_page_preface, PrefaceSection, VerseUnitData,
 };
 
+/// @outputs: 1
 fn print_usage() {
     eprintln!(r#"
 build_revealed_classic — 神聖啟示經典全譯定本原生生成工具 (Rust 版)
@@ -30,6 +31,7 @@ build_revealed_classic — 神聖啟示經典全譯定本原生生成工具 (Rus
 }
 
 // 內建《伊薩奧義書》（Īśāvāsya Upaniṣad，白夜柔吠陀金剛蛇生分院第 40 章，全 18 頌啟示聖典）
+/// @outputs: 1
 fn get_sample_isavasya_data<'a>() -> (
     &'static str,
     &'static str,
@@ -260,6 +262,7 @@ fn get_sample_isavasya_data<'a>() -> (
     (book_title, author_info, preface_title, preface_subtitle, preface_sections, verses)
 }
 
+/// @outputs: 2
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut json_path: Option<String> = None;
@@ -326,8 +329,10 @@ fn main() {
     println!("✅ 禁字與英文層靜態審查通過 (0 皈依、0 平台、0 證悟、0 達斯、0 以太，0 英文洩漏)");
 
     let safe_title = "伊薩奧義書";
-    let md_path = Path::new(&out_dir).join(format!("{safe_title}_繁體中文全譯本.md"));
-    let docx_path = Path::new(&out_dir).join(format!("{safe_title}_繁體中文全譯本.docx"));
+    let md_name = format!("{safe_title}_繁體中文全譯本.md");
+    let docx_name = format!("{safe_title}_繁體中文全譯本.docx");
+    let md_path = Path::new(&out_dir).join(&md_name);
+    let docx_path = Path::new(&out_dir).join(&docx_name);
     let audit_path = Path::new(&out_dir).join(format!("{safe_title}_結構審計報告.md"));
 
     // 寫出 Markdown
@@ -339,8 +344,8 @@ fn main() {
     // 寫出審計報告
     let audit_content = generate_structural_audit_report(
         book_title,
-        &docx_path.file_name().unwrap().to_string_lossy(),
-        &md_path.file_name().unwrap().to_string_lossy(),
+        &docx_name,
+        &md_name,
         &verses,
     );
     if let Err(e) = fs::write(&audit_path, &audit_content) {
@@ -356,9 +361,12 @@ fn main() {
         .arg(&docx_path)
         .status();
 
-    if status.is_err() || !status.unwrap().success() {
-        eprintln!("❌ 調用 wordcraft-cli convert 轉檔至 docx 失敗");
-        process::exit(1);
+    match status {
+        Ok(s) if s.success() => {}
+        _ => {
+            eprintln!("❌ 調用 wordcraft-cli convert 轉檔至 docx 失敗");
+            process::exit(1);
+        }
     }
 
     println!("✅ 編譯成功！\n  - Word: {}\n  - MD:   {}\n  - 審計: {}", docx_path.display(), md_path.display(), audit_path.display());
@@ -372,9 +380,8 @@ fn main() {
         .arg(&md_path)
         .status();
 
-    if qa_status.is_ok() && qa_status.unwrap().success() {
-        println!("🟢 [BUILD REVEALED CLASSIC] 終極閉環驗收通過！");
-    } else {
-        println!("⚠️ 警告: astro_trans_hook qa 驗收回傳非零，請手動檢查");
+    match qa_status {
+        Ok(s) if s.success() => println!("🟢 [BUILD REVEALED CLASSIC] 終極閉環驗收通過！"),
+        _ => println!("⚠️ 警告: astro_trans_hook qa 驗收回傳非零，請手動檢查"),
     }
 }

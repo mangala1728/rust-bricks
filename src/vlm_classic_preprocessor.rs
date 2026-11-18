@@ -326,6 +326,7 @@ pub fn is_duplicate_dhash_pair(hash_a: u64, hash_b: u64, max_hamming: u32) -> bo
 mod tests {
     use super::*;
 
+    /// @outputs: 1
     #[test]
     fn test_histogram_and_percentiles() {
         // 建立階梯灰度圖: 100 個 10 (黑), 100 個 200 (白)
@@ -355,6 +356,7 @@ mod tests {
         assert_eq!(scan_thresh, 20);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_thresholding() {
         let pixels = vec![50, 100, 150, 200];
@@ -364,6 +366,7 @@ mod tests {
         assert_eq!(out, vec![0, 0, 255, 255]);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_median_filter_3x3() {
         let mut pixels = vec![255u8; 9];
@@ -376,6 +379,7 @@ mod tests {
         assert_eq!(out[4], 255);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_horizontal_projection_and_slicing() {
         // 寬 10, 高 20 的假圖像
@@ -409,6 +413,7 @@ mod tests {
         assert!(slices[1].0 <= 12 && slices[1].1 >= 16);
     }
 
+    /// @outputs: 1
     #[test]
     fn test_dhash_and_hamming_distance() {
         let mut thumb1 = [100u8; 72];

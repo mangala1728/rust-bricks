@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 940
+total_functions: 960
 modules:
   - module: "agent_terminal"
     file: "src/agent_terminal.rs"
@@ -502,6 +502,36 @@ modules:
           utc_hour: "[0.0..=24.0]"
           lat_deg: "[-90.0..=90.0]"
           lon_deg: "[-180.0..=180.0]"
+  - module: "astro_translation_audit"
+    file: "src/astro_translation_audit.rs"
+    functions_count: 7
+    architecture_map:
+      - "Role: core/astro_translation_audit — 吠陀占星經典翻譯完整度與雙模態排版品質審查純函式積木。"
+      - "Inputs: Markdown/Docx 純文字與 XML 片段。"
+      - "Outputs: 結構完整度報告、禁字違規、英文殘留與空白譯文檢測結果。"
+      - "Invariants: 零外部依賴、零全域可變狀態、禁止 unsafe、無遞迴、函式 <= 100 行、巢狀 <= 2。"
+    functions:
+      - name: "detect_astro_book_type"
+        signature: "pub fn detect_astro_book_type(content: &str, file_path: &str) -> AstroBookType"
+        outputs: 2
+      - name: "count_distinct_astro_verses"
+        signature: "pub fn count_distinct_astro_verses(content: &str) -> usize"
+        outputs: 1
+      - name: "analyze_astro_markdown"
+        signature: "pub fn analyze_astro_markdown(content: &str, file_path: &str) -> AstroCompletenessReport"
+        outputs: 1
+      - name: "check_astro_banned_words"
+        signature: "pub fn check_astro_banned_words(text: &str) -> Vec<AstroBannedError>"
+        outputs: 1
+      - name: "check_astro_english_leakage"
+        signature: "pub fn check_astro_english_leakage(text: &str) -> Vec<String>"
+        outputs: 1
+      - name: "check_astro_empty_translations"
+        signature: "pub fn check_astro_empty_translations(paragraphs: &[String]) -> Vec<String>"
+        outputs: 1
+      - name: "extract_docx_paragraphs_from_xml"
+        signature: "pub fn extract_docx_paragraphs_from_xml(xml: &str) -> Vec<String>"
+        outputs: 1
   - module: "astro_varga_cusp_analysis"
     file: "src/astro_varga_cusp_analysis.rs"
     functions_count: 3
@@ -1030,7 +1060,7 @@ modules:
           dummy_level: "[0..10]"
   - module: "classic_continuity"
     file: "src/classic_continuity.rs"
-    functions_count: 15
+    functions_count: 19
     architecture_map:
       - "Role: core (聖典經文連續性、篇章全體性、標點閉合與剛性禁字純函式積木)"
       - "Inputs: 經文 Markdown / 文本切片、篇章與頌數標準約束、檔案名稱。"
@@ -1054,6 +1084,9 @@ modules:
         outputs: 2
       - name: "extract_verse_numbers_from_text"
         signature: "pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize)>"
+        outputs: 1
+      - name: "extract_expected_range_from_chap_name"
+        signature: "pub fn extract_expected_range_from_chap_name(chap_name: &str) -> (i32, Option<i32>)"
         outputs: 1
       - name: "check_verse_monotonicity"
         signature: "pub fn check_verse_monotonicity(verses: &[(i32, String, usize)]) -> Vec<String>"
@@ -1086,6 +1119,15 @@ modules:
         outputs: 2
       - name: "check_book_totality_advanced"
         signature: "pub fn check_book_totality_advanced("
+        outputs: 1
+      - name: "is_defective_anvaya_bullet"
+        signature: "pub fn is_defective_anvaya_bullet(clean: &str) -> bool"
+        outputs: 1
+      - name: "check_anvaya_integrity"
+        signature: "pub fn check_anvaya_integrity(content: &str) -> Vec<String>"
+        outputs: 1
+      - name: "parse_registry_expectations"
+        signature: "pub fn parse_registry_expectations("
         outputs: 1
       - name: "inspect_markdown_content"
         signature: "pub fn inspect_markdown_content("
@@ -5605,6 +5647,51 @@ modules:
           cand_end_ms: "[1..86400000]"
           ref_start_ms: "[0..86400000]"
           ref_end_ms: "[1..86400000]"
+          tol_ms: "[1..5000]"
+  - module: "subtitle_qa_audit"
+    file: "src/subtitle_qa_audit.rs"
+    functions_count: 9
+    architecture_map:
+      - "Role: media/subtitle_qa_audit — 影視字幕 SRT 解析、CPS 語速分級、殘留英文字詞掃描與 VAD 語音邊界驗收 Hook 純函式積木。"
+      - "Inputs: SRT 純文字內容、sentence_speech_boundaries.json 純文字內容、閾值與容差參數。"
+      - "Outputs: 結構化 CPS 報告、殘留英文字報告、VAD 邊界驗收與貼合修正結果。"
+      - "Invariants: 零外部依賴、零全域可變狀態、禁止 unsafe、無遞迴、函式 <= 100 行、巢狀 <= 2。"
+    functions:
+      - name: "parse_srt_timestamp_ms"
+        signature: "pub fn parse_srt_timestamp_ms(ts: &str) -> Option<u32>"
+        outputs: 2
+      - name: "format_srt_timestamp_ms"
+        signature: "pub fn format_srt_timestamp_ms(total_ms: u32) -> String"
+        outputs: 1
+        domains:
+          total_ms: "[0..359999999]"
+      - name: "count_readable_subtitle_chars"
+        signature: "pub fn count_readable_subtitle_chars(text: &str) -> u32"
+        outputs: 1
+      - name: "parse_srt_content"
+        signature: "pub fn parse_srt_content(content: &str) -> Vec<SrtEntry>"
+        outputs: 1
+      - name: "audit_srt_cps"
+        signature: "pub fn audit_srt_cps("
+        outputs: 2
+        domains:
+          red_tenths: "[10..500]"
+          orange_tenths: "[10..500]"
+      - name: "find_residual_english_lines"
+        signature: "pub fn find_residual_english_lines("
+        outputs: 1
+      - name: "parse_speech_boundaries_json"
+        signature: "pub fn parse_speech_boundaries_json(json_str: &str) -> Vec<SpeechSentenceBoundary>"
+        outputs: 1
+      - name: "evaluate_vad_boundaries"
+        signature: "pub fn evaluate_vad_boundaries("
+        outputs: 2
+        domains:
+          tol_ms: "[1..5000]"
+      - name: "snap_subtitles_to_vad_boundaries"
+        signature: "pub fn snap_subtitles_to_vad_boundaries("
+        outputs: 2
+        domains:
           tol_ms: "[1..5000]"
   - module: "sys_path"
     file: "src/sys_path.rs"

@@ -13,6 +13,7 @@ use std::process::{self, Command};
 
 use rust_bricks::classic_continuity::{
     check_banned_words_and_leakage, check_filename_bilingual, inspect_markdown_content,
+    is_defective_anvaya_bullet, parse_registry_expectations,
 };
 
 /// 列印使用說明
@@ -26,6 +27,7 @@ classic_trans_gate — 古典聖典翻譯工作流統一品質閘門 (Rust 原�
 
 選項:
   --md <md_file>                 待審之 Markdown .md 檔案路徑
+  --registry <path>              指定 classics_title_registry.json 路徑
   --upload                       門禁通過後自動同步至 Google Drive「翻譯完成」資料夾
   --drive-parent <folder_id>     Google Drive 目標資料夾 ID
   -h, --help                     顯示此說明訊息
@@ -50,7 +52,17 @@ fn extract_docx_xml(docx_path: &str) -> Result<String, String> {
     String::from_utf8(output.stdout).map_err(|e| format!("XML 編碼非有效 UTF-8: {e}"))
 }
 
-/// 從單一 XML 段落區塊中萃取文字
+/// 解碼常見 XML 跳脫字元（最後處理 &amp; 防止雙重解碼）
+/// @outputs: 1
+fn unescape_xml_entities(s: &str) -> String {
+    s.replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&amp;", "&")
+}
+
+/// 從單一 XML 段落區塊中萃取純文字
 /// @outputs: 1
 fn extract_text_from_p_chunk(p_chunk: &str) -> String {
     let mut p_text = String::new();
@@ -70,7 +82,7 @@ fn extract_text_from_p_chunk(p_chunk: &str) -> String {
         p_text.push_str(&p_chunk[text_begin..text_end]);
         t_search = text_end.saturating_add("</w:t>".len());
     }
-    p_text
+    unescape_xml_entities(&p_text)
 }
 
 /// 依序萃取 XML 中所有 <w:p> 段落純文字（控制流扁平化，深度 <= 2）
@@ -95,6 +107,89 @@ fn extract_paragraphs_from_xml(xml: &str) -> Vec<String> {
     paragraphs
 }
 
+/// 從表格列 <w:tr> 萃取所有儲存格 <w:tc> 文字
+/// @outputs: 1
+fn extract_cells_from_tr(tr_chunk: &str) -> Vec<String> {
+    let mut cells = Vec::new();
+    let mut pos = 0;
+    while let Some(rel_start) = tr_chunk[pos..].find("<w:tc") {
+        let abs_start = pos.saturating_add(rel_start);
+        let Some(rel_end) = tr_chunk[abs_start..].find("</w:tc>") else {
+            break;
+        };
+        let abs_end = abs_start.saturating_add(rel_end).saturating_add("</w:tc>".len());
+        let paras = extract_paragraphs_from_xml(&tr_chunk[abs_start..abs_end]);
+        cells.push(paras.join(" ").trim().to_string());
+        pos = abs_end;
+    }
+    cells
+}
+
+/// 掃描 docx 內逐字解 <w:tbl> 是否存在空白或空中括號逐字義
+/// @outputs: 1
+fn check_docx_anvaya_tables(xml: &str) -> Vec<String> {
+    let mut errors = Vec::new();
+    let mut pos = 0;
+    let mut tbl_idx = 0usize;
+    while let Some(rel_start) = xml[pos..].find("<w:tbl") {
+        let abs_start = pos.saturating_add(rel_start);
+        let Some(rel_end) = xml[abs_start..].find("</w:tbl>") else {
+            break;
+        };
+        tbl_idx += 1;
+        let abs_end = abs_start.saturating_add(rel_end).saturating_add("</w:tbl>".len());
+        let tbl_chunk = &xml[abs_start..abs_end];
+        pos = abs_end;
+
+        if !tbl_chunk.contains("梵文單詞") || !tbl_chunk.contains("逐字義") {
+            continue;
+        }
+        check_single_anvaya_table(tbl_chunk, tbl_idx, &mut errors);
+    }
+    errors
+}
+
+/// 檢驗單一逐字解 XML 表格所有資料列
+/// @outputs: 1
+fn check_single_anvaya_table(tbl_chunk: &str, tbl_idx: usize, errors: &mut Vec<String>) {
+    let mut tr_pos = 0;
+    let mut row_idx = 0usize;
+    while let Some(rel_tr) = tbl_chunk[tr_pos..].find("<w:tr") {
+        let abs_tr = tr_pos.saturating_add(rel_tr);
+        let Some(rel_end) = tbl_chunk[abs_tr..].find("</w:tr>") else {
+            break;
+        };
+        row_idx += 1;
+        let abs_end = abs_tr.saturating_add(rel_end).saturating_add("</w:tr>".len());
+        let cells = extract_cells_from_tr(&tbl_chunk[abs_tr..abs_end]);
+        tr_pos = abs_end;
+
+        if cells.len() < 4 || cells[0].contains("梵文單詞") {
+            continue;
+        }
+        let meaning = cells[cells.len() - 1].trim();
+        if meaning.is_empty() || meaning == "[]" || meaning == "[ ]" || meaning == "[　]" {
+            errors.push(format!(
+                "表格 {tbl_idx} 第 {row_idx} 列: Docx 逐字解表格中單詞 '{}' 之繁體中文逐字義為空！",
+                cells[0]
+            ));
+        }
+    }
+}
+
+/// 判斷下一段是否直接跳轉至下一頌或下一區塊（導致譯文為空）
+/// @outputs: 1
+fn is_next_unit_or_empty(next_trimmed: &str) -> bool {
+    next_trimmed.is_empty()
+        || next_trimmed.starts_with("Text ")
+        || next_trimmed.starts_with("Verse ")
+        || next_trimmed.starts_with("BRS ")
+        || next_trimmed.starts_with("VJ ")
+        || next_trimmed.starts_with("GS ")
+        || next_trimmed.starts_with("### ")
+        || next_trimmed.starts_with("【")
+}
+
 /// 解析 XML 中的段落與表格並審核禁字與空白譯文
 /// @outputs: 2
 fn check_docx_integrity(docx_path: &str) -> (bool, usize, usize, Vec<String>) {
@@ -111,22 +206,34 @@ fn check_docx_integrity(docx_path: &str) -> (bool, usize, usize, Vec<String>) {
     };
 
     let table_count = xml.match_indices("<w:tbl").count();
+    errors.extend(check_docx_anvaya_tables(&xml));
     let paragraphs = extract_paragraphs_from_xml(&xml);
     let p_count = paragraphs.len();
+    let mut in_anvaya = false;
 
     for (idx, p) in paragraphs.iter().enumerate() {
         let trimmed = p.trim();
+        if trimmed.contains("【散文句法與逐字解") || trimmed.contains("Anvaya & Padaccheda") {
+            in_anvaya = true;
+        } else if trimmed.starts_with("譯文") || trimmed.starts_with("**譯文") || trimmed.starts_with("【微言大義") || trimmed.starts_with("Text ") || trimmed.starts_with("BRS ") {
+            in_anvaya = false;
+        }
+
         let is_empty_trans = (trimmed == "譯文:" || trimmed == "譯文：")
-            && (idx.saturating_add(1) >= paragraphs.len() || paragraphs[idx + 1].trim().is_empty());
+            && (idx.saturating_add(1) >= paragraphs.len()
+                || is_next_unit_or_empty(paragraphs[idx + 1].trim()));
         if is_empty_trans {
             errors.push(format!("段落 {idx}: 存在空白未填之「譯文:」單元"));
         }
-        let is_defective_anvaya = trimmed.starts_with("- ")
-            && (trimmed.contains("[] ➔")
-                || trimmed.contains("[] ->")
+
+        let section_defective = in_anvaya
+            && (trimmed.contains("[]")
+                || trimmed.contains("[ ]")
+                || trimmed.contains("[　]")
                 || trimmed.ends_with("➔")
-                || trimmed.ends_with("->"));
-        if is_defective_anvaya {
+                || trimmed.ends_with("->")
+                || trimmed.ends_with("→"));
+        if is_defective_anvaya_bullet(trimmed) || section_defective {
             errors.push(format!("段落 {idx}: 逐字解包含空中括號或未填入中文逐字義: '{trimmed}'"));
         }
     }
@@ -167,6 +274,7 @@ fn upload_file_to_drive(file_path: &str, parent_id: &str) {
 struct GateOptions {
     docx_path: String,
     md_path: Option<String>,
+    registry_path: Option<String>,
     upload: bool,
     drive_parent: String,
 }
@@ -180,6 +288,7 @@ fn parse_gate_args(args: &[String]) -> Result<GateOptions, String> {
 
     let mut docx_path = None;
     let mut md_path = None;
+    let mut registry_path = None;
     let mut upload = false;
     let mut drive_parent = "1xresTeMn_ddALkgFg3sUtxFEI_hpib30".to_string();
 
@@ -191,6 +300,9 @@ fn parse_gate_args(args: &[String]) -> Result<GateOptions, String> {
             process::exit(0);
         } else if arg == "--md" && i + 1 < args.len() {
             md_path = Some(args[i + 1].clone());
+            i += 2;
+        } else if arg == "--registry" && i + 1 < args.len() {
+            registry_path = Some(args[i + 1].clone());
             i += 2;
         } else if arg == "--upload" {
             upload = true;
@@ -210,6 +322,7 @@ fn parse_gate_args(args: &[String]) -> Result<GateOptions, String> {
         Some(p) => Ok(GateOptions {
             docx_path: p,
             md_path,
+            registry_path,
             upload,
             drive_parent,
         }),
@@ -217,13 +330,37 @@ fn parse_gate_args(args: &[String]) -> Result<GateOptions, String> {
     }
 }
 
+/// 自動搜尋並讀取 classics_title_registry.json
+/// @outputs: 2
+fn resolve_registry_expectations(
+    registry_opt: Option<&str>,
+    target_file: &str,
+) -> (Option<usize>, Option<i32>, Option<usize>) {
+    let mut candidates = Vec::new();
+    if let Some(p) = registry_opt {
+        candidates.push(p.to_string());
+    }
+    candidates.push("reference_rules/classics_title_registry.json".to_string());
+    candidates.push("../agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+    candidates.push("/home/antigravity/mangala1728/agent-workflows/workflows/sanskrit-classic-translation/reference_rules/classics_title_registry.json".to_string());
+
+    for cand in candidates {
+        if let Ok(reg_text) = fs::read_to_string(&cand) {
+            return parse_registry_expectations(&reg_text, target_file);
+        }
+    }
+    (None, None, None)
+}
+
 /// 審查 Markdown 檔案
 /// @outputs: 2
-fn audit_markdown_file(md_file: &str) -> bool {
+fn audit_markdown_file(md_file: &str, registry_opt: Option<&str>) -> bool {
     println!("\n🔍 [2/2] 正在審查 Markdown (.md) 經文連續性、雙豎線閉合與雙語完整度...");
     match fs::read_to_string(md_file) {
         Ok(content) => {
-            let md_report = inspect_markdown_content(&content, md_file, None, None, None);
+            let (reg_ch, reg_fv, reg_tv) = resolve_registry_expectations(registry_opt, md_file);
+            let md_report = inspect_markdown_content(&content, md_file, reg_ch, reg_fv, reg_tv);
             if md_report.verdict == "PASS" {
                 println!(
                     "✅ Markdown 門禁通過 (共收錄 {} 頌，0 漏頌、0 殘缺斷句、0 禁字、保留原著英譯供大師校審)",
@@ -285,7 +422,7 @@ fn main() {
     }
 
     if let Some(ref md_file) = opts.md_path {
-        let md_ok = audit_markdown_file(md_file);
+        let md_ok = audit_markdown_file(md_file, opts.registry_path.as_deref());
         if !md_ok {
             all_passed = false;
         }
