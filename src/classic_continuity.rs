@@ -229,19 +229,20 @@ fn extract_title_verse_num(norm_line: &str) -> Option<i32> {
         }
     }
 
-    // 格式 2: 包含 第 N 頌 / 第 N 节 / 第 N 節
-    if let Some(pos) = trimmed.find('第') {
-        let rest = &trimmed[pos + '第'.len_utf8()..].trim_start();
+    // 格式 2: 包含 第 N 頌 / 第 N 节 / 第 N 節（掃描所有 '第' 以免被 '第一浪' 等前綴遮蔽）
+    for (pos, _) in trimmed.match_indices('第') {
+        let rest = trimmed[pos + '第'.len_utf8()..].trim_start();
         let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
         let after_digits = rest[digits.len()..].trim_start();
         let is_verse_unit = after_digits.starts_with('頌')
             || after_digits.starts_with('颂')
             || after_digits.starts_with('節')
             || after_digits.starts_with('节');
-        if !digits.is_empty() && is_verse_unit {
-            if let Ok(num) = digits.parse::<i32>() {
-                return Some(num);
-            }
+        if digits.is_empty() || !is_verse_unit {
+            continue;
+        }
+        if let Ok(num) = digits.parse::<i32>() {
+            return Some(num);
         }
     }
 
@@ -295,16 +296,17 @@ pub fn extract_verse_numbers_from_text(content: &str) -> Vec<(i32, String, usize
             continue;
         }
 
-        if in_colophon_block || is_colophon_line(trimmed) {
+        let norm_line = normalize_indic_digits(trimmed);
+        let danda_num = extract_danda_verse_num(&norm_line);
+        if in_colophon_block || (is_colophon_line(trimmed) && danda_num.is_none()) {
             continue;
         }
 
-        let norm_line = normalize_indic_digits(trimmed);
         if let Some(num) = extract_title_verse_num(&norm_line) {
             raw_tokens.push((num, trimmed.to_string(), line_idx));
             continue;
         }
-        if let Some(num) = extract_danda_verse_num(&norm_line) {
+        if let Some(num) = danda_num {
             raw_tokens.push((num, trimmed.to_string(), line_idx));
         }
     }
