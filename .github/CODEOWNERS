@@ -1,0 +1,13 @@
+# L4 Server-Side Gauge & Gate Protection (D-0094 Separation of Duties)
+# Protects gauges, specs, contract checkers, golden vectors, and CI workflows.
+# Enable "Require review from Code Owners" in GitHub Branch Protection on main.
+
+/msa/                     @mangala1728
+/specs/                   @mangala1728
+/src/guard.rs             @mangala1728
+/src/gate_*.rs            @mangala1728
+/src/msa.rs               @mangala1728
+/tests/golden_*.rs        @mangala1728
+/tests/msa_*.rs           @mangala1728
+/.github/                 @mangala1728
+/.claude/                 @mangala1728

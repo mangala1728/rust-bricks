@@ -608,3 +608,123 @@ pub fn run_guard_checks(repo_root: &Path) -> Result<(), Vec<String>> {
 
     Ok(())
 }
+
+/// @outputs: 2
+fn is_any_fn_decl(trimmed: &str) -> bool {
+    let prefix = trimmed.starts_with("fn ")
+        || trimmed.starts_with("pub fn ")
+        || trimmed.starts_with("pub(crate) fn ")
+        || trimmed.starts_with("const fn ")
+        || trimmed.starts_with("pub const fn ");
+    prefix && !trimmed.ends_with(';')
+}
+
+/// @outputs: 2
+fn parse_fn_name_from_decl(trimmed: &str) -> Option<String> {
+    let after_fn = trimmed.split_once("fn ")?.1;
+    let name: String = after_fn.chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+    if name.is_empty() { None } else { Some(name) }
+}
+
+/// @outputs: 2
+fn starts_cf_keyword(trimmed: &str) -> bool {
+    trimmed.starts_with("if ")
+        || trimmed.starts_with("for ")
+        || trimmed.starts_with("while ")
+        || trimmed.starts_with("loop ")
+        || trimmed.starts_with("loop{")
+        || trimmed.starts_with("match ")
+}
+
+/// @outputs: 1
+fn check_strict_domain_annotations(lines: &[&str], fn_idx: usize, path: &Path, issues: &mut Vec<String>) {
+    let sig = lines[fn_idx];
+    let params_str = match sig.split_once('(').and_then(|(_, r)| r.split_once(')')) {
+        Some((p, _)) => p,
+        None => return,
+    };
+    let doc_start = fn_idx.saturating_sub(15);
+    let doc_block = lines[doc_start..fn_idx].join("\n");
+    let numeric_types = ["u8", "u16", "u32", "u64", "usize", "i8", "i16", "i32", "i64", "isize", "f32", "f64"];
+    for raw_param in params_str.split(',') {
+        let (pname, ptype) = match raw_param.split_once(':') {
+            Some((n, t)) => (n.trim().trim_start_matches("mut "), t.trim()),
+            None => continue,
+        };
+        let is_num = numeric_types.contains(&ptype);
+        if is_num && !doc_block.contains(&format!("@domain: {}", pname)) {
+            issues.push(format!(
+                "【R09-4 缺少 @domain】{}:{} 數值參數 `{}: {}` 缺少 `// @domain: {} [min..max]`",
+                path.display(), fn_idx + 1, pname, ptype, pname
+            ));
+        }
+    }
+}
+
+struct StrictFnState {
+    in_fn: bool,
+    fn_line: usize,
+    fn_name: String,
+    brace: i32,
+    max_depth: u32,
+    cf_stack: Vec<i32>,
+    self_called: bool,
+}
+
+/// @outputs: 1
+fn step_strict_fn_body(cleaned: &str, trimmed: &str, st: &mut StrictFnState, path: &Path, issues: &mut Vec<String>) {
+    let opens = cleaned.chars().filter(|&c| c == '{').count() as i32;
+    let closes = cleaned.chars().filter(|&c| c == '}').count() as i32;
+    let is_cf = starts_cf_keyword(trimmed) && opens > 0;
+    st.brace += opens - closes;
+    if is_cf {
+        st.cf_stack.push(st.brace);
+        st.max_depth = st.max_depth.max(st.cf_stack.len() as u32);
+    }
+    st.cf_stack.retain(|&b| st.brace >= b);
+    let call_pat = format!("{}(", st.fn_name);
+    if !st.fn_name.is_empty() && cleaned.contains(&call_pat) && !is_any_fn_decl(trimmed) {
+        st.self_called = true;
+    }
+    if st.brace <= 0 && (opens > 0 || closes > 0) {
+        if st.max_depth > 2 {
+            issues.push(format!("【R09-3 巢狀過深】{}:{} `{}` 巢狀深度 {} > 2", path.display(), st.fn_line, st.fn_name, st.max_depth));
+        }
+        if st.self_called {
+            issues.push(format!("【R09-7 禁止直接遞迴】{}:{} `{}` 偵測到直接自呼叫", path.display(), st.fn_line, st.fn_name));
+        }
+        st.in_fn = false;
+    }
+}
+
+/// 單檔嚴格 09 合約檢查（供雲端農夫新磚與 `guard --strict <file>` 使用，不破壞舊積木相容性）
+/// @outputs: 1
+pub fn check_strict_single_file(path: &Path, content: &str) -> Vec<String> {
+    let mut issues = Vec::new();
+    check_single_contract(path, content, &mut issues);
+    let lines: Vec<&str> = content.lines().collect();
+    let mut st = StrictFnState {
+        in_fn: false, fn_line: 0, fn_name: String::new(), brace: 0, max_depth: 0, cf_stack: Vec::new(), self_called: false,
+    };
+    for (idx, line) in lines.iter().enumerate() {
+        let cleaned = strip_quotes_and_comments(line);
+        let trimmed = cleaned.trim();
+        if !st.in_fn && is_any_fn_decl(trimmed) {
+            if !trimmed.starts_with("pub fn ") {
+                check_fn_outputs(&lines, idx, &mut issues);
+            }
+            check_strict_domain_annotations(&lines, idx, path, &mut issues);
+            st.in_fn = true;
+            st.fn_line = idx + 1;
+            st.fn_name = parse_fn_name_from_decl(trimmed).unwrap_or_default();
+            st.brace = 0;
+            st.max_depth = 0;
+            st.cf_stack.clear();
+            st.self_called = false;
+        }
+        if st.in_fn {
+            step_strict_fn_body(&cleaned, trimmed, &mut st, path, &mut issues);
+        }
+    }
+    issues
+}

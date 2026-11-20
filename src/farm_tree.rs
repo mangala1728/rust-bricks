@@ -597,6 +597,22 @@ fn git_out(repo_root: &Path, args: &[&str]) -> Option<String> {
     Some(String::from_utf8_lossy(&out.stdout).to_string())
 }
 
+/// 顯式同步遠端 contrib/* 與 attempt/* 分支，避免單分支 clone 下 git fetch --all 失明
+/// @outputs: 1
+pub fn fetch_remote_farm_refs(repo_root: &Path) {
+    let _ = git_out(
+        repo_root,
+        &[
+            "fetch",
+            "--quiet",
+            "--prune",
+            "origin",
+            "+refs/heads/contrib/*:refs/remotes/origin/contrib/*",
+            "+refs/heads/attempt/*:refs/remotes/origin/attempt/*",
+        ],
+    );
+}
+
 /// 本機與 origin 的 attempt/ 分支：(分支短名, commit sha)
 /// @outputs: 1
 pub fn list_attempt_refs(repo_root: &Path) -> Vec<(String, String)> {
