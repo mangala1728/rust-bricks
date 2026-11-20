@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 997,
+  "total_functions": 1008,
   "modules": [
     {
       "module": "agent_quota_fallback",
@@ -5860,6 +5860,68 @@
           "name": "msa_number_of_distinct_categories_ndc",
           "signature": "pub fn msa_number_of_distinct_categories_ndc(pv: f64, grr: f64) -> Option<u32>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "stat_gate_core",
+      "file": "src/stat_gate_core.rs",
+      "functions_count": 11,
+      "functions": [
+        {
+          "name": "stat_wilson_interval_95",
+          "signature": "pub fn stat_wilson_interval_95(k: u64, n: u64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_rule_of_three_upper_bound",
+          "signature": "pub fn stat_rule_of_three_upper_bound(n: u64, recall_lower: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_bayesian_ppv",
+          "signature": "pub fn stat_bayesian_ppv(base_rate: f64, recall: f64, false_positive_rate: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_ln_gamma",
+          "signature": "pub fn stat_ln_gamma(z: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_beta_cdf_regularized",
+          "signature": "pub fn stat_beta_cdf_regularized(x: f64, alpha: f64, beta: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_bayesian_trial_upgrade",
+          "signature": "pub fn stat_bayesian_trial_upgrade(",
+          "outputs": 2
+        },
+        {
+          "name": "stat_holm_bonferroni_reject",
+          "signature": "pub fn stat_holm_bonferroni_reject(p_values: &[f64], alpha: f64) -> Option<Vec<bool>>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_median_and_mad",
+          "signature": "pub fn stat_median_and_mad(values: &[f64]) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_robust_z_score",
+          "signature": "pub fn stat_robust_z_score(x: f64, median: f64, mad: f64) -> Option<f64>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_required_paired_sample_size",
+          "signature": "pub fn stat_required_paired_sample_size(sd: f64, delta: f64, z_alpha: f64, z_beta: f64) -> Option<u32>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_p_chart_limits",
+          "signature": "pub fn stat_p_chart_limits(p_bar: f64, n_i: u64, k_sigma: f64) -> Option<(f64, f64)>",
+          "outputs": 2
         }
       ]
     },

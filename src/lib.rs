@@ -200,6 +200,7 @@ pub mod sensor_step_counter;
 pub mod spatial_physics;
 pub mod spc_msa_advanced;
 pub mod spc_six_sigma_msa;
+pub mod stat_gate_core;
 pub mod storage_block_geometry;
 pub mod subtitle_cps_vad;
 pub mod subtitle_qa_audit;
