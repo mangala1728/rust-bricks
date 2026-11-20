@@ -479,7 +479,56 @@ fn dispatch_cloud_llm(attempt: usize, prompt: &str, repo_root: &Path, shift: usi
     Err(format!("{} 所有免費 API 金鑰池 (Gemini 4x / Groq 4x / GitHub Models) 皆無法連線或未設定！", INFRA_TAG))
 }
 
-/// 依序跑指定的整合測試，再跑 guard；回傳各測試的通過摘要
+/// 產生一個最小語意突變（翻轉入口比較運算子或 Option 回傳），驗證測試不可退化
+/// @outputs: 2
+fn build_synthetic_mutant(src: &str) -> Option<String> {
+    let swaps = [
+        (" < ", " <= "),
+        (" > ", " >= "),
+        (" == ", " != "),
+        ("Some(", "None /*mut*/; let _ = Some("),
+    ];
+    for (pat, rep) in swaps {
+        if let Some(pos) = src.find(pat) {
+            let mut mutated = String::with_capacity(src.len() + rep.len());
+            mutated.push_str(&src[..pos]);
+            mutated.push_str(rep);
+            mutated.push_str(&src[pos + pat.len()..]);
+            return Some(mutated);
+        }
+    }
+    None
+}
+
+/// 執行反退化合成突變檢查：突變版必須讓測試失敗（KILLED），並無條件還原原檔
+/// @outputs: 2
+fn verify_mutation_kills(repo_root: &Path, mod_path: &Path, test_targets: &[String]) -> Result<(), String> {
+    let orig = fs::read_to_string(mod_path).map_err(|e| format!("讀取新磚失敗: {}", e))?;
+    let mutated = match build_synthetic_mutant(&orig) {
+        Some(m) => m,
+        None => return Ok(()),
+    };
+    let _ = fs::write(mod_path, &mutated);
+    let mut killed = false;
+    for target in test_targets {
+        let out = Command::new("cargo")
+            .args(["test", "--target-dir", "target/farmer_check", "--test", target.as_str()])
+            .current_dir(repo_root)
+            .output();
+        let passed = out.map(|o| o.status.success()).unwrap_or(false);
+        if !passed {
+            killed = true;
+            break;
+        }
+    }
+    let _ = fs::write(mod_path, &orig);
+    if !killed {
+        return Err("【反退化突變閘門攔截】對新磚植入邊界突變後全部測試仍綠燈（SURVIVED），測試缺乏鑑別力！".to_string());
+    }
+    Ok(())
+}
+
+/// 依序跑指定的整合測試，再跑 guard（含單檔嚴格 09 檢查與突變殺傷驗收）
 /// @outputs: 2
 fn verify_farmed_module(repo_root: &Path, test_targets: &[String]) -> Result<String, String> {
     let mut summary = Vec::new();
@@ -521,9 +570,14 @@ fn try_single_farm_attempt(ctx: &FarmContext, feedback: &str, attempt: usize, sh
         .ok_or_else(|| fail("模型輸出缺少 ```rust:test 標籤"))?;
 
     let root = &ctx.repo_root;
+    let mod_path = root.join("src").join(format!("{}.rs", ctx.module));
     let test_name = format!("test_{}", ctx.module);
     let _ = fs::write(root.join("src").join("lib.rs"), insert_mod_alphabetically(&ctx.orig_lib, &ctx.module));
-    let _ = fs::write(root.join("src").join(format!("{}.rs", ctx.module)), mod_code);
+    let _ = fs::write(&mod_path, &mod_code);
+    let strict_issues = crate::guard::check_strict_single_file(&mod_path, &mod_code);
+    if !strict_issues.is_empty() {
+        return Err((provider.clone(), format!("單檔嚴格 09 合約攔截:\n{}", strict_issues.join("\n"))));
+    }
     let target_use = format!("use rust_bricks::{}::*;", ctx.module);
     let _ = fs::write(root.join("tests").join(format!("{}.rs", test_name)), test_code.replace("use super::*;", &target_use));
     let mut targets = Vec::new();
@@ -541,6 +595,7 @@ fn try_single_farm_attempt(ctx: &FarmContext, feedback: &str, attempt: usize, sh
     targets.push(test_name);
 
     let summary = verify_farmed_module(root, &targets).map_err(|e| (provider.clone(), e))?;
+    verify_mutation_kills(root, &mod_path, &targets).map_err(|e| (provider.clone(), e))?;
     let _ = crate::catalog::generate_catalogs(root);
     let _ = crate::receipt::create_receipt(root, &provider, "PASS");
     Ok((provider, summary))
@@ -552,7 +607,7 @@ pub fn check_module_already_claimed(repo_root: &Path, module_name: &str) -> Resu
     if mod_path.exists() {
         return Err(format!("【防撞車鎖定】本地已存在 `src/{}.rs`，跳過重複開農！", module_name));
     }
-    let _ = Command::new("git").args(["fetch", "--all", "--quiet"]).current_dir(repo_root).status();
+    crate::farm_tree::fetch_remote_farm_refs(repo_root);
     let out = Command::new("git").args(["branch", "-r"]).current_dir(repo_root).output();
     if let Ok(o) = out {
         let branches = String::from_utf8_lossy(&o.stdout);
@@ -776,7 +831,7 @@ fn harvest_single_branch(repo_root: &Path, remote_branch: &str, module_name: &st
 
 /// @outputs: 2
 pub fn harvest_cloud_branches(repo_root: &Path) -> Result<Vec<String>, String> {
-    let _ = Command::new("git").args(["fetch", "--all", "--prune"]).current_dir(repo_root).status();
+    crate::farm_tree::fetch_remote_farm_refs(repo_root);
     let out = Command::new("git")
         .args(["branch", "-r"])
         .current_dir(repo_root)

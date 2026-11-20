@@ -970,7 +970,39 @@ fn run_catalog_cmd() {
 }
 
 /// @outputs: 1
-fn run_guard_cmd() {
+fn run_strict_guard_cmd(args: &[String]) {
+    let target = match args.get(3) {
+        Some(p) => Path::new(p),
+        None => {
+            eprintln!("❌ 用法: rust-bricks guard --strict <src/file.rs>");
+            process::exit(1);
+        }
+    };
+    let content = match std::fs::read_to_string(target) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("❌ 讀取 {} 失敗: {}", target.display(), e);
+            process::exit(1);
+        }
+    };
+    let issues = guard::check_strict_single_file(target, &content);
+    if issues.is_empty() {
+        println!("✅ [rust-bricks] Strict 09-contract guard passed: {}", target.display());
+        return;
+    }
+    eprintln!("\n❌ [rust-bricks] Strict 09-contract guard failed ({}):", target.display());
+    for issue in issues {
+        eprintln!("  - {}", issue);
+    }
+    process::exit(1);
+}
+
+/// @outputs: 1
+fn run_guard_cmd(args: &[String]) {
+    if args.get(2).map(|s| s.as_str()) == Some("--strict") {
+        run_strict_guard_cmd(args);
+        return;
+    }
     println!("🛡️ [rust-bricks] Running Pure Rust Capacity & Contract Guard (brick-guard)...");
     let repo_root = Path::new(".");
     let res = guard::run_guard_checks(repo_root);
@@ -1039,7 +1071,7 @@ fn run_audit_cmd() {
 /// @outputs: 1
 fn run_patrol_cmd() {
     println!("🚨 [rust-bricks] Running Remote Branch Patrol & Collision Check...");
-    let _ = Command::new("git").args(["fetch", "--all"]).output();
+    rust_bricks::farm_tree::fetch_remote_farm_refs(Path::new("."));
     let branches_out = Command::new("git").args(["branch", "-r"]).output();
     let stdout = match branches_out {
         Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
@@ -1492,7 +1524,7 @@ fn main() {
     match cmd {
         "selftest" | "test" => run_selftest(),
         "catalog" => run_catalog_cmd(),
-        "guard" => run_guard_cmd(),
+        "guard" => run_guard_cmd(&args),
         "patrol" => run_patrol_cmd(),
         "audit" | "chaos" => run_audit_cmd(),
         "wish" | "wishes" => run_wish_cmd(&args),

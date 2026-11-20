@@ -7,6 +7,61 @@ on:
     branches: [ main ]
 
 jobs:
+  l4-gauge-protection:
+    name: L4 Gauge Lock & Separation of Duties (D-0094)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce L4 Gauge Lock & Farmer Boundary
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PR_ACTOR: ${{ github.actor }}
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE_REF...HEAD")
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          GAUGE_TOUCHED=""
+          PRODUCT_TOUCHED=""
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              msa/*|specs/template.md|src/guard.rs|src/gate_*.rs|src/msa.rs|.github/*|.claude/gauge-guard.local.json)
+                GAUGE_TOUCHED="${GAUGE_TOUCHED}${f}"$'\n'
+                ;;
+              src/lib.rs|src/main.rs|src/cloud_farmer.rs|src/farm_tree.rs|src/catalog.rs|src/receipt.rs|src/chaos_audit.rs)
+                ;;
+              src/*.rs)
+                PRODUCT_TOUCHED="${PRODUCT_TOUCHED}${f}"$'\n'
+                ;;
+            esac
+          done <<< "$CHANGED"
+
+          if [[ "$HEAD_REF" == contrib/cloud-farm-* ]] || [[ "$PR_ACTOR" == *"cloud-farmer"* ]]; then
+            if [ -n "$GAUGE_TOUCHED" ] || echo "$CHANGED" | grep -qE '^specs/'; then
+              echo "❌ [L4 BLOCK] Cloud Farmer / contrib branch attempted to modify protected gauge/spec/gate paths:"
+              echo "$GAUGE_TOUCHED"
+              exit 1
+            fi
+          fi
+
+          if [ -n "$GAUGE_TOUCHED" ] && [ -n "$PRODUCT_TOUCHED" ]; then
+            echo "❌ [D-0094 BLOCK] Separation of Duties violated: same PR modifies BOTH gauge/gate paths and product bricks!"
+            echo "--- Gauge/Gate paths ---"
+            echo "$GAUGE_TOUCHED"
+            echo "--- Product bricks ---"
+            echo "$PRODUCT_TOUCHED"
+            echo "Please land gauge/spec updates first on main, then open a separate product PR."
+            exit 1
+          fi
+          echo "✅ [L4] Gauge protection & D-0094 Separation of Duties passed."
+
   contract-quality-gates:
     name: Pure Rust Quality & Contract Gates
     runs-on: ubuntu-latest
