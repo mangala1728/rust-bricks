@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 997
+total_functions: 1008
 modules:
   - module: "agent_quota_fallback"
     file: "src/agent_quota_fallback.rs"
@@ -5760,6 +5760,84 @@ modules:
         domains:
           pv: "[0.0..1.0e9]"
           grr: "[1.0e-12..1.0e9]"
+  - module: "stat_gate_core"
+    file: "src/stat_gate_core.rs"
+    functions_count: 11
+    architecture_map:
+      - "- Role: core/stat_gate_core — Zero-dependency pure Rust statistical gate engines (STAT-GATE-SPEC v1.0 Q8)"
+      - "- Inputs: Bounded counts, rates, p-values, sample slices, and SPC/power parameters"
+      - "- Outputs: Deterministic Option<T> intervals, Bayesian posteriors, Holm flags, robust z, power n, and p-chart limits"
+      - "- Invariants: Zero external crates, zero recursion (R09-7), bounded loops (R09-8), nesting <= 2 (R09-3), JPL <= 60 lines/fn, full @domain runtime guards (R09-4)"
+    functions:
+      - name: "stat_wilson_interval_95"
+        signature: "pub fn stat_wilson_interval_95(k: u64, n: u64) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          k: "[0..1000000000]"
+          n: "[1..1000000000]"
+      - name: "stat_rule_of_three_upper_bound"
+        signature: "pub fn stat_rule_of_three_upper_bound(n: u64, recall_lower: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          n: "[1..1000000000]"
+          recall_lower: "[0.0001..1.0]"
+      - name: "stat_bayesian_ppv"
+        signature: "pub fn stat_bayesian_ppv(base_rate: f64, recall: f64, false_positive_rate: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          base_rate: "[0.0..1.0]"
+          recall: "[0.0..1.0]"
+          false_positive_rate: "[0.0..1.0]"
+      - name: "stat_ln_gamma"
+        signature: "pub fn stat_ln_gamma(z: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          z: "[0.0001..1000000.0]"
+      - name: "stat_beta_cdf_regularized"
+        signature: "pub fn stat_beta_cdf_regularized(x: f64, alpha: f64, beta: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          x: "[0.0..1.0]"
+          alpha: "[0.0001..1000000.0]"
+          beta: "[0.0001..1000000.0]"
+      - name: "stat_bayesian_trial_upgrade"
+        signature: "pub fn stat_bayesian_trial_upgrade("
+        outputs: 2
+        domains:
+          successes: "[0..100000]"
+          failures: "[0..100000]"
+          p0: "[0.0001..0.9999]"
+          confidence: "[0.5..0.9999]"
+      - name: "stat_holm_bonferroni_reject"
+        signature: "pub fn stat_holm_bonferroni_reject(p_values: &[f64], alpha: f64) -> Option<Vec<bool>>"
+        outputs: 2
+        domains:
+          alpha: "[0.0001..0.5]"
+      - name: "stat_median_and_mad"
+        signature: "pub fn stat_median_and_mad(values: &[f64]) -> Option<(f64, f64)>"
+        outputs: 2
+      - name: "stat_robust_z_score"
+        signature: "pub fn stat_robust_z_score(x: f64, median: f64, mad: f64) -> Option<f64>"
+        outputs: 2
+        domains:
+          x: "[-1000000000.0..1000000000.0]"
+          median: "[-1000000000.0..1000000000.0]"
+          mad: "[0.000000001..1000000000.0]"
+      - name: "stat_required_paired_sample_size"
+        signature: "pub fn stat_required_paired_sample_size(sd: f64, delta: f64, z_alpha: f64, z_beta: f64) -> Option<u32>"
+        outputs: 2
+        domains:
+          sd: "[0.0001..100000.0]"
+          delta: "[0.0001..100000.0]"
+          z_alpha: "[0.5..6.0]"
+          z_beta: "[0.1..6.0]"
+      - name: "stat_p_chart_limits"
+        signature: "pub fn stat_p_chart_limits(p_bar: f64, n_i: u64, k_sigma: f64) -> Option<(f64, f64)>"
+        outputs: 2
+        domains:
+          p_bar: "[0.0..1.0]"
+          n_i: "[1..1000000000]"
+          k_sigma: "[1.0..6.0]"
   - module: "storage_block_geometry"
     file: "src/storage_block_geometry.rs"
     functions_count: 10
