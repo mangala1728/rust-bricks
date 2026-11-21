@@ -268,3 +268,9 @@ cargo run -- wish list
 3. **`lib.rs` 字母排序防線**：`guard.rs` 自動審查 `src/lib.rs` 宣告排序，防止分支合併衝突。
 4. **分支隔離上線**：本地開 `worker/*` 或 `integrate/*` 分支開發，經 `rebase main` 與五板斧驗收後方可 merge。
 5. **缺陷硬鎖（Defect Gate）**：外部代碼有坑開單 `incidents/INC-*.md (OPEN)`，守衛剛性阻擋全庫入庫直至修復。
+
+---
+
+## 八、實測效能與硬體邊界基準報告（Benchmarks）
+- **跨專案 `/py2rs` 效能、容量、記憶體與 Android 實機對照**：[`docs/PY2RS-PERFORMANCE-AND-SIZE-BENCHMARK.md`](docs/PY2RS-PERFORMANCE-AND-SIZE-BENCHMARK.md)（桌機 4.8×–30.4× 加速、Commit 省 10×–23×、`[profile.release]` 二進位瘦身 -33.1%、`SM-S9470` ARM64 實機 45ms DSP）。
+- **本地邊緣決策模型（RTX 3050 4GB VRAM / GGUF）基準**：[`docs/LOCAL-DECISION-MODEL-BENCHMARK.md`](docs/LOCAL-DECISION-MODEL-BENCHMARK.md)。
