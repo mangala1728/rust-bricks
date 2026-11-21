@@ -5,7 +5,7 @@
 // - Outputs: Deterministic Option<T> intervals, Bayesian posteriors, Holm flags, robust z, power n, and p-chart limits
 // - Invariants: Zero external crates, zero recursion (R09-7), bounded loops (R09-8), nesting <= 2 (R09-3), JPL <= 60 lines/fn, full @domain runtime guards (R09-4)
 
-const MAX_BETA_CF_ITER: usize = 200;
+const MAX_BETA_CF_ITER: usize = 2000;
 const MAX_SAMPLE_LEN: usize = 100_000;
 const Z_95_TWO_SIDED: f64 = 1.959_963_984_540_054;
 const MAD_TO_SIGMA: f64 = 1.4826;
@@ -69,9 +69,9 @@ pub fn stat_bayesian_ppv(base_rate: f64, recall: f64, false_positive_rate: f64) 
 
 /// Computes ln(Gamma(z)) via 9-term Lanczos approximation (g = 7, accuracy < 1e-13 for z >= 0.0001).
 /// @outputs: 2
-/// @domain: z [0.0001..1000000.0]
+/// @domain: z [0.0001..2000000.0]
 pub fn stat_ln_gamma(z: f64) -> Option<f64> {
-    if !z.is_finite() || z < 0.0001 || z > 1_000_000.0 {
+    if !z.is_finite() || z < 0.0001 || z > 2_000_000.0 {
         return None;
     }
     const COEFFS: [f64; 9] = [
@@ -103,7 +103,16 @@ pub fn stat_ln_gamma(z: f64) -> Option<f64> {
 /// @domain: a [0.0001..1000000.0]
 /// @domain: b [0.0001..1000000.0]
 fn beta_continued_fraction(x: f64, a: f64, b: f64) -> Option<f64> {
-    if !x.is_finite() || !a.is_finite() || !b.is_finite() || x < 0.0 || x > 1.0 || a < 0.0001 || b < 0.0001 {
+    if !x.is_finite()
+        || !a.is_finite()
+        || !b.is_finite()
+        || x < 0.0
+        || x > 1.0
+        || a < 0.0001
+        || a > 1_000_000.0
+        || b < 0.0001
+        || b > 1_000_000.0
+    {
         return None;
     }
     const TINY: f64 = 1.0e-30;
@@ -136,11 +145,11 @@ fn beta_continued_fraction(x: f64, a: f64, b: f64) -> Option<f64> {
         }
         m += 1;
     }
-    Some(h)
+    None
 }
 
 /// Computes regularized incomplete beta CDF I_x(alpha, beta) = P(X <= x) for X ~ Beta(alpha, beta).
-/// @outputs: 2
+/// @outputs: 5
 /// @domain: x [0.0..1.0]
 /// @domain: alpha [0.0001..1000000.0]
 /// @domain: beta [0.0001..1000000.0]
@@ -335,4 +344,210 @@ pub fn stat_p_chart_limits(p_bar: f64, n_i: u64, k_sigma: f64) -> Option<(f64, f
     let lcl = (p_bar - k_sigma * se).max(0.0);
     let ucl = (p_bar + k_sigma * se).min(1.0);
     Some((lcl, ucl))
+}
+
+/// Deterministic Xorshift64 PRNG step for reproducible permutation/bootstrap (L-4).
+/// @outputs: 2
+/// @domain: state [1..18446744073709551615]
+pub fn stat_xorshift64_next(state: u64) -> u64 {
+    if state == 0 {
+        return 0;
+    }
+    let mut x = state;
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    x
+}
+
+/// Computes equal-weighted mean across distinct strata, with optional sign-flip permutation.
+/// @outputs: 1
+fn stratified_sign_flip_mean(diffs: &[f64], strata: &[u16], mut rng: Option<&mut u64>) -> f64 {
+    let mut keys: [u16; 64] = [0; 64];
+    let mut sums: [f64; 64] = [0.0; 64];
+    let mut counts: [usize; 64] = [0; 64];
+    let mut n_strata = 0usize;
+    for (i, &d) in diffs.iter().enumerate() {
+        let sign = match rng.as_mut() {
+            Some(r) => {
+                **r = stat_xorshift64_next(**r);
+                if (**r & 1) == 0 { 1.0 } else { -1.0 }
+            }
+            None => 1.0,
+        };
+        let s = strata[i];
+        let pos = keys[..n_strata].iter().position(|&k| k == s).unwrap_or(n_strata);
+        if pos == n_strata && n_strata < 64 {
+            keys[n_strata] = s;
+            n_strata += 1;
+        }
+        let slot = pos.min(63);
+        sums[slot] += sign * d;
+        counts[slot] += 1;
+    }
+    let mut total = 0.0f64;
+    for idx in 0..n_strata {
+        total += sums[idx] / (counts[idx].max(1) as f64);
+    }
+    total / (n_strata.max(1) as f64)
+}
+
+/// Two-sided stratified paired sign-flip permutation p-value (STAT-GATE Q14).
+/// @outputs: 2
+/// @domain: n_perm [100..200000]
+/// @domain: seed [1..18446744073709551615]
+pub fn stat_stratified_permutation_p(
+    diffs: &[f64],
+    strata: &[u16],
+    n_perm: u32,
+    seed: u64,
+) -> Option<f64> {
+    if diffs.is_empty()
+        || diffs.len() != strata.len()
+        || diffs.len() > MAX_SAMPLE_LEN
+        || n_perm < 100
+        || n_perm > 200_000
+        || seed == 0
+    {
+        return None;
+    }
+    if diffs.iter().any(|v| !v.is_finite()) {
+        return None;
+    }
+    let obs = stratified_sign_flip_mean(diffs, strata, None).abs();
+    let mut rng = seed;
+    let mut ge_count = 0u32;
+    for _ in 0..n_perm {
+        if stratified_sign_flip_mean(diffs, strata, Some(&mut rng)).abs() >= obs * (1.0 - 1.0e-12) {
+            ge_count += 1;
+        }
+    }
+    Some(((ge_count as f64) + 1.0) / ((n_perm as f64) + 1.0))
+}
+
+/// Helper computing one bootstrap resample mean.
+/// @outputs: 1
+fn bootstrap_sample_mean(diffs: &[f64], rng: &mut u64) -> f64 {
+    let n = diffs.len();
+    let mut sum = 0.0f64;
+    for _ in 0..n {
+        *rng = stat_xorshift64_next(*rng);
+        let idx = (*rng as usize) % n;
+        sum += diffs[idx];
+    }
+    sum / (n as f64)
+}
+
+/// Paired percentile bootstrap confidence interval (mean, lo, hi) at level 1 - alpha.
+/// @outputs: 2
+/// @domain: alpha [0.001..0.5]
+/// @domain: n_boot [100..200000]
+/// @domain: seed [1..18446744073709551615]
+pub fn stat_paired_bootstrap_ci(
+    diffs: &[f64],
+    alpha: f64,
+    n_boot: u32,
+    seed: u64,
+) -> Option<(f64, f64, f64)> {
+    if diffs.is_empty()
+        || diffs.len() > MAX_SAMPLE_LEN
+        || !alpha.is_finite()
+        || alpha < 0.001
+        || alpha > 0.5
+        || n_boot < 100
+        || n_boot > 200_000
+        || seed == 0
+    {
+        return None;
+    }
+    if diffs.iter().any(|v| !v.is_finite()) {
+        return None;
+    }
+    let obs_mean = diffs.iter().sum::<f64>() / (diffs.len() as f64);
+    let mut rng = seed;
+    let mut means = Vec::with_capacity(n_boot as usize);
+    for _ in 0..n_boot {
+        means.push(bootstrap_sample_mean(diffs, &mut rng));
+    }
+    means.sort_by(|a, b| a.total_cmp(b));
+    let lo_idx = (((alpha / 2.0) * (means.len() as f64)).floor() as usize).min(means.len() - 1);
+    let hi_idx = (((1.0 - alpha / 2.0) * (means.len() as f64)).ceil() as usize).min(means.len() - 1);
+    Some((obs_mean, means[lo_idx], means[hi_idx]))
+}
+
+/// Helper appending matched forbidden terms from a static word list.
+/// @outputs: 1
+fn collect_forbidden_hits(haystack: &str, terms: &[&'static str], out: &mut Vec<&'static str>) {
+    for &term in terms {
+        if haystack.contains(term) {
+            out.push(term);
+        }
+    }
+}
+
+/// Checks claim text against STAT-GATE §6 wording rules (level: 0=描述, 1=關聯, 2=因果).
+/// @outputs: 2
+/// @domain: level [0..2]
+pub fn stat_check_wording_level(level: u8, text: &str) -> Vec<&'static str> {
+    if level > 2 {
+        return vec!["INVALID_LEVEL"];
+    }
+    const ALWAYS_FORBIDDEN: &[&str] = &["保證", "杜絕", "一定", "所有情況", "擋得住"];
+    const CAUSAL_FORBIDDEN: &[&str] = &["導致", "因為", "造成", "使得", "證明", "有效"];
+    const COMPARE_FORBIDDEN: &[&str] = &["改善", "變好", "提升", "更快", "更少", "優於"];
+
+    let mut hits = Vec::new();
+    collect_forbidden_hits(text, ALWAYS_FORBIDDEN, &mut hits);
+    let cleaned = text.replace("因為樣本不足", "").replace("因為樣本數不足", "");
+    if level <= 1 {
+        collect_forbidden_hits(&cleaned, CAUSAL_FORBIDDEN, &mut hits);
+    }
+    if level == 0 {
+        collect_forbidden_hits(&cleaned, COMPARE_FORBIDDEN, &mut hits);
+    }
+    hits
+}
+
+/// Checks whether a whitespace/delimiter-separated token represents a standalone number (excluding `v2`/`C01`, keeping `1.5`/`95%` as 1).
+/// @outputs: 2
+fn is_standalone_number_token(tok: &str) -> bool {
+    let core = tok.trim_matches(|c: char| matches!(c, ',' | ';' | '(' | ')' | '[' | ']' | '%' | '。' | '，'));
+    if core.is_empty() || core.bytes().any(|b| b.is_ascii_alphabetic()) {
+        return false;
+    }
+    core.parse::<f64>().is_ok()
+}
+
+/// Counts standalone numeric tokens in a paragraph (without splitting decimals or counting `v2`/`C01`).
+/// @outputs: 1
+fn count_numeric_tokens(text: &str) -> usize {
+    let mut count = 0usize;
+    for tok in text.split(|c: char| c.is_whitespace() || matches!(c, '→' | '/' | '：' | ':')).take(MAX_SAMPLE_LEN) {
+        if is_standalone_number_token(tok) {
+            count += 1;
+        }
+    }
+    count
+}
+
+/// Detects STAT-GATE §3 T4 trigger (comparative keyword + numeric comparison cue).
+/// @outputs: 2
+pub fn stat_detect_t4_trigger(paragraph: &str) -> bool {
+    const T4_WORDS: &[&str] = &[
+        "變好", "改善", "提升", "增加", "降低", "減少", "上升", "下降",
+        "降到", "降至", "升到", "升至", "高於", "低於",
+        "提高", "好轉", "優化", "更快", "更少", "更穩", "優於",
+        "improve", "reduce", "increase", "higher", "lower", "faster", "better", "fewer",
+    ];
+    let lower = paragraph.to_ascii_lowercase();
+    let has_word = T4_WORDS.iter().any(|&w| lower.contains(w));
+    if !has_word {
+        return false;
+    }
+    let has_pair_cue = paragraph.contains("→")
+        || paragraph.contains("->")
+        || (paragraph.contains("從") && paragraph.contains("到"))
+        || (paragraph.contains("前") && paragraph.contains("後"))
+        || (paragraph.contains("新") && paragraph.contains("舊"));
+    has_pair_cue || count_numeric_tokens(paragraph) >= 2
 }

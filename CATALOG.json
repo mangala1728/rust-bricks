@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 1034,
+  "total_functions": 1066,
   "modules": [
     {
       "module": "agent_quota_fallback",
@@ -3395,6 +3395,58 @@
       ]
     },
     {
+      "module": "fpy_recorder_core",
+      "file": "src/fpy_recorder_core.rs",
+      "functions_count": 9,
+      "functions": [
+        {
+          "name": "fpy_hash16",
+          "signature": "pub fn fpy_hash16(input: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "fpy_redact_secrets",
+          "signature": "pub fn fpy_redact_secrets(text: &str) -> (String, Vec<&'static str>)",
+          "outputs": 1
+        },
+        {
+          "name": "fpy_clip_utf16",
+          "signature": "pub fn fpy_clip_utf16(text: &str, max_units: usize) -> (String, bool)",
+          "outputs": 3
+        },
+        {
+          "name": "fpy_normalize_tool_class",
+          "signature": "pub fn fpy_normalize_tool_class(tool: &str) -> &'static str",
+          "outputs": 5
+        },
+        {
+          "name": "fpy_detect_n1_and_n1b",
+          "signature": "pub fn fpy_detect_n1_and_n1b(cmd: &str, exit_code: Option<i32>, err: bool, deny: bool) -> (bool, bool, bool)",
+          "outputs": 4
+        },
+        {
+          "name": "fpy_detect_n4_prompt",
+          "signature": "pub fn fpy_detect_n4_prompt(",
+          "outputs": 5
+        },
+        {
+          "name": "fpy_detect_n6_turn_end",
+          "signature": "pub fn fpy_detect_n6_turn_end(msg: &str) -> (Vec<&'static str>, Vec<&'static str>)",
+          "outputs": 2
+        },
+        {
+          "name": "fpy_verify_hash_chain",
+          "signature": "pub fn fpy_verify_hash_chain(lines: &[&str]) -> (usize, usize)",
+          "outputs": 2
+        },
+        {
+          "name": "fpy_evaluate_proposal_transition",
+          "signature": "pub fn fpy_evaluate_proposal_transition(",
+          "outputs": 8
+        }
+      ]
+    },
+    {
       "module": "gate_acceptance",
       "file": "src/gate_acceptance.rs",
       "functions_count": 4,
@@ -4073,6 +4125,43 @@
           "name": "repair_json_stream",
           "signature": "pub fn repair_json_stream(raw: &str) -> String",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "kit_hook_policy",
+      "file": "src/kit_hook_policy.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "is_bypass_git_command",
+          "signature": "pub fn is_bypass_git_command(cmd: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "is_protected_hook_path",
+          "signature": "pub fn is_protected_hook_path(path: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "is_test_file_path",
+          "signature": "pub fn is_test_file_path(path: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "is_auto_continue_prompt",
+          "signature": "pub fn is_auto_continue_prompt(text: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "evaluate_pre_bash_policy",
+          "signature": "pub fn evaluate_pre_bash_policy(cmd: &str) -> u8",
+          "outputs": 3
+        },
+        {
+          "name": "evaluate_pre_edit_policy",
+          "signature": "pub fn evaluate_pre_edit_policy(path: &str, red_light_active: bool) -> u8",
+          "outputs": 3
         }
       ]
     },
@@ -5214,6 +5303,38 @@
       ]
     },
     {
+      "module": "rescue_bench_core",
+      "file": "src/rescue_bench_core.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "rescue_classify_claimed_done",
+          "signature": "pub fn rescue_classify_claimed_done(final_msg: &str, blind_says_incomplete: bool) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "rescue_validate_outcome",
+          "signature": "pub fn rescue_validate_outcome(",
+          "outputs": 5
+        },
+        {
+          "name": "rescue_check_arm_leak",
+          "signature": "pub fn rescue_check_arm_leak(log_text: &str, forbidden_labels: &[&str]) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "rescue_chance_baseline_strict",
+          "signature": "pub fn rescue_chance_baseline_strict(",
+          "outputs": 2
+        },
+        {
+          "name": "rescue_format_honest_metric",
+          "signature": "pub fn rescue_format_honest_metric(k: u64, n: u64, recall_lower: f64) -> Option<String>",
+          "outputs": 2
+        }
+      ]
+    },
+    {
       "module": "ring_buffer",
       "file": "src/ring_buffer.rs",
       "functions_count": 7,
@@ -5888,6 +6009,48 @@
       ]
     },
     {
+      "module": "sew_craft_qa_forensic",
+      "file": "src/sew_craft_qa_forensic.rs",
+      "functions_count": 7,
+      "functions": [
+        {
+          "name": "validate_seam_allowance_01mm",
+          "signature": "pub fn validate_seam_allowance_01mm(seam_01mm: i32) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "validate_punch_hole_01mm",
+          "signature": "pub fn validate_punch_hole_01mm(punch_01mm: i32) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "validate_m370_hoop_extents_01mm",
+          "signature": "pub fn validate_m370_hoop_extents_01mm(width_01mm: i32, height_01mm: i32) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "validate_seam_pairing_diff_01mm",
+          "signature": "pub fn validate_seam_pairing_diff_01mm(len_a_01mm: i32, len_b_01mm: i32, max_diff_01mm: i32) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "validate_pure_vector_pdf_text",
+          "signature": "pub fn validate_pure_vector_pdf_text(pdf_text: &str) -> bool",
+          "outputs": 2
+        },
+        {
+          "name": "extract_json_int_field",
+          "signature": "pub fn extract_json_int_field(json_text: &str, key: &str) -> Option<i32>",
+          "outputs": 2
+        },
+        {
+          "name": "audit_pattern_spec_json",
+          "signature": "pub fn audit_pattern_spec_json(json_text: &str) -> u32",
+          "outputs": 8
+        }
+      ]
+    },
+    {
       "module": "spatial_physics",
       "file": "src/spatial_physics.rs",
       "functions_count": 4,
@@ -6031,7 +6194,7 @@
     {
       "module": "stat_gate_core",
       "file": "src/stat_gate_core.rs",
-      "functions_count": 11,
+      "functions_count": 16,
       "functions": [
         {
           "name": "stat_wilson_interval_95",
@@ -6056,7 +6219,7 @@
         {
           "name": "stat_beta_cdf_regularized",
           "signature": "pub fn stat_beta_cdf_regularized(x: f64, alpha: f64, beta: f64) -> Option<f64>",
-          "outputs": 2
+          "outputs": 5
         },
         {
           "name": "stat_bayesian_trial_upgrade",
@@ -6086,6 +6249,31 @@
         {
           "name": "stat_p_chart_limits",
           "signature": "pub fn stat_p_chart_limits(p_bar: f64, n_i: u64, k_sigma: f64) -> Option<(f64, f64)>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_xorshift64_next",
+          "signature": "pub fn stat_xorshift64_next(state: u64) -> u64",
+          "outputs": 2
+        },
+        {
+          "name": "stat_stratified_permutation_p",
+          "signature": "pub fn stat_stratified_permutation_p(",
+          "outputs": 2
+        },
+        {
+          "name": "stat_paired_bootstrap_ci",
+          "signature": "pub fn stat_paired_bootstrap_ci(",
+          "outputs": 2
+        },
+        {
+          "name": "stat_check_wording_level",
+          "signature": "pub fn stat_check_wording_level(level: u8, text: &str) -> Vec<&'static str>",
+          "outputs": 2
+        },
+        {
+          "name": "stat_detect_t4_trigger",
+          "signature": "pub fn stat_detect_t4_trigger(paragraph: &str) -> bool",
           "outputs": 2
         }
       ]

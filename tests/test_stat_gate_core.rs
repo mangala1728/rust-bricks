@@ -118,3 +118,41 @@ fn test_median_mad_robust_z_power_and_p_chart() {
     assert!((ucl - 0.244_935_887).abs() < 1e-6);
     assert!(stat_p_chart_limits(1.2, 20, 3.0).is_none());
 }
+
+#[test]
+fn test_permutation_bootstrap_wording_and_t4_golden() {
+    // Stratified paired permutation: clear positive diffs -> small p-value, deterministic on seed
+    let diffs = [0.25, 0.30, 0.20, 0.35, 0.28, 0.22, 0.31, 0.27];
+    let strata = [1, 1, 1, 1, 2, 2, 2, 2];
+    let p1 = stat_stratified_permutation_p(&diffs, &strata, 1000, 42).expect("perm1");
+    let p2 = stat_stratified_permutation_p(&diffs, &strata, 1000, 42).expect("perm2");
+    assert!((p1 - p2).abs() < 1e-12);
+    assert!(p1 < 0.02);
+    assert!(stat_stratified_permutation_p(&diffs, &[1], 1000, 42).is_none());
+
+    // Paired bootstrap CI at Holm step 1 (98.3% => alpha = 0.017)
+    let (mean, lo, hi) = stat_paired_bootstrap_ci(&diffs, 0.017, 1000, 42).expect("boot");
+    assert!((mean - 0.2725).abs() < 1e-9);
+    assert!(lo > 0.20 && hi < 0.35 && lo < mean && mean < hi);
+
+    // Wording level checks (§6 & §9 non-claim exemption)
+    assert!(stat_check_wording_level(0, "因為樣本不足，所以只列描述").is_empty());
+    assert!(!stat_check_wording_level(0, "因為樣本數夠多，本系統已獲實證可靠").is_empty());
+    let hits0 = stat_check_wording_level(0, "此修法改善了良率並保證有效");
+    assert!(hits0.contains(&"改善") && hits0.contains(&"保證") && hits0.contains(&"有效"));
+    let hits1 = stat_check_wording_level(1, "新 hook 與較低假完成率伴隨出現");
+    assert!(hits1.is_empty());
+
+    // T4 trigger detection (§3): version tags like v2 and single decimal 1.5 must not false-trigger
+    assert!(stat_detect_t4_trigger("裝上防呆後假完成率從 25% 降到 5%"));
+    assert!(!stat_detect_t4_trigger("npm test -> 12/12"));
+    assert!(!stat_detect_t4_trigger("FPY v2 提升至 95%"));
+    assert!(!stat_detect_t4_trigger("耗時改善 1.5 秒"));
+
+    // Tiny non-zero diffs must not collapse to p=1.0; large alpha+beta converges cleanly
+    let tiny = [1.0e-13; 8];
+    let strata_t = [1, 1, 1, 1, 2, 2, 2, 2];
+    let pt = stat_stratified_permutation_p(&tiny, &strata_t, 500, 42).expect("tiny");
+    assert!(pt < 0.05);
+    assert!(stat_beta_cdf_regularized(0.8, 50_000.0, 12_500.0).is_some());
+}

@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 1034
+total_functions: 1066
 modules:
   - module: "agent_quota_fallback"
     file: "src/agent_quota_fallback.rs"
@@ -3281,6 +3281,51 @@ modules:
       - name: "fin_cvar_historical"
         signature: "pub fn fin_cvar_historical(returns: &[f64], confidence: f64) -> Option<f64>"
         outputs: 1
+  - module: "fpy_recorder_core"
+    file: "src/fpy_recorder_core.rs"
+    functions_count: 9
+    architecture_map:
+      - "- Role: core/fpy_recorder_core — Zero-dependency pure Rust FPY Recorder engine (FPY-RECORDER-SPEC v1.0)"
+      - "- Inputs: Tool commands, exit codes, prompts, turn-end messages, JSONL chain lines, proposal trial metrics"
+      - "- Outputs: SHA-256 hash16, redacted UTF-16 clipped summaries, N1/N1b/N4/N6 flags, K3+K4 audit, P3/P22/Q5 transitions"
+      - "- Invariants: Zero external crates, zero recursion (R09-7), nesting <= 2 (R09-3), JPL <= 60 lines/fn, zero unproved unwrap"
+    functions:
+      - name: "fpy_hash16"
+        signature: "pub fn fpy_hash16(input: &str) -> String"
+        outputs: 1
+      - name: "fpy_redact_secrets"
+        signature: "pub fn fpy_redact_secrets(text: &str) -> (String, Vec<&'static str>)"
+        outputs: 1
+      - name: "fpy_clip_utf16"
+        signature: "pub fn fpy_clip_utf16(text: &str, max_units: usize) -> (String, bool)"
+        outputs: 3
+        domains:
+          max_units: "[10..4096]"
+      - name: "fpy_normalize_tool_class"
+        signature: "pub fn fpy_normalize_tool_class(tool: &str) -> &'static str"
+        outputs: 5
+      - name: "fpy_detect_n1_and_n1b"
+        signature: "pub fn fpy_detect_n1_and_n1b(cmd: &str, exit_code: Option<i32>, err: bool, deny: bool) -> (bool, bool, bool)"
+        outputs: 4
+      - name: "fpy_detect_n4_prompt"
+        signature: "pub fn fpy_detect_n4_prompt("
+        outputs: 5
+      - name: "fpy_detect_n6_turn_end"
+        signature: "pub fn fpy_detect_n6_turn_end(msg: &str) -> (Vec<&'static str>, Vec<&'static str>)"
+        outputs: 2
+      - name: "fpy_verify_hash_chain"
+        signature: "pub fn fpy_verify_hash_chain(lines: &[&str]) -> (usize, usize)"
+        outputs: 2
+      - name: "fpy_evaluate_proposal_transition"
+        signature: "pub fn fpy_evaluate_proposal_transition("
+        outputs: 8
+        domains:
+          successes: "[0..100000]"
+          failures: "[0..100000]"
+          distinct_tasks: "[0..100000]"
+          distinct_sessions: "[0..100000]"
+          days_in_trial: "[0..10000]"
+          pending_suggested: "[0..100000]"
   - module: "gate_acceptance"
     file: "src/gate_acceptance.rs"
     functions_count: 4
@@ -3923,6 +3968,29 @@ modules:
       - name: "repair_json_stream"
         signature: "pub fn repair_json_stream(raw: &str) -> String"
         outputs: 1
+  - module: "kit_hook_policy"
+    file: "src/kit_hook_policy.rs"
+    functions_count: 6
+    architecture_map:
+    functions:
+      - name: "is_bypass_git_command"
+        signature: "pub fn is_bypass_git_command(cmd: &str) -> bool"
+        outputs: 2
+      - name: "is_protected_hook_path"
+        signature: "pub fn is_protected_hook_path(path: &str) -> bool"
+        outputs: 2
+      - name: "is_test_file_path"
+        signature: "pub fn is_test_file_path(path: &str) -> bool"
+        outputs: 2
+      - name: "is_auto_continue_prompt"
+        signature: "pub fn is_auto_continue_prompt(text: &str) -> bool"
+        outputs: 2
+      - name: "evaluate_pre_bash_policy"
+        signature: "pub fn evaluate_pre_bash_policy(cmd: &str) -> u8"
+        outputs: 3
+      - name: "evaluate_pre_edit_policy"
+        signature: "pub fn evaluate_pre_edit_policy(path: &str, red_light_active: bool) -> u8"
+        outputs: 3
   - module: "log_lifecycle_dag"
     file: "src/log_lifecycle_dag.rs"
     functions_count: 2
@@ -5027,6 +5095,38 @@ modules:
       - name: "verify_receipt"
         signature: "pub fn verify_receipt(repo_root: &Path) -> Result<String, String>"
         outputs: 2
+  - module: "rescue_bench_core"
+    file: "src/rescue_bench_core.rs"
+    functions_count: 5
+    architecture_map:
+      - "- Role: core/rescue_bench_core — Pure Rust Harness Rescue Bench evaluator (HARNESS-RESCUE-BENCH-PLAN v1.0)"
+      - "- Inputs: Final agent messages, outcome metadata, opaque arm labels, paired task pass/fail matrices"
+      - "- Outputs: 3-stage claimed_done verdict, A11/A13/P20 validity, arm-leak check, Fisher-Yates permutation chance baseline, honest metric formatting"
+      - "- Invariants: Zero external crates, zero recursion (R09-7), nesting <= 2 (R09-3), JPL <= 60 lines/fn, zero unproved unwrap"
+    functions:
+      - name: "rescue_classify_claimed_done"
+        signature: "pub fn rescue_classify_claimed_done(final_msg: &str, blind_says_incomplete: bool) -> bool"
+        outputs: 2
+      - name: "rescue_validate_outcome"
+        signature: "pub fn rescue_validate_outcome("
+        outputs: 5
+      - name: "rescue_check_arm_leak"
+        signature: "pub fn rescue_check_arm_leak(log_text: &str, forbidden_labels: &[&str]) -> bool"
+        outputs: 2
+      - name: "rescue_chance_baseline_strict"
+        signature: "pub fn rescue_chance_baseline_strict("
+        outputs: 2
+        domains:
+          n_reps: "[1..20]"
+          n_perm: "[100..50000]"
+          seed: "[1..18446744073709551615]"
+      - name: "rescue_format_honest_metric"
+        signature: "pub fn rescue_format_honest_metric(k: u64, n: u64, recall_lower: f64) -> Option<String>"
+        outputs: 2
+        domains:
+          k: "[0..1000000000]"
+          n: "[1..1000000000]"
+          recall_lower: "[0.0001..1.0]"
   - module: "ring_buffer"
     file: "src/ring_buffer.rs"
     functions_count: 7
@@ -5725,6 +5825,43 @@ modules:
         outputs: 3
         domains:
           alpha: "[0.0..=1.0], threshold_delta [0.0..=∞], state [0..=1]"
+  - module: "sew_craft_qa_forensic"
+    file: "src/sew_craft_qa_forensic.rs"
+    functions_count: 7
+    architecture_map:
+    functions:
+      - name: "validate_seam_allowance_01mm"
+        signature: "pub fn validate_seam_allowance_01mm(seam_01mm: i32) -> bool"
+        outputs: 2
+        domains:
+          seam_01mm: "[0..5000]"
+      - name: "validate_punch_hole_01mm"
+        signature: "pub fn validate_punch_hole_01mm(punch_01mm: i32) -> bool"
+        outputs: 2
+        domains:
+          punch_01mm: "[0..500]"
+      - name: "validate_m370_hoop_extents_01mm"
+        signature: "pub fn validate_m370_hoop_extents_01mm(width_01mm: i32, height_01mm: i32) -> bool"
+        outputs: 2
+        domains:
+          width_01mm: "[0..10000]"
+          height_01mm: "[0..10000]"
+      - name: "validate_seam_pairing_diff_01mm"
+        signature: "pub fn validate_seam_pairing_diff_01mm(len_a_01mm: i32, len_b_01mm: i32, max_diff_01mm: i32) -> bool"
+        outputs: 2
+        domains:
+          len_a_01mm: "[0..100000]"
+          len_b_01mm: "[0..100000]"
+          max_diff_01mm: "[0..1000]"
+      - name: "validate_pure_vector_pdf_text"
+        signature: "pub fn validate_pure_vector_pdf_text(pdf_text: &str) -> bool"
+        outputs: 2
+      - name: "extract_json_int_field"
+        signature: "pub fn extract_json_int_field(json_text: &str, key: &str) -> Option<i32>"
+        outputs: 2
+      - name: "audit_pattern_spec_json"
+        signature: "pub fn audit_pattern_spec_json(json_text: &str) -> u32"
+        outputs: 8
   - module: "spatial_physics"
     file: "src/spatial_physics.rs"
     functions_count: 4
@@ -5865,7 +6002,7 @@ modules:
           grr: "[1.0e-12..1.0e9]"
   - module: "stat_gate_core"
     file: "src/stat_gate_core.rs"
-    functions_count: 11
+    functions_count: 16
     architecture_map:
       - "- Role: core/stat_gate_core — Zero-dependency pure Rust statistical gate engines (STAT-GATE-SPEC v1.0 Q8)"
       - "- Inputs: Bounded counts, rates, p-values, sample slices, and SPC/power parameters"
@@ -5895,10 +6032,10 @@ modules:
         signature: "pub fn stat_ln_gamma(z: f64) -> Option<f64>"
         outputs: 2
         domains:
-          z: "[0.0001..1000000.0]"
+          z: "[0.0001..2000000.0]"
       - name: "stat_beta_cdf_regularized"
         signature: "pub fn stat_beta_cdf_regularized(x: f64, alpha: f64, beta: f64) -> Option<f64>"
-        outputs: 2
+        outputs: 5
         domains:
           x: "[0.0..1.0]"
           alpha: "[0.0001..1000000.0]"
@@ -5941,6 +6078,32 @@ modules:
           p_bar: "[0.0..1.0]"
           n_i: "[1..1000000000]"
           k_sigma: "[1.0..6.0]"
+      - name: "stat_xorshift64_next"
+        signature: "pub fn stat_xorshift64_next(state: u64) -> u64"
+        outputs: 2
+        domains:
+          state: "[1..18446744073709551615]"
+      - name: "stat_stratified_permutation_p"
+        signature: "pub fn stat_stratified_permutation_p("
+        outputs: 2
+        domains:
+          n_perm: "[100..200000]"
+          seed: "[1..18446744073709551615]"
+      - name: "stat_paired_bootstrap_ci"
+        signature: "pub fn stat_paired_bootstrap_ci("
+        outputs: 2
+        domains:
+          alpha: "[0.001..0.5]"
+          n_boot: "[100..200000]"
+          seed: "[1..18446744073709551615]"
+      - name: "stat_check_wording_level"
+        signature: "pub fn stat_check_wording_level(level: u8, text: &str) -> Vec<&'static str>"
+        outputs: 2
+        domains:
+          level: "[0..2]"
+      - name: "stat_detect_t4_trigger"
+        signature: "pub fn stat_detect_t4_trigger(paragraph: &str) -> bool"
+        outputs: 2
   - module: "storage_block_geometry"
     file: "src/storage_block_geometry.rs"
     functions_count: 10
