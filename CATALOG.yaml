@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 1008
+total_functions: 1034
 modules:
   - module: "agent_quota_fallback"
     file: "src/agent_quota_fallback.rs"
@@ -360,6 +360,23 @@ modules:
           prop_seg: "[1, 8]"
           phase_seg1: "[1, 8]"
           phase_seg2: "[1, 8]"
+  - module: "archive_zip_store"
+    file: "src/archive_zip_store.rs"
+    functions_count: 4
+    architecture_map:
+    functions:
+      - name: "zip_crc32_ieee"
+        signature: "pub fn zip_crc32_ieee(data: &[u8]) -> u32"
+        outputs: 1
+      - name: "zip_adler32"
+        signature: "pub fn zip_adler32(data: &[u8]) -> u32"
+        outputs: 1
+      - name: "build_zip_store"
+        signature: "pub fn build_zip_store(entries: &[ZipEntry]) -> Vec<u8>"
+        outputs: 1
+      - name: "encode_minimal_png_rgba"
+        signature: "pub fn encode_minimal_png_rgba(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, String>"
+        outputs: 1
   - module: "astro_ayanamsha_converter"
     file: "src/astro_ayanamsha_converter.rs"
     functions_count: 2
@@ -1314,6 +1331,37 @@ modules:
         outputs: 2
         domains:
           max_allowed_depth: "[1..16]"
+  - module: "code_kotlin_lint"
+    file: "src/code_kotlin_lint.rs"
+    functions_count: 5
+    architecture_map:
+    functions:
+      - name: "strip_kotlin_lexical"
+        signature: "pub fn strip_kotlin_lexical(raw: &str) -> String"
+        outputs: 1
+      - name: "kt_max_nesting"
+        signature: "pub fn kt_max_nesting(body: &str) -> usize"
+        outputs: 1
+      - name: "kt_has_guard"
+        signature: "pub fn kt_has_guard(body: &str, param: &str) -> bool"
+        outputs: 1
+      - name: "contains_word"
+        signature: "pub fn contains_word(haystack: &str, word: &str) -> bool"
+        outputs: 1
+      - name: "audit_kotlin_source"
+        signature: "pub fn audit_kotlin_source(_rel_path: &str, raw: &str, max_outputs: usize, max_nest: usize) -> Vec<KtLintIssue>"
+        outputs: 1
+  - module: "code_python_structure"
+    file: "src/code_python_structure.rs"
+    functions_count: 2
+    architecture_map:
+    functions:
+      - name: "py_max_nesting"
+        signature: "pub fn py_max_nesting(lines: &[&str], start_idx: usize, end_idx: usize) -> usize"
+        outputs: 1
+      - name: "audit_python_source"
+        signature: "pub fn audit_python_source("
+        outputs: 1
   - module: "codec_binary_wire_schema"
     file: "src/codec_binary_wire_schema.rs"
     functions_count: 10
@@ -2650,6 +2698,47 @@ modules:
         domains:
           n: "[0..65535]"
           total_len: "[1..65536]"
+  - module: "encoding_base64_json"
+    file: "src/encoding_base64_json.rs"
+    functions_count: 12
+    architecture_map:
+    functions:
+      - name: "as_json_str"
+        signature: "pub fn as_json_str(&self) -> Option<&str>"
+        outputs: 1
+      - name: "as_f64"
+        signature: "pub fn as_f64(&self) -> Option<f64>"
+        outputs: 1
+      - name: "as_i64"
+        signature: "pub fn as_i64(&self) -> Option<i64>"
+        outputs: 1
+      - name: "as_bool"
+        signature: "pub fn as_bool(&self) -> Option<bool>"
+        outputs: 1
+      - name: "as_arr"
+        signature: "pub fn as_arr(&self) -> Option<&[JsonVal]>"
+        outputs: 1
+      - name: "get"
+        signature: "pub fn get(&self, key: &str) -> Option<&JsonVal>"
+        outputs: 1
+      - name: "to_json_string"
+        signature: "pub fn to_json_string(&self) -> String"
+        outputs: 1
+      - name: "serialize_json_iterative"
+        signature: "pub fn serialize_json_iterative(root: &JsonVal) -> String"
+        outputs: 1
+      - name: "json_escape_str"
+        signature: "pub fn json_escape_str(s: &str) -> String"
+        outputs: 1
+      - name: "base64_encode"
+        signature: "pub fn base64_encode(input: &[u8]) -> String"
+        outputs: 1
+      - name: "base64_decode"
+        signature: "pub fn base64_decode(input: &str) -> Result<Vec<u8>, String>"
+        outputs: 1
+      - name: "parse_json"
+        signature: "pub fn parse_json(input: &str) -> Result<JsonVal, String>"
+        outputs: 1
   - module: "env_sensor"
     file: "src/env_sensor.rs"
     functions_count: 3
@@ -4149,6 +4238,20 @@ modules:
         outputs: 1
         domains:
           packet_len: "[14..1518]"
+  - module: "net_http_micro"
+    file: "src/net_http_micro.rs"
+    functions_count: 3
+    architecture_map:
+    functions:
+      - name: "parse_http_request"
+        signature: "pub fn parse_http_request(raw: &[u8]) -> Result<HttpRequest, String>"
+        outputs: 1
+      - name: "format_http_response"
+        signature: "pub fn format_http_response(status: u16, reason: &str, content_type: &str, body: &[u8]) -> Vec<u8>"
+        outputs: 1
+      - name: "route_health_request"
+        signature: "pub fn route_health_request(req: &HttpRequest, app_version: &str) -> Vec<u8>"
+        outputs: 1
   - module: "net_telemetry"
     file: "src/net_telemetry.rs"
     functions_count: 4
