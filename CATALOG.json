@@ -3,7 +3,7 @@
   "repository": "https://github.com/mangala1728/rust-bricks",
   "standard": "09-contract-boundary",
   "zero_dependencies": true,
-  "total_functions": 1066,
+  "total_functions": 1077,
   "modules": [
     {
       "module": "agent_quota_fallback",
@@ -5303,6 +5303,38 @@
       ]
     },
     {
+      "module": "redteam_receipt_core",
+      "file": "src/redteam_receipt_core.rs",
+      "functions_count": 5,
+      "functions": [
+        {
+          "name": "redteam_sanitize_tsv",
+          "signature": "pub fn redteam_sanitize_tsv(value: &str) -> String",
+          "outputs": 1
+        },
+        {
+          "name": "redteam_format_tsv_row",
+          "signature": "pub fn redteam_format_tsv_row(",
+          "outputs": 4
+        },
+        {
+          "name": "redteam_parse_tsv_line",
+          "signature": "pub fn redteam_parse_tsv_line(line: &str) -> Option<RedteamRow>",
+          "outputs": 2
+        },
+        {
+          "name": "redteam_summarize_rows",
+          "signature": "pub fn redteam_summarize_rows(rows: &[RedteamRow], req_scope: &str) -> RedteamSummary",
+          "outputs": 1
+        },
+        {
+          "name": "redteam_countersign_status",
+          "signature": "pub fn redteam_countersign_status(has_verified: bool, skip_reason: &str) -> &'static str",
+          "outputs": 3
+        }
+      ]
+    },
+    {
       "module": "rescue_bench_core",
       "file": "src/rescue_bench_core.rs",
       "functions_count": 5,
@@ -6188,6 +6220,43 @@
           "name": "msa_number_of_distinct_categories_ndc",
           "signature": "pub fn msa_number_of_distinct_categories_ndc(pv: f64, grr: f64) -> Option<u32>",
           "outputs": 1
+        }
+      ]
+    },
+    {
+      "module": "stat_exam_ledger",
+      "file": "src/stat_exam_ledger.rs",
+      "functions_count": 6,
+      "functions": [
+        {
+          "name": "stat_claim_ledger_register",
+          "signature": "pub fn stat_claim_ledger_register(",
+          "outputs": 4
+        },
+        {
+          "name": "stat_receipt_canonical_hash16",
+          "signature": "pub fn stat_receipt_canonical_hash16(",
+          "outputs": 1
+        },
+        {
+          "name": "stat_exam_validate_bank_counts",
+          "signature": "pub fn stat_exam_validate_bank_counts(",
+          "outputs": 3
+        },
+        {
+          "name": "stat_exam_level_code",
+          "signature": "pub fn stat_exam_level_code(level: &str) -> u8",
+          "outputs": 3
+        },
+        {
+          "name": "stat_exam_check_item",
+          "signature": "pub fn stat_exam_check_item(",
+          "outputs": 2
+        },
+        {
+          "name": "stat_exam_runs_consistent",
+          "signature": "pub fn stat_exam_runs_consistent(",
+          "outputs": 2
         }
       ]
     },

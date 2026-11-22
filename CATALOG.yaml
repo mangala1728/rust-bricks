@@ -6,7 +6,7 @@ catalog_version: "1.0.0"
 repository: "https://github.com/mangala1728/rust-bricks"
 standard: "09-contract-boundary"
 zero_dependencies: true
-total_functions: 1066
+total_functions: 1077
 modules:
   - module: "agent_quota_fallback"
     file: "src/agent_quota_fallback.rs"
@@ -5095,6 +5095,33 @@ modules:
       - name: "verify_receipt"
         signature: "pub fn verify_receipt(repo_root: &Path) -> Result<String, String>"
         outputs: 2
+  - module: "redteam_receipt_core"
+    file: "src/redteam_receipt_core.rs"
+    functions_count: 5
+    architecture_map:
+      - "- Role: core/redteam_receipt_core — Pure Rust Green-RedTeam TSV receipt formatter, parser, and verifier"
+      - "- Inputs: Red-team audit metadata (`scope`, `shots`, `confirmed_hits`, `verdict`) and TSV lines"
+      - "- Outputs: Sanitized TSV rows, parsed `RedteamRow` summaries, and `countersign` linkage status"
+      - "- Invariants: Zero external crates, zero recursion (R09-7), nesting <= 2 (R09-3), JPL <= 60 lines/fn, zero unproved unwrap"
+    functions:
+      - name: "redteam_sanitize_tsv"
+        signature: "pub fn redteam_sanitize_tsv(value: &str) -> String"
+        outputs: 1
+      - name: "redteam_format_tsv_row"
+        signature: "pub fn redteam_format_tsv_row("
+        outputs: 4
+        domains:
+          shots: "[0..10000]"
+          confirmed_hits: "[0..10000]"
+      - name: "redteam_parse_tsv_line"
+        signature: "pub fn redteam_parse_tsv_line(line: &str) -> Option<RedteamRow>"
+        outputs: 2
+      - name: "redteam_summarize_rows"
+        signature: "pub fn redteam_summarize_rows(rows: &[RedteamRow], req_scope: &str) -> RedteamSummary"
+        outputs: 1
+      - name: "redteam_countersign_status"
+        signature: "pub fn redteam_countersign_status(has_verified: bool, skip_reason: &str) -> &'static str"
+        outputs: 3
   - module: "rescue_bench_core"
     file: "src/rescue_bench_core.rs"
     functions_count: 5
@@ -6000,6 +6027,39 @@ modules:
         domains:
           pv: "[0.0..1.0e9]"
           grr: "[1.0e-12..1.0e9]"
+  - module: "stat_exam_ledger"
+    file: "src/stat_exam_ledger.rs"
+    functions_count: 6
+    architecture_map:
+      - "- Role: core/stat_exam_ledger — Pure Rust C13 claim ledger, L-4 canonical receipt hash, and 114-item exam scorer"
+      - "- Inputs: Claim triples, CLI args/output JsonVal pairs, 114-item exam vectors & 2-run submissions"
+      - "- Outputs: Canonical claim registration, 16-char SHA-256 receipt hash, deterministic item/run validation"
+      - "- Invariants: Zero external crates, zero recursion (R09-7), nesting <= 2 (R09-3), JPL <= 60 lines/fn, zero unproved unwrap"
+    functions:
+      - name: "stat_claim_ledger_register"
+        signature: "pub fn stat_claim_ledger_register("
+        outputs: 4
+      - name: "stat_receipt_canonical_hash16"
+        signature: "pub fn stat_receipt_canonical_hash16("
+        outputs: 1
+      - name: "stat_exam_validate_bank_counts"
+        signature: "pub fn stat_exam_validate_bank_counts("
+        outputs: 3
+        domains:
+          total: "[0..100000]"
+          pos: "[0..100000]"
+          neg: "[0..100000]"
+          multi: "[0..100000]"
+          unique_ids: "[0..100000]"
+      - name: "stat_exam_level_code"
+        signature: "pub fn stat_exam_level_code(level: &str) -> u8"
+        outputs: 3
+      - name: "stat_exam_check_item"
+        signature: "pub fn stat_exam_check_item("
+        outputs: 2
+      - name: "stat_exam_runs_consistent"
+        signature: "pub fn stat_exam_runs_consistent("
+        outputs: 2
   - module: "stat_gate_core"
     file: "src/stat_gate_core.rs"
     functions_count: 16
