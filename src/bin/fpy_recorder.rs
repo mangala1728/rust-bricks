@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 // ## Map
 // - Role: app/bin/fpy_recorder — Pure Rust FPY Recorder CLI, Phase 0 benchmark & K1-K9 reporter (FPY-RECORDER-SPEC v1.0)
-// - Inputs: Subcommands (`bench-phase0`, `record-tool`, `record-prompt`, `record-turn-end`, `verify-chain`, `report`, `check-proposal`)
+// - Inputs: Subcommands (`bench-phase0`, `record-tool`, `record-prompt`, `record-turn-end`, `hook-event`, `verify-chain`, `report`, `check-proposal`)
 // - Outputs: RFC 8259 escaped fpy/1 JSONL lines, SHA-256/I-O benchmark JSON, K3+K4 audit, 【描述】 Markdown report
-// - Invariants: Zero external crates, fail-open P-3 on record-*, path-traversal safe, nesting <= 2, JPL <= 60 lines/fn
+// - Invariants: Zero external crates, fail-open P-3 on record-*/hook-event, atomic lockfile guard, path-traversal safe, nesting <= 2, JPL <= 60 lines/fn
 
+use rust_bricks::encoding_base64_json::{JsonVal, parse_json};
 use rust_bricks::fpy_recorder_core::{
     fpy_clip_utf16, fpy_detect_n1_and_n1b, fpy_detect_n4_prompt, fpy_detect_n6_turn_end,
     fpy_evaluate_proposal_transition, fpy_hash16, fpy_normalize_tool_class, fpy_redact_secrets,
@@ -12,13 +13,17 @@ use rust_bricks::fpy_recorder_core::{
 };
 use std::env;
 use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const MAX_ROTATE_BYTES: u64 = 2 * 1024 * 1024;
 const OVERSIZE_BYTES: usize = 65_536;
+const MAX_HOOK_STDIN_BYTES: usize = 1_048_576;
+const MAX_LOCK_RETRIES: u8 = 25;
+const STALE_LOCK_SECS: u64 = 5;
 
 /// Escapes RFC 8259 JSON string characters cleanly (quotes, backslash, newlines, tab, control chars).
 /// @outputs: 1
@@ -38,15 +43,20 @@ fn json_escape(s: &str) -> String {
     out
 }
 
-/// Sanitizes session ID to `[A-Za-z0-9_-]` only, preventing `..` / `/` / `\` path traversal.
-/// @outputs: 1
+/// Sanitizes session ID to `[A-Za-z0-9_-]` and appends a hash suffix when truncated (`> 55` chars).
+/// @outputs: 2
 fn sanitize_session_id(raw: &str) -> String {
     let clean: String = raw
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
-        .take(64)
+        .take(55)
         .collect();
-    if clean.is_empty() { "default-session".to_string() } else { clean }
+    let base = if clean.is_empty() { "default-session" } else { clean.as_str() };
+    if raw.chars().count() > 55 {
+        let tag: String = fpy_hash16(raw).chars().take(8).collect();
+        return format!("{}_{}", base, tag);
+    }
+    base.to_string()
 }
 
 /// Resolves FPY storage root honoring `FPY_DATA_DIR` (P4).
@@ -112,36 +122,72 @@ fn resolve_session_file(base_dir: &Path, safe_session: &str) -> PathBuf {
     base_dir.join(format!("{}-999.jsonl", safe_session))
 }
 
-/// Appends one `fpy/1` line cleanly via `OpenOptions::append`, returning `(seq, prev)` first.
-/// @outputs: 1
+/// Returns `true` if lockfile modification age exceeds `STALE_LOCK_SECS` (or clock skewed > 60s).
+/// @outputs: 2
+fn is_lock_stale(lock_path: &Path) -> bool {
+    let Ok(meta) = fs::metadata(lock_path) else {
+        return false;
+    };
+    let Ok(modified) = meta.modified() else {
+        return false;
+    };
+    match modified.elapsed() {
+        Ok(d) => d.as_secs() >= STALE_LOCK_SECS,
+        Err(e) => e.duration().as_secs() >= 60,
+    }
+}
+
+/// Acquires an exclusive cross-platform lockfile with bounded retries (`<= 50ms`).
+/// @outputs: 2
+fn acquire_session_lock(base_dir: &Path, safe_session: &str) -> Option<PathBuf> {
+    let lock_path = base_dir.join(format!(".{}.lock", safe_session));
+    for attempt in 0..MAX_LOCK_RETRIES {
+        if OpenOptions::new().write(true).create_new(true).open(&lock_path).is_ok() {
+            return Some(lock_path);
+        }
+        if is_lock_stale(&lock_path) {
+            let _ = fs::remove_file(&lock_path);
+        }
+        if attempt + 1 < MAX_LOCK_RETRIES {
+            thread::sleep(Duration::from_millis(2));
+        }
+    }
+    None
+}
+
+/// Appends one `fpy/1` line cleanly under atomic lockfile guard, returning `(seq, prev)` first.
+/// @outputs: 2
 fn append_session_line(safe_session: &str, build_line: impl FnOnce(usize, &str) -> String) {
     let dir = resolve_data_dir();
     let _ = fs::create_dir_all(&dir);
+    let Some(lock_path) = acquire_session_lock(&dir, safe_session) else {
+        return;
+    };
     let file = resolve_session_file(&dir, safe_session);
-    let existing = fs::read_to_string(&file).unwrap_or_default();
+    let raw_bytes = fs::read(&file).unwrap_or_default();
+    let existing = String::from_utf8_lossy(&raw_bytes);
     let lines: Vec<&str> = existing.lines().filter(|l| !l.trim().is_empty()).collect();
     let seq = lines.len() + 1;
     let prev = lines.last().map(|l| fpy_hash16(l)).unwrap_or_else(|| "0".to_string());
     let line = build_line(seq, &prev);
-    if let Ok(mut fh) = OpenOptions::new().create(true).append(true).open(&file) {
-        let _ = writeln!(fh, "{}", line);
+    let wrote = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&file)
+        .and_then(|mut fh| writeln!(fh, "{}", line))
+        .is_ok();
+    let _ = fs::remove_file(&lock_path);
+    if wrote {
+        println!("{}", line);
     }
-    println!("{}", line);
 }
 
-/// Appends one `fpy/1` tool record with redaction, UTF-16 clip, shell-only N1/N1b, and prev chain (P-3).
-/// @outputs: 2
-fn run_record_tool(args: &[String]) -> ExitCode {
-    if args.len() < 6 {
-        return ExitCode::SUCCESS;
-    }
-    let safe_sess = sanitize_session_id(&args[2]);
-    let tool = &args[3];
+/// Shared tool event recorder used by `record-tool` and `hook-event post-tool`.
+/// @outputs: 1
+fn record_tool_fields(safe_sess: &str, host: &str, tool: &str, raw_cmd: &str, exit_code: Option<i32>) {
     let tool_class = fpy_normalize_tool_class(tool);
-    let raw_cmd = &args[4];
-    let exit_code = args[5].parse::<i32>().ok();
     let oversize = raw_cmd.len() > OVERSIZE_BYTES;
-    let slice = if oversize { &raw_cmd[..raw_cmd.floor_char_boundary(4096)] } else { raw_cmd.as_str() };
+    let slice = if oversize { &raw_cmd[..raw_cmd.floor_char_boundary(4096)] } else { raw_cmd };
     let (redacted, kinds) = fpy_redact_secrets(slice);
     let (summary, cut) = fpy_clip_utf16(&redacted, 120);
     let (n1, n1b, sw) = if tool_class == "shell" {
@@ -151,14 +197,25 @@ fn run_record_tool(args: &[String]) -> ExitCode {
     };
     let now_ms = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
     let nft = if n1 { "[\"N1\"]" } else { "[]" };
-    append_session_line(&safe_sess, |seq, prev| {
+    append_session_line(safe_sess, |seq, prev| {
         format!(
-            "{{\"v\":\"fpy/1\",\"id\":\"{}-{}\",\"seq\":{},\"mono_ms\":{},\"host\":\"rust\",\"session\":\"{}\",\"agent\":\"main\",\"kind\":\"tool\",\"prev\":\"{}\",\"tool\":\"{}\",\"tool_class\":\"{}\",\"oversize\":{},\"shell_write\":{},\"summary\":\"{}\",\"redacted_count\":{},\"cut\":{},\"exit\":{},\"masked\":{},\"nft\":{}}}",
-            json_escape(&safe_sess), seq, seq, now_ms, json_escape(&safe_sess), prev, json_escape(tool),
+            "{{\"v\":\"fpy/1\",\"id\":\"{}-{}\",\"seq\":{},\"mono_ms\":{},\"host\":\"{}\",\"session\":\"{}\",\"agent\":\"main\",\"kind\":\"tool\",\"prev\":\"{}\",\"tool\":\"{}\",\"tool_class\":\"{}\",\"oversize\":{},\"shell_write\":{},\"summary\":\"{}\",\"redacted_count\":{},\"cut\":{},\"exit\":{},\"masked\":{},\"nft\":{}}}",
+            json_escape(safe_sess), seq, seq, now_ms, json_escape(host), json_escape(safe_sess), prev, json_escape(tool),
             tool_class, oversize, sw, json_escape(&summary), kinds.len(), cut,
             exit_code.map(|c| c.to_string()).unwrap_or_else(|| "null".to_string()), n1b, nft
         )
     });
+}
+
+/// Appends one `fpy/1` tool record with redaction, UTF-16 clip, shell-only N1/N1b, and prev chain (P-3).
+/// @outputs: 2
+fn run_record_tool(args: &[String]) -> ExitCode {
+    if args.len() < 6 {
+        return ExitCode::SUCCESS;
+    }
+    let safe_sess = sanitize_session_id(&args[2]);
+    let exit_code = args[5].parse::<i32>().ok();
+    record_tool_fields(&safe_sess, "rust", &args[3], &args[4], exit_code);
     ExitCode::SUCCESS
 }
 
@@ -251,12 +308,84 @@ fn run_report(path_str: &str) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// Reads bounded UTF-8 stdin payload (`<= MAX_HOOK_STDIN_BYTES`) for `hook-event`.
+/// @outputs: 2
+fn read_bounded_stdin() -> Option<String> {
+    let mut buf = Vec::new();
+    let mut handle = std::io::stdin().take(MAX_HOOK_STDIN_BYTES as u64);
+    handle.read_to_end(&mut buf).ok()?;
+    let text = String::from_utf8_lossy(&buf).trim().to_string();
+    if text.is_empty() { None } else { Some(text) }
+}
+
+/// Extracts sanitized session ID from Antigravity/Claude hook JSON payload.
+/// @outputs: 1
+fn extract_hook_session(doc: &JsonVal) -> String {
+    let raw = doc
+        .get("trajectoryId")
+        .or_else(|| doc.get("session_id"))
+        .and_then(|v| v.as_json_str())
+        .unwrap_or("default-session");
+    sanitize_session_id(raw)
+}
+
+/// Extracts string field from `doc.args.<k1>`, `doc.tool_input.<k2>`, or `doc.toolInput.<k2>`.
+/// @outputs: 2
+fn pick_arg_str<'a>(doc: &'a JsonVal, k_args: &str, k_ti: &str) -> Option<&'a str> {
+    doc.get("args")
+        .and_then(|a| a.get(k_args))
+        .and_then(|v| v.as_json_str())
+        .or_else(|| doc.get("tool_input").and_then(|t| t.get(k_ti)).and_then(|v| v.as_json_str()))
+        .or_else(|| doc.get("toolInput").and_then(|t| t.get(k_ti)).and_then(|v| v.as_json_str()))
+}
+
+/// Extracts non-truncating `i32` exit code (non-zero 64-bit values never truncate to 0).
+/// @outputs: 2
+fn extract_hook_exit_code(doc: &JsonVal) -> Option<i32> {
+    let v = doc.get("exit_code").or_else(|| doc.get("exitCode"))?;
+    let n = v.as_i64()?;
+    if n == 0 {
+        return Some(0);
+    }
+    Some(i32::try_from(n).unwrap_or(1))
+}
+
+/// Handles Antigravity `hook-event post-tool|prompt|stop` from stdin JSON (strict P-3 Fail-Open).
+/// @outputs: 1
+fn run_hook_event(args: &[String]) -> ExitCode {
+    let kind = args.get(2).map(|s| s.as_str()).unwrap_or("");
+    let Some(raw) = read_bounded_stdin() else {
+        return ExitCode::SUCCESS;
+    };
+    let Ok(doc) = parse_json(&raw) else {
+        return ExitCode::SUCCESS;
+    };
+    let safe_sess = extract_hook_session(&doc);
+    if kind == "post-tool" {
+        let tool = doc.get("toolName").or_else(|| doc.get("tool_name")).and_then(|v| v.as_json_str()).unwrap_or("unknown");
+        let cmd = pick_arg_str(&doc, "CommandLine", "command")
+            .or_else(|| pick_arg_str(&doc, "Path", "file_path"))
+            .or_else(|| pick_arg_str(&doc, "TargetFile", "TargetFile"))
+            .or_else(|| pick_arg_str(&doc, "AbsolutePath", "AbsolutePath"))
+            .unwrap_or("");
+        record_tool_fields(&safe_sess, "antigravity", tool, cmd, extract_hook_exit_code(&doc));
+    } else if kind == "prompt" {
+        let p_txt = doc.get("prompt").or_else(|| doc.get("user_prompt")).and_then(|v| v.as_json_str())
+            .or_else(|| pick_arg_str(&doc, "prompt", "prompt")).unwrap_or("");
+        let _ = run_record_prompt(&["fpy".into(), "record-prompt".into(), safe_sess, "user".into(), p_txt.into()]);
+    } else if kind == "stop" {
+        let msg = doc.get("message").or_else(|| doc.get("last_assistant_message")).and_then(|v| v.as_json_str()).unwrap_or("");
+        let _ = run_record_turn_end(&["fpy".into(), "record-turn-end".into(), safe_sess, msg.into()]);
+    }
+    ExitCode::SUCCESS
+}
+
 /// CLI entry point.
 /// @outputs: 2
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        eprintln!("Usage: fpy_recorder <bench-phase0|record-tool|record-prompt|record-turn-end|verify-chain|report|check-proposal>");
+        eprintln!("Usage: fpy_recorder <bench-phase0|record-tool|record-prompt|record-turn-end|hook-event|verify-chain|report|check-proposal>");
         return ExitCode::FAILURE;
     }
     match args[1].as_str() {
@@ -264,6 +393,7 @@ fn main() -> ExitCode {
         "record-tool" => run_record_tool(&args),
         "record-prompt" => run_record_prompt(&args),
         "record-turn-end" => run_record_turn_end(&args),
+        "hook-event" => run_hook_event(&args),
         "verify-chain" if args.len() >= 3 => run_verify_chain(&args[2]),
         "report" if args.len() >= 3 => run_report(&args[2]),
         "check-proposal" => run_check_proposal(&args),
