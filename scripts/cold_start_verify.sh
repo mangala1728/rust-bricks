@@ -28,7 +28,7 @@ echo "=== 雲端冷啟動五階剛性驗收開始 ==="
 
 # Stage 1: Rust 工具鏈與純度檢查 (Zero External Dependencies)
 check_step "[Stage 1] Cargo.toml 零外部依賴檢查" bash -c '
-    deps=$(grep -A 100 "\[dependencies\]" Cargo.toml | grep -v "\[" | grep -v "^#" | grep -v "^$" || true)
+    deps=$(awk '/^\[dependencies\]$/{f=1;next} /^\[/{f=0} f' Cargo.toml | grep -v "^#" | grep -v "^[[:space:]]*$" || true)
     if [ -n "$deps" ]; then
         echo "違反鐵律：Cargo.toml 發現外部依賴：$deps"
         exit 1
